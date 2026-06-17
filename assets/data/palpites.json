@@ -9068,8 +9068,8 @@
     "palpiteId": "pl9dbff6d05122",
     "participanteId": "p86361c7629",
     "jogoId": "gd32f5940b6f5",
-    "golsMandante": null,
-    "golsVisitante": null
+    "golsMandante": 2,
+    "golsVisitante": 0
   },
   {
     "palpiteId": "pl2e382d707783",

@@ -1,4 +1,4 @@
-name: Deploy Flutter Web to Cloudflare Pages
+name: Deploy Flutter Web to Cloudflare Pages - Bolão 2026 FWC
 
 on:
   push:
@@ -31,14 +31,28 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Update JSON data from SportsDB
+        run: dart run tools/update_sportsdb.dart
+
+      - name: Show updated data files
+        run: |
+          echo "Updated JSON files:"
+          ls -lah assets/data/*.json
+          echo ""
+          echo "Backup folders generated during CI, if any:"
+          ls -lah assets/data/backups || true
+
       - name: Analyze project
         run: flutter analyze
 
       - name: Build Flutter Web
         run: flutter build web --release
 
-      - name: List build output
-        run: ls -la build/web
+      - name: Verify Flutter Web build output
+        run: |
+          test -f build/web/index.html
+          ls -la build/web
+          find build/web -maxdepth 2 -type f | head -50
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
