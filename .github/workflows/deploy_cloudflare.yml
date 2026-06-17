@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - test
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -24,6 +25,9 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Show Flutter version
+        run: flutter --version
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -33,9 +37,12 @@ jobs:
       - name: Build Flutter Web
         run: flutter build web --release
 
+      - name: List build output
+        run: ls -la build/web
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy build/web --project-name bolao2026fwc --branch ${{ github.ref_name }}
+          command: pages deploy build/web --project-name bolao2026fwc --branch ${{ github.ref_name }} --commit-dirty=true
