@@ -1,4 +1,4 @@
-Bolão FWC 2026
+# Bolão FWC 2026
 
 Aplicação Flutter Web para visualização de um bolão da Copa do Mundo FIFA 2026.
 
@@ -79,7 +79,7 @@ git push origin main
 
 URL principal:
 
-https://bolao2026fwc.pages.dev
+<https://bolao2026fwc.pages.dev>
 
 ⸻
 
@@ -275,7 +275,7 @@ eventsday.php
 
 A API pública usa a base:
 
-https://www.thesportsdb.com/api/v1/json/123
+<https://www.thesportsdb.com/api/v1/json/123>
 
 O app Flutter deve apenas ler os JSONs estáticos e exibir as projeções.
 
