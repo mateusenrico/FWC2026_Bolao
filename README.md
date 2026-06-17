@@ -9,7 +9,7 @@ O projeto é pessoal/privado, pensado para um grupo pequeno de participantes. A 
 ## Stack
 
 | Camada | Escolha |
-|---|---|
+| --- | --- |
 | UI / frontend | Flutter Web |
 | Linguagem | Dart |
 | Dados | JSON estático em `assets/data/` |
@@ -77,9 +77,7 @@ git push origin main
 
 URL de produção:
 
-```text
-https://bolao2026fwc.pages.dev
-```
+<https://bolao2026fwc.pages.dev>
 
 ---
 
@@ -523,9 +521,7 @@ eventsday.php
 
 Base pública:
 
-```text
-https://www.thesportsdb.com/api/v1/json/123
-```
+<https://www.thesportsdb.com/api/v1/json/123>
 
 ---
 
