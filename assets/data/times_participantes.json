@@ -1,0 +1,1394 @@
+[
+  {
+    "timeId": "t14c0a8bf7690",
+    "nome": "MEXICO",
+    "nomeNormalizado": "MEXICO",
+    "grupo": "A",
+    "jogosIds": [
+      "gb0850041021b",
+      "ga0b3c635e59b",
+      "ga954f1feb709"
+    ],
+    "rankingGrupo": 1,
+    "estatisticasGrupo": {
+      "pontos": 3,
+      "jogos": 1,
+      "vitorias": 1,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 2,
+      "golsContra": 0,
+      "saldoGols": 2,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t8411b2b13319",
+    "nome": "COREIA DO SUL",
+    "nomeNormalizado": "COREIA_DO_SUL",
+    "grupo": "A",
+    "jogosIds": [
+      "g2910c145b81c",
+      "ga0b3c635e59b",
+      "geaecd3f8b4e9"
+    ],
+    "rankingGrupo": 2,
+    "estatisticasGrupo": {
+      "pontos": 3,
+      "jogos": 1,
+      "vitorias": 1,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 2,
+      "golsContra": 1,
+      "saldoGols": 1,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t8e0c044e4a63",
+    "nome": "REPÚBLICA TCHECA",
+    "nomeNormalizado": "REPUBLICA_TCHECA",
+    "grupo": "A",
+    "jogosIds": [
+      "g2910c145b81c",
+      "g39d536fab267",
+      "ga954f1feb709"
+    ],
+    "rankingGrupo": 3,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 1,
+      "golsPro": 1,
+      "golsContra": 2,
+      "saldoGols": -1,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "tfb46ed78075d",
+    "nome": "ÁFRICA DO SUL",
+    "nomeNormalizado": "AFRICA_DO_SUL",
+    "grupo": "A",
+    "jogosIds": [
+      "gb0850041021b",
+      "g39d536fab267",
+      "geaecd3f8b4e9"
+    ],
+    "rankingGrupo": 4,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 1,
+      "golsPro": 0,
+      "golsContra": 2,
+      "saldoGols": -2,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t3a34ba9913d4",
+    "nome": "BÓSNIA E HERZEGOVINA",
+    "nomeNormalizado": "BOSNIA_E_HERZEGOVINA",
+    "grupo": "B",
+    "jogosIds": [
+      "ge5fa0ec99e7f",
+      "g828d635409db",
+      "g24c78f9e8c44"
+    ],
+    "rankingGrupo": 1,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 1,
+      "golsContra": 1,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "tde30744df5a2",
+    "nome": "CANADÁ",
+    "nomeNormalizado": "CANADA",
+    "grupo": "B",
+    "jogosIds": [
+      "ge5fa0ec99e7f",
+      "gf34cdac1af35",
+      "g49e996759ade"
+    ],
+    "rankingGrupo": 2,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 1,
+      "golsContra": 1,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t5b8ee26f6771",
+    "nome": "CATAR",
+    "nomeNormalizado": "CATAR",
+    "grupo": "B",
+    "jogosIds": [
+      "gcb89e14bf670",
+      "gf34cdac1af35",
+      "g24c78f9e8c44"
+    ],
+    "rankingGrupo": 3,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 1,
+      "golsContra": 1,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t971c3113a93a",
+    "nome": "SUÍÇA",
+    "nomeNormalizado": "SUICA",
+    "grupo": "B",
+    "jogosIds": [
+      "gcb89e14bf670",
+      "g828d635409db",
+      "g49e996759ade"
+    ],
+    "rankingGrupo": 4,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 1,
+      "golsContra": 1,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t9cd2df7f02f4",
+    "nome": "ESCÓCIA",
+    "nomeNormalizado": "ESCOCIA",
+    "grupo": "C",
+    "jogosIds": [
+      "g2555f8afbf0f",
+      "gdc468c8a6a5f",
+      "g6b30eb0d957a"
+    ],
+    "rankingGrupo": 1,
+    "estatisticasGrupo": {
+      "pontos": 3,
+      "jogos": 1,
+      "vitorias": 1,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 1,
+      "golsContra": 0,
+      "saldoGols": 1,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "tdac37fe11c83",
+    "nome": "BRASIL",
+    "nomeNormalizado": "BRASIL",
+    "grupo": "C",
+    "jogosIds": [
+      "g4dba31f89773",
+      "g4790ab0ef84e",
+      "g6b30eb0d957a"
+    ],
+    "rankingGrupo": 2,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 1,
+      "golsContra": 1,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "ta1d78a1b7981",
+    "nome": "MARROCOS",
+    "nomeNormalizado": "MARROCOS",
+    "grupo": "C",
+    "jogosIds": [
+      "g4dba31f89773",
+      "gdc468c8a6a5f",
+      "g82d359bbf9ca"
+    ],
+    "rankingGrupo": 3,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 1,
+      "golsContra": 1,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t8490df8864b1",
+    "nome": "HAITI",
+    "nomeNormalizado": "HAITI",
+    "grupo": "C",
+    "jogosIds": [
+      "g2555f8afbf0f",
+      "g4790ab0ef84e",
+      "g82d359bbf9ca"
+    ],
+    "rankingGrupo": 4,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 1,
+      "golsPro": 0,
+      "golsContra": 1,
+      "saldoGols": -1,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t0ee0375d381c",
+    "nome": "ESTADOS UNIDOS",
+    "nomeNormalizado": "ESTADOS_UNIDOS",
+    "grupo": "D",
+    "jogosIds": [
+      "gf582c6f41d38",
+      "gfebf38ee44a1",
+      "g6d59c8129bf3"
+    ],
+    "rankingGrupo": 1,
+    "estatisticasGrupo": {
+      "pontos": 3,
+      "jogos": 1,
+      "vitorias": 1,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 4,
+      "golsContra": 1,
+      "saldoGols": 3,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t452d8a23e307",
+    "nome": "AUSTRÁLIA",
+    "nomeNormalizado": "AUSTRALIA",
+    "grupo": "D",
+    "jogosIds": [
+      "g7eec658eaf39",
+      "gfebf38ee44a1",
+      "g864efc5f3156"
+    ],
+    "rankingGrupo": 2,
+    "estatisticasGrupo": {
+      "pontos": 3,
+      "jogos": 1,
+      "vitorias": 1,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 2,
+      "golsContra": 0,
+      "saldoGols": 2,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t4a05613e9803",
+    "nome": "TURQUIA",
+    "nomeNormalizado": "TURQUIA",
+    "grupo": "D",
+    "jogosIds": [
+      "g7eec658eaf39",
+      "gf628aafb5c78",
+      "g6d59c8129bf3"
+    ],
+    "rankingGrupo": 3,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 1,
+      "golsPro": 0,
+      "golsContra": 2,
+      "saldoGols": -2,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "tfd475cec5745",
+    "nome": "PARAGUAI",
+    "nomeNormalizado": "PARAGUAI",
+    "grupo": "D",
+    "jogosIds": [
+      "gf582c6f41d38",
+      "gf628aafb5c78",
+      "g864efc5f3156"
+    ],
+    "rankingGrupo": 4,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 1,
+      "golsPro": 1,
+      "golsContra": 4,
+      "saldoGols": -3,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t911804839c1c",
+    "nome": "ALEMANHA",
+    "nomeNormalizado": "ALEMANHA",
+    "grupo": "E",
+    "jogosIds": [
+      "g20cc442a8a57",
+      "g9b7ebf5cbc16",
+      "ge729d78273c2"
+    ],
+    "rankingGrupo": 1,
+    "estatisticasGrupo": {
+      "pontos": 3,
+      "jogos": 1,
+      "vitorias": 1,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 7,
+      "golsContra": 1,
+      "saldoGols": 6,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "tfcf0253214e7",
+    "nome": "COSTA DO MARFIM",
+    "nomeNormalizado": "COSTA_DO_MARFIM",
+    "grupo": "E",
+    "jogosIds": [
+      "g58f3d0a3e5b9",
+      "g9b7ebf5cbc16",
+      "g8283570f97ae"
+    ],
+    "rankingGrupo": 2,
+    "estatisticasGrupo": {
+      "pontos": 3,
+      "jogos": 1,
+      "vitorias": 1,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 1,
+      "golsContra": 0,
+      "saldoGols": 1,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t968d4f74c408",
+    "nome": "EQUADOR",
+    "nomeNormalizado": "EQUADOR",
+    "grupo": "E",
+    "jogosIds": [
+      "g58f3d0a3e5b9",
+      "gc5dc4026a59c",
+      "ge729d78273c2"
+    ],
+    "rankingGrupo": 3,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 1,
+      "golsPro": 0,
+      "golsContra": 1,
+      "saldoGols": -1,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t6b2a83730cc6",
+    "nome": "CURAÇAO",
+    "nomeNormalizado": "CURACAO",
+    "grupo": "E",
+    "jogosIds": [
+      "g20cc442a8a57",
+      "gc5dc4026a59c",
+      "g8283570f97ae"
+    ],
+    "rankingGrupo": 4,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 1,
+      "golsPro": 1,
+      "golsContra": 7,
+      "saldoGols": -6,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t88a95d38caae",
+    "nome": "SUÉCIA",
+    "nomeNormalizado": "SUECIA",
+    "grupo": "F",
+    "jogosIds": [
+      "gab1eb607e729",
+      "g15c605eb0994",
+      "g4b7e7aedd3dc"
+    ],
+    "rankingGrupo": 1,
+    "estatisticasGrupo": {
+      "pontos": 3,
+      "jogos": 1,
+      "vitorias": 1,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 5,
+      "golsContra": 1,
+      "saldoGols": 4,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t574812db0ef9",
+    "nome": "HOLANDA",
+    "nomeNormalizado": "HOLANDA",
+    "grupo": "F",
+    "jogosIds": [
+      "gabdbf4e055cd",
+      "g15c605eb0994",
+      "g62e1c777b075"
+    ],
+    "rankingGrupo": 2,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 2,
+      "golsContra": 2,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t48d23d20e687",
+    "nome": "JAPÃO",
+    "nomeNormalizado": "JAPAO",
+    "grupo": "F",
+    "jogosIds": [
+      "gabdbf4e055cd",
+      "g9b07b758bb26",
+      "g4b7e7aedd3dc"
+    ],
+    "rankingGrupo": 3,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 2,
+      "golsContra": 2,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t831957e232a5",
+    "nome": "TUNÍSIA",
+    "nomeNormalizado": "TUNISIA",
+    "grupo": "F",
+    "jogosIds": [
+      "gab1eb607e729",
+      "g9b07b758bb26",
+      "g62e1c777b075"
+    ],
+    "rankingGrupo": 4,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 1,
+      "golsPro": 1,
+      "golsContra": 5,
+      "saldoGols": -4,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t113b25f85d03",
+    "nome": "BÉLGICA",
+    "nomeNormalizado": "BELGICA",
+    "grupo": "G",
+    "jogosIds": [
+      "gdc85d16fe2a0",
+      "gb107fa6a50d5",
+      "g9dc83176a842"
+    ],
+    "rankingGrupo": 1,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 1,
+      "golsContra": 1,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t9d8b4d384cb9",
+    "nome": "EGITO",
+    "nomeNormalizado": "EGITO",
+    "grupo": "G",
+    "jogosIds": [
+      "gdc85d16fe2a0",
+      "g11939235ba10",
+      "gcf194a5e486c"
+    ],
+    "rankingGrupo": 2,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 1,
+      "golsContra": 1,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t21b5a80c22f1",
+    "nome": "IRÃ",
+    "nomeNormalizado": "IRA",
+    "grupo": "G",
+    "jogosIds": [
+      "g6df93dd992e1",
+      "gb107fa6a50d5",
+      "gcf194a5e486c"
+    ],
+    "rankingGrupo": 3,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "td2354a7df610",
+    "nome": "NOVA ZELÂNDIA",
+    "nomeNormalizado": "NOVA_ZELANDIA",
+    "grupo": "G",
+    "jogosIds": [
+      "g6df93dd992e1",
+      "g11939235ba10",
+      "g9dc83176a842"
+    ],
+    "rankingGrupo": 4,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "teaef5ec32dfb",
+    "nome": "ARÁBIA SAUDITA",
+    "nomeNormalizado": "ARABIA_SAUDITA",
+    "grupo": "H",
+    "jogosIds": [
+      "g3f4d50acc979",
+      "g6224c97ef859",
+      "g25982eb142a9"
+    ],
+    "rankingGrupo": 1,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 1,
+      "golsContra": 1,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "ta96c916b3989",
+    "nome": "URUGUAI",
+    "nomeNormalizado": "URUGUAI",
+    "grupo": "H",
+    "jogosIds": [
+      "g3f4d50acc979",
+      "g9ec83317374a",
+      "g0aca52bddf15"
+    ],
+    "rankingGrupo": 2,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 1,
+      "golsContra": 1,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t9cd762b36605",
+    "nome": "CABO VERDE",
+    "nomeNormalizado": "CABO_VERDE",
+    "grupo": "H",
+    "jogosIds": [
+      "g742293f4d9fb",
+      "g9ec83317374a",
+      "g25982eb142a9"
+    ],
+    "rankingGrupo": 3,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t951406afa8e8",
+    "nome": "ESPANHA",
+    "nomeNormalizado": "ESPANHA",
+    "grupo": "H",
+    "jogosIds": [
+      "g742293f4d9fb",
+      "g6224c97ef859",
+      "g0aca52bddf15"
+    ],
+    "rankingGrupo": 4,
+    "estatisticasGrupo": {
+      "pontos": 1,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 1,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "taa9749a94caf",
+    "nome": "FRANÇA",
+    "nomeNormalizado": "FRANCA",
+    "grupo": "I",
+    "jogosIds": [
+      "ga75ba585c0bc",
+      "g7d71a2f2ccdf",
+      "g533869d8b0f1"
+    ],
+    "rankingGrupo": 1,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t512df61d67d9",
+    "nome": "IRAQUE",
+    "nomeNormalizado": "IRAQUE",
+    "grupo": "I",
+    "jogosIds": [
+      "g048007aec00c",
+      "g7d71a2f2ccdf",
+      "g1df527d96f77"
+    ],
+    "rankingGrupo": 2,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t643a041f9e1a",
+    "nome": "NORUEGA",
+    "nomeNormalizado": "NORUEGA",
+    "grupo": "I",
+    "jogosIds": [
+      "g048007aec00c",
+      "gf81fc4d5fdef",
+      "g533869d8b0f1"
+    ],
+    "rankingGrupo": 3,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t35698c21875c",
+    "nome": "SENEGAL",
+    "nomeNormalizado": "SENEGAL",
+    "grupo": "I",
+    "jogosIds": [
+      "ga75ba585c0bc",
+      "gf81fc4d5fdef",
+      "g1df527d96f77"
+    ],
+    "rankingGrupo": 4,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t430a1d65b23e",
+    "nome": "ARGENTINA",
+    "nomeNormalizado": "ARGENTINA",
+    "grupo": "J",
+    "jogosIds": [
+      "g64cf7be26416",
+      "ga5002aacf122",
+      "ga5477bc2be7b"
+    ],
+    "rankingGrupo": 1,
+    "estatisticasGrupo": {
+      "pontos": 3,
+      "jogos": 1,
+      "vitorias": 1,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 3,
+      "golsContra": 0,
+      "saldoGols": 3,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "tdabe7402347f",
+    "nome": "ÁUSTRIA",
+    "nomeNormalizado": "AUSTRIA",
+    "grupo": "J",
+    "jogosIds": [
+      "g216aa45864a9",
+      "ga5002aacf122",
+      "g7e40e611c8bd"
+    ],
+    "rankingGrupo": 2,
+    "estatisticasGrupo": {
+      "pontos": 3,
+      "jogos": 1,
+      "vitorias": 1,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 3,
+      "golsContra": 1,
+      "saldoGols": 2,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t4c40bc982142",
+    "nome": "JORDÂNIA",
+    "nomeNormalizado": "JORDANIA",
+    "grupo": "J",
+    "jogosIds": [
+      "g216aa45864a9",
+      "gb96ff58618b8",
+      "ga5477bc2be7b"
+    ],
+    "rankingGrupo": 3,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 1,
+      "golsPro": 1,
+      "golsContra": 3,
+      "saldoGols": -2,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "tc90a38480d05",
+    "nome": "ARGÉLIA",
+    "nomeNormalizado": "ARGELIA",
+    "grupo": "J",
+    "jogosIds": [
+      "g64cf7be26416",
+      "gb96ff58618b8",
+      "g7e40e611c8bd"
+    ],
+    "rankingGrupo": 4,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 1,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 1,
+      "golsPro": 0,
+      "golsContra": 3,
+      "saldoGols": -3,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "ta19bbfeafb7a",
+    "nome": "COLÔMBIA",
+    "nomeNormalizado": "COLOMBIA",
+    "grupo": "K",
+    "jogosIds": [
+      "g043d17356fe5",
+      "gd32f5940b6f5",
+      "g652232a46028"
+    ],
+    "rankingGrupo": 1,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t459588b89401",
+    "nome": "PORTUGAL",
+    "nomeNormalizado": "PORTUGAL",
+    "grupo": "K",
+    "jogosIds": [
+      "g6b3ab4171d47",
+      "gb26cbe2e0ba9",
+      "g652232a46028"
+    ],
+    "rankingGrupo": 2,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t3495c03205c0",
+    "nome": "RD CONGO",
+    "nomeNormalizado": "RD_CONGO",
+    "grupo": "K",
+    "jogosIds": [
+      "g6b3ab4171d47",
+      "gd32f5940b6f5",
+      "g82694ea5318a"
+    ],
+    "rankingGrupo": 3,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t531d7ff7f91c",
+    "nome": "UZBEQUISTÃO",
+    "nomeNormalizado": "UZBEQUISTAO",
+    "grupo": "K",
+    "jogosIds": [
+      "g043d17356fe5",
+      "gb26cbe2e0ba9",
+      "g82694ea5318a"
+    ],
+    "rankingGrupo": 4,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t64c2aed2c12d",
+    "nome": "CROÁCIA",
+    "nomeNormalizado": "CROACIA",
+    "grupo": "L",
+    "jogosIds": [
+      "g0e899ad47e6a",
+      "g322004b653d8",
+      "g46b4958a4654"
+    ],
+    "rankingGrupo": 1,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "td2d32bd03d42",
+    "nome": "GANA",
+    "nomeNormalizado": "GANA",
+    "grupo": "L",
+    "jogosIds": [
+      "g16e1f34ea2a3",
+      "gb566aa809c66",
+      "g46b4958a4654"
+    ],
+    "rankingGrupo": 2,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "t672a070ba2cd",
+    "nome": "INGLATERRA",
+    "nomeNormalizado": "INGLATERRA",
+    "grupo": "L",
+    "jogosIds": [
+      "g0e899ad47e6a",
+      "gb566aa809c66",
+      "gacf03bab0e50"
+    ],
+    "rankingGrupo": 3,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  },
+  {
+    "timeId": "tdc7a1bb025b8",
+    "nome": "PANAMÁ",
+    "nomeNormalizado": "PANAMA",
+    "grupo": "L",
+    "jogosIds": [
+      "g16e1f34ea2a3",
+      "g322004b653d8",
+      "gacf03bab0e50"
+    ],
+    "rankingGrupo": 4,
+    "estatisticasGrupo": {
+      "pontos": 0,
+      "jogos": 0,
+      "vitorias": 0,
+      "empates": 0,
+      "derrotas": 0,
+      "golsPro": 0,
+      "golsContra": 0,
+      "saldoGols": 0,
+      "fairPlayPontos": null,
+      "cartoesAmarelos": null,
+      "cartoesVermelhos": null,
+      "cartoesVermelhosIndiretos": null,
+      "cartoesAmareloVermelho": null,
+      "observacaoDesempate": "Fair play e cartões ficam null porque não constam nos dados locais exportados."
+    },
+    "rankingGrupoProvisorio": true
+  }
+]

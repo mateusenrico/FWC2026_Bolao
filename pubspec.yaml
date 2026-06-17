@@ -90,6 +90,9 @@ flutter:
 
 # MEUS
   assets:
-    - assets/data/participantes.json
     - assets/data/jogos.json
+    - assets/data/historico_partidas.json
+    - assets/data/times_participantes.json
+    - assets/data/participantes.json
     - assets/data/palpites.json
+    

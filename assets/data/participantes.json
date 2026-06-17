@@ -1,0 +1,132 @@
+[
+  {
+    "participanteId": "p40a471872e",
+    "nome": "Ana",
+    "jogosPalpitados": 72,
+    "jogosSemPalpite": 32,
+    "jogosPalpitadosFaseGrupos": 72,
+    "jogosSemPalpiteFaseGrupos": 0,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  },
+  {
+    "participanteId": "pf18f290d55",
+    "nome": "Beatriz",
+    "jogosPalpitados": 72,
+    "jogosSemPalpite": 32,
+    "jogosPalpitadosFaseGrupos": 72,
+    "jogosSemPalpiteFaseGrupos": 0,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  },
+  {
+    "participanteId": "p73c93a72cb",
+    "nome": "Caio",
+    "jogosPalpitados": 72,
+    "jogosSemPalpite": 32,
+    "jogosPalpitadosFaseGrupos": 72,
+    "jogosSemPalpiteFaseGrupos": 0,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  },
+  {
+    "participanteId": "p1ec1562405",
+    "nome": "Gabriel",
+    "jogosPalpitados": 72,
+    "jogosSemPalpite": 32,
+    "jogosPalpitadosFaseGrupos": 72,
+    "jogosSemPalpiteFaseGrupos": 0,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  },
+  {
+    "participanteId": "p0e1dda405f",
+    "nome": "Jorge",
+    "jogosPalpitados": 72,
+    "jogosSemPalpite": 32,
+    "jogosPalpitadosFaseGrupos": 72,
+    "jogosSemPalpiteFaseGrupos": 0,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  },
+  {
+    "participanteId": "p88eaa5e0c9",
+    "nome": "Juliana",
+    "jogosPalpitados": 72,
+    "jogosSemPalpite": 32,
+    "jogosPalpitadosFaseGrupos": 72,
+    "jogosSemPalpiteFaseGrupos": 0,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  },
+  {
+    "participanteId": "p06b874fbe1",
+    "nome": "Kaique",
+    "jogosPalpitados": 0,
+    "jogosSemPalpite": 104,
+    "jogosPalpitadosFaseGrupos": 0,
+    "jogosSemPalpiteFaseGrupos": 72,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  },
+  {
+    "participanteId": "p007c476953",
+    "nome": "Luiza",
+    "jogosPalpitados": 72,
+    "jogosSemPalpite": 32,
+    "jogosPalpitadosFaseGrupos": 72,
+    "jogosSemPalpiteFaseGrupos": 0,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  },
+  {
+    "participanteId": "p810f83ab24",
+    "nome": "Mateus",
+    "jogosPalpitados": 72,
+    "jogosSemPalpite": 32,
+    "jogosPalpitadosFaseGrupos": 72,
+    "jogosSemPalpiteFaseGrupos": 0,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  },
+  {
+    "participanteId": "p5bca7671e3",
+    "nome": "Marcelo",
+    "jogosPalpitados": 72,
+    "jogosSemPalpite": 32,
+    "jogosPalpitadosFaseGrupos": 72,
+    "jogosSemPalpiteFaseGrupos": 0,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  },
+  {
+    "participanteId": "pc304730d48",
+    "nome": "Mariana",
+    "jogosPalpitados": 72,
+    "jogosSemPalpite": 32,
+    "jogosPalpitadosFaseGrupos": 72,
+    "jogosSemPalpiteFaseGrupos": 0,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  },
+  {
+    "participanteId": "pc4bb99b17a",
+    "nome": "Sofia",
+    "jogosPalpitados": 72,
+    "jogosSemPalpite": 32,
+    "jogosPalpitadosFaseGrupos": 72,
+    "jogosSemPalpiteFaseGrupos": 0,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  },
+  {
+    "participanteId": "p86361c7629",
+    "nome": "Victor",
+    "jogosPalpitados": 71,
+    "jogosSemPalpite": 33,
+    "jogosPalpitadosFaseGrupos": 71,
+    "jogosSemPalpiteFaseGrupos": 1,
+    "totalJogosPrevistos": 104,
+    "totalJogosFaseGrupos": 72
+  }
+]
