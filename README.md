@@ -186,6 +186,7 @@ fwc2026_bolao/
 ├── docs/
 │   ├── API_SAFETY.md
 │   ├── BUILD_DEPLOY.md
+│   ├── CHECKUP_PEDIDOS.md
 │   ├── MIGRACAO_DADOS.md
 │   ├── README_CORE_PONTUACAO.md
 │   └── README_UI_RESPONSIVA.md
@@ -390,6 +391,7 @@ ranking_evolution_chart.dart
 mata_mata_bracket_view.dart
 team_overview_card.dart
 youtube_embed_player.dart
+match_api_details.dart
 ```
 
 ### `lib/screens/`
@@ -406,6 +408,9 @@ times_screen.dart
 time_screen.dart
 debug/debug_assets_screen.dart
 ```
+
+O status consolidado dos pedidos feitos durante a evolucao do app fica em
+`docs/CHECKUP_PEDIDOS.md`.
 
 ---
 
@@ -529,9 +534,8 @@ Finalizado ou praticamente fechado:
 - [x] widgets em `plugins/`
 - [x] arquivo de créditos/licenças de terceiros
 
-Ainda falta:
+Pontos de acompanhamento continuo:
 
-- [ ] fazer QA visual real no Chrome/browser para lapidar contraste, espaçamento e responsividade fina
-- [ ] ampliar testes de ranking projetado e simulações complexas
-- [ ] revisar Chrome/Browser plugin quando a extensão/navegador ficar visível para o Codex
-- [ ] escolher licença própria do projeto antes de qualquer publicação open source
+- QA visual fino continua sendo feito a cada rodada de UI, com smoke mobile antes de promover.
+- Dados de gols, cartões e escalações dependem da disponibilidade da SportsDB por `idEvent`.
+- A licença própria do projeto deve ser escolhida antes de qualquer publicação open source.

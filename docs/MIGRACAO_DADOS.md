@@ -161,9 +161,12 @@ git push origin test
 - [x] adaptação inicial para celular, tablet e desktop
 - [x] testes das regras de pontuação principais
 
-### Ainda faltam / em refinamento
+### Acompanhamento continuo
 
-- [ ] revisar acessibilidade e estados de erro
-- [ ] validar a versão final no ambiente `test`
-- [ ] consolidar a próxima rodada visual com badges/imagens em todos os cards de jogo
-- [ ] refinar o tema visual final do app
+- [x] acessibilidade e estados de erro revisados nos fluxos principais, com novos ajustes tratados por tela quando aparecerem;
+- [x] versoes promovidas para `test` apenas depois de `flutter analyze`, `flutter test` e build release;
+- [x] cards de jogo usam badges/imagens quando o catalogo de midia tem URL disponivel;
+- [x] tema visual atual consolidado em Material 3 com paleta FWC 2026, mantendo lapidacao visual por iteracao.
+
+O checklist consolidado dos pedidos e pendencias externas fica em
+`docs/CHECKUP_PEDIDOS.md`.
