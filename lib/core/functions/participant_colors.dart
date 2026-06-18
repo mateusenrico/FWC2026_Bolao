@@ -6,18 +6,18 @@ class ParticipantColors {
   const ParticipantColors._();
 
   static const fallbackPalette = [
-    Color(0xFF0072B2),
-    Color(0xFFD81B60),
-    Color(0xFF00A896),
-    Color(0xFFE85D04),
-    Color(0xFF9ACD00),
-    Color(0xFF6C63FF),
-    Color(0xFF2B2D42),
-    Color(0xFF008000),
-    Color(0xFFE60012),
-    Color(0xFFFDC500),
-    Color(0xFFFB8500),
-    Color(0xFF7209B7),
+    Color(0xFF006DDB),
+    Color(0xFFC1126B),
+    Color(0xFF009E73),
+    Color(0xFFF75C03),
+    Color(0xFFA6D608),
+    Color(0xFF7B2CBF),
+    Color(0xFF3A86FF),
+    Color(0xFF00C853),
+    Color(0xFFE71D36),
+    Color(0xFFFFD60A),
+    Color(0xFFFF9F1C),
+    Color(0xFF5E60CE),
     Color(0xFF8A8F98),
   ];
 

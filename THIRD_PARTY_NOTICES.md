@@ -73,14 +73,15 @@ Baseado em `pubspec.lock`. As dependencias SDK (`flutter`, `flutter_test` e `sky
 | Fonte | Uso no projeto | Arquivos/locais afetados | Credito/licenca registrada | Link |
 | --- | --- | --- | --- | --- |
 | TheStatsAPI | Fixture canonica dos 104 jogos da Copa do Mundo 2026 | `tools/data/world_cup_2026_fixtures.json`, `assets/data/jogos.json` (`fonteFixture: thestatsapi`) | O JSON declara: uso livre mediante atribuicao a TheStatsAPI. | <https://www.thestatsapi.com> |
-| TheSportsDB | Resultados, jogos ao vivo, historico bruto, times, badges, liga, venues, banners, URLs de video, timeline, estatisticas e escalacoes retornadas pela API | `tools/update_sportsdb.dart`, `assets/data/historico_partidas.json`, `assets/data/times_sportsdb.json`, `assets/data/venues_sportsdb.json`, `assets/data/liga_sportsdb.json`, tela de detalhe de partida | Manter credito "Powered by TheSportsDB" quando dados/midia da API forem exibidos ou documentados. Respeitar os termos atuais do servico. | <https://www.thesportsdb.com/api.php> |
+| TheSportsDB | Resultados, jogos ao vivo, historico bruto, times, badges, liga, venues, banners, URLs de video, timeline, estatisticas, escalacoes e midia retornada pela API | `tools/update_sportsdb.dart`, `tools/cache_media_assets.dart`, `assets/data/historico_partidas.json`, `assets/data/times_sportsdb.json`, `assets/data/venues_sportsdb.json`, `assets/data/liga_sportsdb.json`, `assets/media/`, tela de detalhe de partida | Manter credito "Powered by TheSportsDB" quando dados/midia da API forem exibidos ou documentados. O cache local e usado para o app privado/pessoal; revisar termos de redistribuicao antes de publicar assets em repositorio publico. | <https://www.thesportsdb.com/api.php> |
 | FixtureDownload | Fallback de agenda/resultados quando a SportsDB nao retorna informacao suficiente | `tools/update_sportsdb.dart`, possivel `fonteResultado` em `assets/data/jogos.json` | Manter atribuicao quando dados dessa fonte forem usados ou exportados. | <https://fixturedownload.com/> |
 | YouTube | Links e embeds de highlights vindos da SportsDB (`strVideo`) | Telas de detalhe de partida, quando houver URL | O app nao armazena videos; apenas referencia, abre ou incorpora URLs externas quando disponiveis. | <https://www.youtube.com/> |
 
 ## Assets e midia remota
 
-- Badges de times, badge/banner da liga, imagens de venues e URLs de highlights sao consumidos como URLs retornadas pelas APIs, principalmente TheSportsDB.
-- O app nao deve baixar e redistribuir esses arquivos como assets locais sem revisar a licenca especifica.
+- Badges de times, badge/banner da liga, imagens de venues, imagens de partidas e URLs de highlights sao consumidos como URLs retornadas pelas APIs, principalmente TheSportsDB.
+- O app tambem mantem cache local dessas imagens em `assets/media/` para garantir exibicao mais estavel no uso privado/pessoal.
+- Antes de publicar o repositorio como open source ou distribuir os assets fora do grupo privado, revisar a licenca/termos de redistribuicao de cada fonte de midia.
 - Se uma imagem, icone, fonte, audio ou asset for adicionado manualmente ao repositorio, registrar aqui a origem, autor, licenca e arquivo afetado.
 
 ## Checklist de manutencao

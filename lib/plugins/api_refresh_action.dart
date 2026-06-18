@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/app_routes.dart';
 import '../services/bolao_controller.dart';
 import 'theme_mode_action.dart';
 
@@ -10,9 +11,23 @@ class ApiRefreshAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final routeName = ModalRoute.of(context)?.settings.name;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (routeName != AppRoutes.home)
+          Tooltip(
+            message: 'Dashboard',
+            child: IconButton(
+              onPressed: () {
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+              },
+              icon: const Icon(Icons.dashboard_outlined),
+            ),
+          ),
         const ThemeModeAction(),
         if (controller.atualizandoApi)
           const Padding(

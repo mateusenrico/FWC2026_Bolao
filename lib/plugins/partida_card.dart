@@ -141,7 +141,11 @@ class _PartidaCardContent extends StatelessWidget {
                 children: [
                   headerText,
                   const SizedBox(height: 6),
-                  _StatusChip(status: jogo.statusJogo, liveClock: liveClock),
+                  _StatusChip(
+                    status: jogo.statusJogo,
+                    date: date,
+                    liveClock: liveClock,
+                  ),
                 ],
               );
             }
@@ -150,7 +154,11 @@ class _PartidaCardContent extends StatelessWidget {
               children: [
                 Expanded(child: headerText),
                 const SizedBox(width: 8),
-                _StatusChip(status: jogo.statusJogo, liveClock: liveClock),
+                _StatusChip(
+                  status: jogo.statusJogo,
+                  date: date,
+                  liveClock: liveClock,
+                ),
               ],
             );
           },
@@ -409,26 +417,33 @@ class _ScoreBox extends StatelessWidget {
 
 class _StatusChip extends StatelessWidget {
   final String status;
+  final DateTime? date;
   final String? liveClock;
 
-  const _StatusChip({required this.status, required this.liveClock});
+  const _StatusChip({
+    required this.status,
+    required this.date,
+    required this.liveClock,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final today = AppDateTime.agoraBrasilia();
+    final isToday = date != null && AppDateTime.mesmoDia(date!, today);
     final (label, background, foreground) = switch (status) {
       'em_andamento' => (
-        liveClock == null ? 'AO VIVO' : 'AO VIVO · $liveClock',
+        liveClock == null ? 'Ao Vivo' : 'Ao Vivo · $liveClock',
         colorScheme.error,
         colorScheme.onError,
       ),
       'encerrado' => (
-        'FINAL',
+        'Finalizado',
         colorScheme.secondaryContainer,
         colorScheme.onSecondaryContainer,
       ),
       _ => (
-        'AGENDADO',
+        isToday ? 'Em breve' : 'Agendado',
         colorScheme.surfaceContainerHighest,
         colorScheme.onSurfaceVariant,
       ),

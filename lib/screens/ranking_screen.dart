@@ -76,8 +76,6 @@ class _RankingScreenState extends State<RankingScreen> {
                         children: [
                           SectionHeader(
                             title: 'Classificação',
-                            subtitle:
-                                'Consolidados ignoram jogos ao vivo; projetados incluem placares em andamento',
                             trailing: controller.temJogosAoVivo
                                 ? RankingModeSelector(
                                     value: controller.ordenacaoRanking,
@@ -99,10 +97,7 @@ class _RankingScreenState extends State<RankingScreen> {
                             },
                           ),
                           const SizedBox(height: 18),
-                          SectionHeader(
-                            title: 'Evolução',
-                            subtitle: _evolutionSubtitle,
-                          ),
+                          SectionHeader(title: 'Evolução'),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
@@ -194,11 +189,7 @@ class _RankingScreenState extends State<RankingScreen> {
                             metric: _evolutionMetric,
                           ),
                           const SizedBox(height: 22),
-                          const SectionHeader(
-                            title: 'Lista completa',
-                            subtitle:
-                                'Máximo por partida já pontuável: 5 pontos por jogo',
-                          ),
+                          const SectionHeader(title: 'Lista completa'),
                           _RankingPointsGrid(
                             ranking: ranking,
                             participantColors: participantColors,
@@ -223,17 +214,6 @@ class _RankingScreenState extends State<RankingScreen> {
         );
       },
     );
-  }
-
-  String get _evolutionSubtitle {
-    final recorte = _evolutionMode == RankingEvolutionMode.partidas
-        ? 'por partida'
-        : 'por dia no horário brasileiro';
-    final metric = _evolutionMetric == RankingEvolutionMetric.pontos
-        ? 'pontuação acumulada'
-        : 'posição no ranking';
-
-    return '$metric $recorte';
   }
 
   List<RankingEvolutionPoint> _buildEvolutionPoints(RankingEvolutionMode mode) {
@@ -449,13 +429,12 @@ class _ParticipantFilter extends StatelessWidget {
       children: [
         for (final linha in ranking)
           FilterChip(
-            avatar: Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: participantColors[linha.participanteId],
-                shape: BoxShape.circle,
-              ),
+            avatar: ParticipantMarker(
+              color:
+                  participantColors[linha.participanteId] ??
+                  Theme.of(context).colorScheme.primary,
+              participanteId: linha.participanteId,
+              size: 12,
             ),
             label: Text(linha.nome),
             selected: selecionados.contains(linha.participanteId),
@@ -569,7 +548,7 @@ class _RankingPointsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    const minTableWidth = 1080.0;
+    const minTableWidth = 760.0;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -631,17 +610,12 @@ class _RankingGridHeader extends StatelessWidget {
           _GridHeaderCell(label: '#', width: 62),
           _GridHeaderCell(label: 'Participante', width: 220, alignStart: true),
           _GridHeaderCell(label: 'Total', width: 72),
-          _GridHeaderCell(label: '+Live', width: 62),
-          _GridHeaderCell(label: 'Jogos', width: 72),
-          _GridHeaderCell(label: 'Grupos', width: 72),
-          _GridHeaderCell(label: 'Final', width: 62),
-          _GridHeaderCell(label: 'Max', width: 62),
-          _GridHeaderCell(label: '+5', width: 58),
-          _GridHeaderCell(label: '+3', width: 58),
-          _GridHeaderCell(label: '+2', width: 58),
-          _GridHeaderCell(label: '+1', width: 58),
-          _GridHeaderCell(label: '0', width: 58),
-          _GridHeaderCell(label: 'Pont.', width: 66),
+          _GridHeaderCell(label: 'Ao vivo', width: 76),
+          _GridHeaderCell(label: 'Exato', width: 70),
+          _GridHeaderCell(label: 'Res.+gol', width: 82),
+          _GridHeaderCell(label: 'Resultado', width: 88),
+          _GridHeaderCell(label: 'Gol', width: 58),
+          _GridHeaderCell(label: 'Nada', width: 62),
         ],
       ),
     );
@@ -711,6 +685,7 @@ class _RankingGridRow extends StatelessWidget {
                       child: ParticipantNameInline(
                         name: linha.nome,
                         color: accent,
+                        participantId: linha.participanteId,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w900,
                         ),
@@ -723,34 +698,23 @@ class _RankingGridRow extends StatelessWidget {
                     ),
                     _GridValueCell(
                       value: liveDelta > 0 ? '+$liveDelta' : '0',
-                      width: 62,
+                      width: 76,
                       color: liveDelta > 0 ? accent : colors.onSurfaceVariant,
                     ),
-                    _GridValueCell(value: '${linha.pontosJogos}', width: 72),
-                    _GridValueCell(value: '${linha.pontosGrupos}', width: 72),
-                    _GridValueCell(value: '${linha.pontosFinal}', width: 62),
-                    _GridValueCell(
-                      value: '${linha.palpitesPontuaveis * 5}',
-                      width: 62,
-                    ),
-                    _GridValueCell(value: '${linha.placaresExatos}', width: 58),
+                    _GridValueCell(value: '${linha.placaresExatos}', width: 70),
                     _GridValueCell(
                       value: '${linha.palpitesComTresPontos}',
-                      width: 58,
+                      width: 82,
                     ),
                     _GridValueCell(
                       value: '${linha.palpitesComDoisPontos}',
-                      width: 58,
+                      width: 88,
                     ),
                     _GridValueCell(
                       value: '${linha.palpitesComUmPonto}',
                       width: 58,
                     ),
-                    _GridValueCell(value: '${zeros.clamp(0, 999)}', width: 58),
-                    _GridValueCell(
-                      value: '${linha.palpitesPontuaveis}',
-                      width: 66,
-                    ),
+                    _GridValueCell(value: '${zeros.clamp(0, 999)}', width: 62),
                   ],
                 ),
               ),

@@ -13,8 +13,10 @@ O projeto é pessoal/privado, pensado para um grupo pequeno de participantes. A 
 | UI / frontend | Flutter Web |
 | Linguagem | Dart |
 | Dados do app | JSON estático em `assets/data/` |
+| Mídia local | Cache gerado em `assets/media/` |
 | Agenda canônica auxiliar | `tools/data/world_cup_2026_fixtures.json` |
 | Atualização | `tools/update_sportsdb.dart` |
+| Cache de imagens | `tools/cache_media_assets.dart` |
 | Deploy | GitHub Actions |
 | Hospedagem | Cloudflare Pages |
 | Fontes externas | TheSportsDB, FixtureDownload, TheStatsAPI fixture seed |
@@ -150,6 +152,16 @@ Atualizar dados localmente:
 dart run tools/update_sportsdb.dart
 ```
 
+Atualizar o cache local de imagens:
+
+```bash
+dart run tools/cache_media_assets.dart
+```
+
+O app prefere imagens locais registradas em `assets/media/media_manifest.json`
+e cai automaticamente para a URL remota quando uma imagem ainda nao foi
+baixada.
+
 ---
 
 ## Documentação e atribuições
@@ -173,17 +185,25 @@ Sempre que entrar uma dependência, asset, imagem, API, feed ou serviço externo
 ```text
 fwc2026_bolao/
 ├── assets/
-│   └── data/
-│       ├── jogos.json
-│       ├── historico_partidas.json
-│       ├── times_participantes.json
-│       ├── participantes.json
-│       ├── palpites.json
-│       ├── times_sportsdb.json
-│       ├── venues_sportsdb.json
-│       └── liga_sportsdb.json
+│   ├── data/
+│   │   ├── jogos.json
+│   │   ├── historico_partidas.json
+│   │   ├── times_participantes.json
+│   │   ├── participantes.json
+│   │   ├── palpites.json
+│   │   ├── times_sportsdb.json
+│   │   ├── venues_sportsdb.json
+│   │   └── liga_sportsdb.json
+│   └── media/
+│       ├── media_manifest.json
+│       ├── team_badges/
+│       ├── team_images/
+│       ├── venue_images/
+│       ├── match_images/
+│       └── league_images/
 │
 ├── docs/
+│   ├── APIS_DADOS_MIDIA.md
 │   ├── API_SAFETY.md
 │   ├── BUILD_DEPLOY.md
 │   ├── CHECKUP_PEDIDOS.md
@@ -192,6 +212,7 @@ fwc2026_bolao/
 │   └── README_UI_RESPONSIVA.md
 │
 ├── tools/
+│   ├── cache_media_assets.dart
 │   ├── update_sportsdb.dart
 │   └── data/
 │       └── world_cup_2026_fixtures.json
@@ -268,6 +289,21 @@ Base complementar de estádios/venues vinda da TheSportsDB, usada para enriquece
 ### `liga_sportsdb.json`
 
 Metadados da competição vindos da TheSportsDB, incluindo badge, banner e informações visuais da liga quando disponíveis.
+
+### `assets/media/`
+
+Cache local de imagens referenciadas pelos JSONs da TheSportsDB.
+
+O manifesto `assets/media/media_manifest.json` mapeia cada URL remota para o
+asset baixado. O `BolaoController` resolve badge, imagem de partida e imagem de
+time preferindo esse asset local; se a URL nao estiver no manifesto, os widgets
+continuam tentando carregar a imagem remota.
+
+Para atualizar:
+
+```bash
+dart run tools/cache_media_assets.dart
+```
 
 ---
 

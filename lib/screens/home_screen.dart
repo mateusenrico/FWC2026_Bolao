@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
 import '../core/app_routes.dart';
+import '../core/functions/date_time_utils.dart';
 import '../core/functions/participant_colors.dart';
 import '../core/sistema_pontuacao_participantes.dart';
 import '../models/jogo.dart';
@@ -153,7 +154,7 @@ class _NextGamesSection extends StatelessWidget {
           title: hasLive ? 'Acontecendo agora' : 'Próximo jogo',
           subtitle: jogos.length > 1
               ? '${jogos.length} partidas no mesmo horário'
-              : 'Destaque do calendário',
+              : null,
         ),
         if (jogos.isEmpty)
           const Card(
@@ -262,9 +263,6 @@ class _RankingSection extends StatelessWidget {
       children: [
         SectionHeader(
           title: 'Ranking parcial',
-          subtitle: hasLive
-              ? 'Ordenado pelo placar ao vivo; pontos mostram consolidado + parcial'
-              : 'Desempate por placares exatos',
           trailing: TextButton.icon(
             onPressed: () => Navigator.pushNamed(context, AppRoutes.ranking),
             icon: const Icon(Icons.leaderboard_outlined),
@@ -452,7 +450,9 @@ class _RankingMiniEvolution extends StatelessWidget {
   }
 }
 
-class _GamesSection extends StatelessWidget {
+enum _FuturosSubfiltro { amanha, semana, todos }
+
+class _GamesSection extends StatefulWidget {
   final BolaoController controller;
   final PeriodoJogos periodo;
   final List<Jogo> jogos;
@@ -466,13 +466,23 @@ class _GamesSection extends StatelessWidget {
   });
 
   @override
+  State<_GamesSection> createState() => _GamesSectionState();
+}
+
+class _GamesSectionState extends State<_GamesSection> {
+  _FuturosSubfiltro _futurosSubfiltro = _FuturosSubfiltro.amanha;
+
+  @override
   Widget build(BuildContext context) {
+    final jogos = widget.periodo == PeriodoJogos.futuros
+        ? _filtrarFuturos(widget.jogos)
+        : widget.jogos;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SectionHeader(
           title: 'Partidas',
-          subtitle: 'Passados, em andamento e futuros',
           trailing: TextButton.icon(
             onPressed: () => Navigator.pushNamed(context, AppRoutes.jogos),
             icon: const Icon(Icons.sports_soccer_outlined),
@@ -484,37 +494,58 @@ class _GamesSection extends StatelessWidget {
           runSpacing: 8,
           children: [
             _FilterChip(
-              label: 'Hoje',
-              value: PeriodoJogos.hoje,
-              selected: periodo == PeriodoJogos.hoje,
-              onSelected: onPeriodoChanged,
+              label: 'Passados',
+              value: PeriodoJogos.passados,
+              selected: widget.periodo == PeriodoJogos.passados,
+              onSelected: widget.onPeriodoChanged,
             ),
             _FilterChip(
-              label: 'Amanhã',
-              value: PeriodoJogos.amanha,
-              selected: periodo == PeriodoJogos.amanha,
-              onSelected: onPeriodoChanged,
+              label: 'Hoje',
+              value: PeriodoJogos.hoje,
+              selected: widget.periodo == PeriodoJogos.hoje,
+              onSelected: widget.onPeriodoChanged,
             ),
             _FilterChip(
               label: 'Rodada',
               value: PeriodoJogos.rodadaAtual,
-              selected: periodo == PeriodoJogos.rodadaAtual,
-              onSelected: onPeriodoChanged,
-            ),
-            _FilterChip(
-              label: 'Passados',
-              value: PeriodoJogos.passados,
-              selected: periodo == PeriodoJogos.passados,
-              onSelected: onPeriodoChanged,
+              selected: widget.periodo == PeriodoJogos.rodadaAtual,
+              onSelected: widget.onPeriodoChanged,
             ),
             _FilterChip(
               label: 'Futuros',
               value: PeriodoJogos.futuros,
-              selected: periodo == PeriodoJogos.futuros,
-              onSelected: onPeriodoChanged,
+              selected: widget.periodo == PeriodoJogos.futuros,
+              onSelected: widget.onPeriodoChanged,
             ),
           ],
         ),
+        if (widget.periodo == PeriodoJogos.futuros) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _FutureFilterChip(
+                label: 'Amanhã',
+                value: _FuturosSubfiltro.amanha,
+                selected: _futurosSubfiltro == _FuturosSubfiltro.amanha,
+                onSelected: _onFutureFilterChanged,
+              ),
+              _FutureFilterChip(
+                label: 'Semana',
+                value: _FuturosSubfiltro.semana,
+                selected: _futurosSubfiltro == _FuturosSubfiltro.semana,
+                onSelected: _onFutureFilterChanged,
+              ),
+              _FutureFilterChip(
+                label: 'Todos',
+                value: _FuturosSubfiltro.todos,
+                selected: _futurosSubfiltro == _FuturosSubfiltro.todos,
+                onSelected: _onFutureFilterChanged,
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 14),
         if (jogos.isEmpty)
           const Card(
@@ -527,9 +558,13 @@ class _GamesSection extends StatelessWidget {
           for (final jogo in jogos)
             PartidaCard(
               jogo: jogo,
-              badgeMandante: controller.badgeDoTime(jogo.mandantePrevisto),
-              badgeVisitante: controller.badgeDoTime(jogo.visitantePrevisto),
-              liveClock: controller.tempoAtualDoJogo(jogo),
+              badgeMandante: widget.controller.badgeDoTime(
+                jogo.mandantePrevisto,
+              ),
+              badgeVisitante: widget.controller.badgeDoTime(
+                jogo.visitantePrevisto,
+              ),
+              liveClock: widget.controller.tempoAtualDoJogo(jogo),
               onTap: () {
                 Navigator.pushNamed(
                   context,
@@ -540,6 +575,38 @@ class _GamesSection extends StatelessWidget {
             ),
       ],
     );
+  }
+
+  void _onFutureFilterChanged(_FuturosSubfiltro value) {
+    setState(() => _futurosSubfiltro = value);
+  }
+
+  List<Jogo> _filtrarFuturos(List<Jogo> jogos) {
+    if (_futurosSubfiltro == _FuturosSubfiltro.todos) {
+      return jogos;
+    }
+
+    final hoje = AppDateTime.agoraBrasilia();
+    final amanha = hoje.add(const Duration(days: 1));
+    final limiteSemana = AppDateTime.inicioDoDia(
+      hoje.add(const Duration(days: 7)),
+    );
+
+    return jogos
+        .where((jogo) {
+          final date = AppDateTime.horarioBrasilia(jogo);
+          if (date == null) {
+            return _futurosSubfiltro == _FuturosSubfiltro.todos;
+          }
+
+          return switch (_futurosSubfiltro) {
+            _FuturosSubfiltro.amanha => AppDateTime.mesmoDia(date, amanha),
+            _FuturosSubfiltro.semana =>
+              date.isAfter(hoje) && date.isBefore(limiteSemana),
+            _FuturosSubfiltro.todos => true,
+          };
+        })
+        .toList(growable: false);
   }
 }
 
@@ -861,6 +928,30 @@ class _FilterChip extends StatelessWidget {
       label: Text(label),
       selected: selected,
       onSelected: (_) => onSelected(value),
+    );
+  }
+}
+
+class _FutureFilterChip extends StatelessWidget {
+  final String label;
+  final _FuturosSubfiltro value;
+  final bool selected;
+  final ValueChanged<_FuturosSubfiltro> onSelected;
+
+  const _FutureFilterChip({
+    required this.label,
+    required this.value,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onSelected(value),
+      visualDensity: VisualDensity.compact,
     );
   }
 }

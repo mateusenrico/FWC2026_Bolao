@@ -55,6 +55,7 @@ class RankingParticipanteCard extends StatelessWidget {
                           child: ParticipantNameInline(
                             name: linha.nome,
                             color: participantColor,
+                            participantId: linha.participanteId,
                             style: Theme.of(context).textTheme.titleSmall
                                 ?.copyWith(fontWeight: FontWeight.w900),
                           ),
