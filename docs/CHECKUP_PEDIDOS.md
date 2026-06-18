@@ -1,6 +1,6 @@
 # Checkup de pedidos e cobertura
 
-Ultima revisao: v2.5.0-dev.
+Ultima revisao: v2.5.2-dev.
 
 Este documento consolida os pedidos feitos durante a evolucao do app e o estado
 de implementacao. Quando algo depende de fonte externa, a implementacao fica
@@ -41,19 +41,20 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Evolucao por partida ou por dia brasileiro | Completo | `RankingScreen` |
 | Grafico reescala o eixo X ao filtrar faixa de partidas/dias | Completo | `RankingEvolutionChart` |
 | Grafico com guias por etapa e por posicoes/pontos | Completo | `RankingEvolutionChart` |
+| Grafico usa o marcador visual da pessoa no fim da linha e na legenda | Completo | `RankingEvolutionChart`, `ParticipantMarker` |
 | Cores fixas por participante em `participantes.json` | Completo | `ParticipantColors`, testes |
 | Usar cor da pessoa como acento visual global onde nomes aparecem | Completo | `ParticipantPositionBadge`, `ParticipantNameInline`, ranking e palpites |
 | Aumentar diferenciacao das cores dos participantes | Completo | `assets/data/participantes.json`, `ParticipantColors` |
-| Diferenciar participantes tambem por marcador visual alem da cor | Completo | `ParticipantMarker`, `ParticipantNameInline` |
+| Diferenciar participantes tambem por marcador visual alem da cor, sem usar `X` | Completo | `ParticipantMarker`, `ParticipantNameInline` |
 | Legenda do grafico ordenada por ranking atual | Completo | `RankingEvolutionChart` |
-| Lista detalhada do ranking sem tabela redundante e com +5/+3/+2/+1/0 | Completo | `RankingScreen` |
+| Lista detalhada do ranking sem tabela redundante e com +5/+3/+2/+1/0 | Completo | `RankingScreen`, cards compactos |
 | Lista detalhada do ranking sem colunas redundantes de jogos/grupos/final/max/pontuaveis | Completo | `_RankingPointsGrid` |
 | Tabela de ranking ocupa a largura disponivel sem sobra deslocada | Completo | `_RankingPointsGrid` |
 | Participantes sem nenhum palpite completo nao aparecem nos rankings/palpites | Completo | `BolaoController` |
 | Tela do participante com filtros de palpites (+5, zerados, futuros etc.) | Completo | `ParticipanteDetailScreen` |
 | Tela do participante mostra palpite vs resultado/parcial com cores e pontos | Completo | `PalpiteJogoCard` |
 | Separar grupos e mata-mata nas exibicoes de jogos | Completo | `JogosScreen`, `MataMataBracketView` |
-| Chaveamento em formato visual para mata-mata, responsivo | Completo | `MataMataBracketView` |
+| Chaveamento em formato visual para mata-mata, responsivo | Completo | `MataMataBracketView`; desktop usa conectores entre fases, mobile usa colunas verticais |
 | Simulador de cenarios com busca/cards compactos | Completo | `SimuladorScreen` |
 | Tela de grupos clicavel com detalhe, partidas e cruzamentos provaveis | Completo | `GruposScreen`, `GrupoTableCard` |
 | Tela de grupos abre todos e esconde os demais ao clicar em um grupo | Completo | `GruposScreen` |

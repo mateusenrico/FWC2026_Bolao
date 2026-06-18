@@ -14,7 +14,7 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - detalhe da partida com palpites agrupados por resultado apostado e dados de timeline/escalação/estatísticas quando a SportsDB disponibilizar;
 - tela de partida com ordem: dados básicos, palpites, resumo compacto dos times, dados externos e vídeo;
 - detalhe do participante com placar principal alternando entre palpite futuro e resultado/parcial real;
-- ranking detalhado com pódio, tabela de pontos e evolução por pontos ou posição;
+- ranking detalhado com pódio, cards compactos de pontos e evolução por pontos ou posição;
 - filtro de evolução por participantes e por faixa de partidas ou dias;
 - gráfico de evolução com eixo X reescalado conforme a faixa filtrada;
 - gráfico de evolução com guias visuais por etapa e por posição/pontuação;
@@ -22,9 +22,11 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - setas de subida, queda ou empate no ranking da home comparando posição consolidada e posição com placar ao vivo;
 - participantes sem nenhum palpite completo ficam ocultos dos rankings e chips de palpites;
 - destaque visual de ouro, prata e bronze para os três primeiros no gráfico;
+- marcadores fixos por participante no fim de cada linha do gráfico e na legenda, sem usar `X` como símbolo;
 - classificação dos grupos;
 - projeção colapsável do mata-mata por participante;
 - chaveamento com badges quando a tela possui catálogo de mídia;
+- chaveamento de mata-mata com conectores entre fases no desktop e leitura vertical no celular;
 - tema Material 3 seguindo o sistema por padrão, com botão claro/escuro no AppBar;
 - imagens remotas com cache do Flutter/browser, `gaplessPlayback` e fallback HTML no Web para reduzir flicker e contornar CORS;
 - simulador com busca, cards compactos e limpeza rápida de placares digitados;

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/functions/participant_colors.dart';
+import 'participant_identity.dart';
 
 class RankingEvolutionPoint {
   final String participanteId;
@@ -103,6 +104,7 @@ class RankingEvolutionChart extends StatelessWidget {
                 children: [
                   for (final participanteId in orderedLegendIds)
                     _LegendItem(
+                      participanteId: participanteId,
                       color: _colorFor(participanteId),
                       name: participants[participanteId]!,
                       podiumPosition: podiumPositions[participanteId],
@@ -254,9 +256,15 @@ class _RankingEvolutionPainter extends CustomPainter {
           minPosition: minPosition,
           maxPosition: maxPosition,
         );
-        if (podiumPosition != null && i == participantPoints.length - 1) {
-          canvas.drawCircle(Offset(x, y), 7.5, Paint()..color = medalColor);
-          canvas.drawCircle(Offset(x, y), 5, Paint()..color = colors.surface);
+        if (i == participantPoints.length - 1) {
+          _drawEndpointMarker(
+            canvas: canvas,
+            center: Offset(x, y),
+            participanteId: entry.key,
+            color: color,
+            medalColor: podiumPosition == null ? null : medalColor,
+          );
+          continue;
         }
         canvas.drawCircle(Offset(x, y), 3, Paint()..color = color);
       }
@@ -401,6 +409,34 @@ class _RankingEvolutionPainter extends CustomPainter {
     painter.paint(canvas, offset);
   }
 
+  void _drawEndpointMarker({
+    required Canvas canvas,
+    required Offset center,
+    required String participanteId,
+    required Color color,
+    required Color? medalColor,
+  }) {
+    const markerSize = 13.0;
+    if (medalColor != null) {
+      canvas.drawCircle(
+        center,
+        9.2,
+        Paint()..color = medalColor.withValues(alpha: 0.94),
+      );
+      canvas.drawCircle(center, 6.8, Paint()..color = colors.surface);
+    } else {
+      canvas.drawCircle(center, 6.6, Paint()..color = colors.surface);
+    }
+
+    canvas.save();
+    canvas.translate(center.dx - markerSize / 2, center.dy - markerSize / 2);
+    ParticipantMarkerPainter(
+      color: color,
+      shapeIndex: ParticipantMarker.shapeIndexFor(participanteId),
+    ).paint(canvas, const Size.square(markerSize));
+    canvas.restore();
+  }
+
   int _niceStepInterval(int span) {
     if (span <= 8) {
       return 1;
@@ -438,11 +474,13 @@ class _RankingEvolutionPainter extends CustomPainter {
 }
 
 class _LegendItem extends StatelessWidget {
+  final String participanteId;
   final Color color;
   final String name;
   final int? podiumPosition;
 
   const _LegendItem({
+    required this.participanteId,
     required this.color,
     required this.name,
     required this.podiumPosition,
@@ -473,10 +511,10 @@ class _LegendItem extends StatelessWidget {
           ),
           const SizedBox(width: 6),
         ],
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ParticipantMarker(
+          color: color,
+          participanteId: participanteId,
+          size: 12,
         ),
         const SizedBox(width: 6),
         Text(

@@ -162,6 +162,13 @@ O app prefere imagens locais registradas em `assets/media/media_manifest.json`
 e cai automaticamente para a URL remota quando uma imagem ainda nao foi
 baixada.
 
+UI atual:
+
+- dashboard responsivo com placares ao vivo/proximos jogos, ranking parcial e mini grafico;
+- tela de ranking com cards compactos, podio, evolucao por pontos/posicao e marcadores fixos por participante;
+- chaveamento de mata-mata com conectores no desktop e leitura vertical no celular;
+- badges, bandeiras e imagens vindas primeiro do cache local e depois das URLs externas.
+
 ---
 
 ## Documentação e atribuições

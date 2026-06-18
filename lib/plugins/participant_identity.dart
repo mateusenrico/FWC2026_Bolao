@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../core/functions/participant_colors.dart';
@@ -114,15 +116,15 @@ class ParticipantMarker extends StatelessWidget {
     return SizedBox.square(
       dimension: size,
       child: CustomPaint(
-        painter: _ParticipantMarkerPainter(
+        painter: ParticipantMarkerPainter(
           color: color,
-          shapeIndex: _shapeIndex(participanteId),
+          shapeIndex: ParticipantMarker.shapeIndexFor(participanteId),
         ),
       ),
     );
   }
 
-  int _shapeIndex(String? value) {
+  static int shapeIndexFor(String? value) {
     final text = value ?? '';
     if (text.isEmpty) {
       return 0;
@@ -136,11 +138,11 @@ class ParticipantMarker extends StatelessWidget {
   }
 }
 
-class _ParticipantMarkerPainter extends CustomPainter {
+class ParticipantMarkerPainter extends CustomPainter {
   final Color color;
   final int shapeIndex;
 
-  const _ParticipantMarkerPainter({
+  const ParticipantMarkerPainter({
     required this.color,
     required this.shapeIndex,
   });
@@ -172,21 +174,21 @@ class _ParticipantMarkerPainter extends CustomPainter {
           ..close();
         canvas.drawPath(path, paint);
       case 4:
-        final stroke = Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = size.width * 0.28
-          ..strokeCap = StrokeCap.round;
-        canvas.drawLine(
-          Offset(size.width * 0.15, size.height * 0.15),
-          Offset(size.width * 0.85, size.height * 0.85),
-          stroke,
-        );
-        canvas.drawLine(
-          Offset(size.width * 0.85, size.height * 0.15),
-          Offset(size.width * 0.15, size.height * 0.85),
-          stroke,
-        );
+        final path = Path();
+        for (var i = 0; i < 5; i++) {
+          final angle = (-90 + i * 72) * 3.141592653589793 / 180;
+          final point = Offset(
+            center.dx + size.width * 0.48 * math.cos(angle),
+            center.dy + size.height * 0.48 * math.sin(angle),
+          );
+          if (i == 0) {
+            path.moveTo(point.dx, point.dy);
+          } else {
+            path.lineTo(point.dx, point.dy);
+          }
+        }
+        path.close();
+        canvas.drawPath(path, paint);
       case 5:
         final stroke = Paint()
           ..color = color
@@ -199,7 +201,7 @@ class _ParticipantMarkerPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ParticipantMarkerPainter oldDelegate) {
+  bool shouldRepaint(covariant ParticipantMarkerPainter oldDelegate) {
     return color != oldDelegate.color || shapeIndex != oldDelegate.shapeIndex;
   }
 }
