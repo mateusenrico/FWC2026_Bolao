@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
 import '../core/app_routes.dart';
+import '../core/functions/participant_colors.dart';
 import '../models/jogo.dart';
 import '../plugins/api_refresh_action.dart';
 import '../plugins/live_palpite_grid.dart';
 import '../plugins/partida_card.dart';
-import '../plugins/ranking_mode_selector.dart';
 import '../plugins/ranking_participante_card.dart';
 import '../plugins/refresh_countdown_indicator.dart';
 import '../plugins/section_header.dart';
@@ -140,6 +140,9 @@ class _NextGamesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasLive = jogos.any((jogo) => jogo.isEmAndamento);
+    final participantColors = ParticipantColors.mapFromParticipantes(
+      controller.data.participantes,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -170,14 +173,17 @@ class _NextGamesSection extends StatelessWidget {
                     for (final jogo in jogos)
                       SizedBox(
                         width: itemWidth,
-                        child: _partida(context, jogo),
+                        child: _partida(context, jogo, participantColors),
                       ),
                   ],
                 );
               }
 
               return Column(
-                children: [for (final jogo in jogos) _partida(context, jogo)],
+                children: [
+                  for (final jogo in jogos)
+                    _partida(context, jogo, participantColors),
+                ],
               );
             },
           ),
@@ -185,7 +191,11 @@ class _NextGamesSection extends StatelessWidget {
     );
   }
 
-  Widget _partida(BuildContext context, Jogo jogo) {
+  Widget _partida(
+    BuildContext context,
+    Jogo jogo,
+    Map<String, Color> participantColors,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -204,18 +214,14 @@ class _NextGamesSection extends StatelessWidget {
             );
           },
         ),
-        if (jogo.isEmAndamento)
-          LivePalpiteGrid(
-            jogo: jogo,
-            groups: controller.gruposDePalpitesDoJogo(jogo.jogoId),
-            onTapParticipante: (id) => () {
-              Navigator.pushNamed(
-                context,
-                AppRoutes.participante,
-                arguments: id,
-              );
-            },
-          ),
+        LivePalpiteGrid(
+          jogo: jogo,
+          groups: controller.gruposDePalpitesDoJogo(jogo.jogoId),
+          participantColors: participantColors,
+          onTapParticipante: (id) => () {
+            Navigator.pushNamed(context, AppRoutes.participante, arguments: id);
+          },
+        ),
       ],
     );
   }
@@ -234,45 +240,65 @@ class _RankingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ranking = controller.classificacao;
+    final hasLive = controller.temJogosAoVivo;
+    final ranking = hasLive
+        ? controller.classificacaoProjetada
+        : controller.classificacaoConsolidada;
+    final consolidadoPorParticipante = {
+      for (final linha in controller.classificacaoConsolidada)
+        linha.participanteId: linha,
+    };
     final visible = expanded
         ? ranking
         : ranking.take(5).toList(growable: false);
+    final participantColors = ParticipantColors.mapFromParticipantes(
+      controller.data.participantes,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SectionHeader(
           title: 'Ranking parcial',
-          subtitle: 'Desempate por placares exatos',
+          subtitle: hasLive
+              ? 'Ordenado pelo placar ao vivo; pontos mostram consolidado + parcial'
+              : 'Desempate por placares exatos',
           trailing: TextButton.icon(
             onPressed: () => Navigator.pushNamed(context, AppRoutes.ranking),
             icon: const Icon(Icons.leaderboard_outlined),
             label: const Text('Detalhes'),
           ),
         ),
-        if (controller.temJogosAoVivo) ...[
-          RankingModeSelector(
-            value: controller.ordenacaoRanking,
-            onChanged: controller.alterarOrdenacaoRanking,
-          ),
-          const SizedBox(height: 10),
-        ],
-        for (final linha in visible)
-          RankingParticipanteCard(
-            linha: linha,
-            liveDelta:
-                controller.ordenacaoRanking == OrdenacaoRanking.consolidado
-                ? controller.pontosAoVivo(linha.participanteId)
-                : 0,
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                AppRoutes.participante,
-                arguments: linha.participanteId,
+        for (final linha in visible) ...[
+          Builder(
+            builder: (context) {
+              final consolidado =
+                  consolidadoPorParticipante[linha.participanteId] ?? linha;
+              final liveDelta = hasLive
+                  ? linha.pontosTotal - consolidado.pontosTotal
+                  : 0;
+              final movementDelta = hasLive
+                  ? consolidado.posicao - linha.posicao
+                  : null;
+
+              return RankingParticipanteCard(
+                linha: linha,
+                participantColor: participantColors[linha.participanteId],
+                displayPoints: hasLive ? consolidado.pontosTotal : null,
+                liveDelta: liveDelta,
+                movementDelta: movementDelta,
+                pointsLabel: hasLive ? 'cons. + ao vivo' : null,
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.participante,
+                    arguments: linha.participanteId,
+                  );
+                },
               );
             },
           ),
+        ],
         if (ranking.length > 5)
           Align(
             alignment: Alignment.centerLeft,

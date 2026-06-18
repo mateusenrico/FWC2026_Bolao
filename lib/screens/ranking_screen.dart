@@ -6,9 +6,9 @@ import '../core/functions/participant_colors.dart';
 import '../core/sistema_pontuacao_participantes.dart';
 import '../plugins/api_refresh_action.dart';
 import '../plugins/live_matches_banner.dart';
+import '../plugins/participant_identity.dart';
 import '../plugins/ranking_evolution_chart.dart';
 import '../plugins/ranking_mode_selector.dart';
-import '../plugins/ranking_participante_card.dart';
 import '../plugins/ranking_podium.dart';
 import '../plugins/section_header.dart';
 import '../services/bolao_controller.dart';
@@ -47,7 +47,9 @@ class _RankingScreenState extends State<RankingScreen> {
         final points = _buildEvolutionPoints(_evolutionMode);
         final evolutionRange = _rangeFor(points);
         final visiblePoints = _filterByRange(points, evolutionRange);
-        final participantColors = _participantColors();
+        final participantColors = ParticipantColors.mapFromParticipantes(
+          controller.data.participantes,
+        );
         final podiumPositions = {
           for (final linha in ranking.take(3))
             linha.participanteId: linha.posicao,
@@ -158,6 +160,7 @@ class _RankingScreenState extends State<RankingScreen> {
                           _ParticipantFilter(
                             ranking: ranking,
                             selecionados: _selecionados,
+                            participantColors: participantColors,
                             onChanged: (id, selected) {
                               setState(() {
                                 if (selected) {
@@ -198,6 +201,7 @@ class _RankingScreenState extends State<RankingScreen> {
                           ),
                           _RankingPointsGrid(
                             ranking: ranking,
+                            participantColors: participantColors,
                             liveDelta: (id) =>
                                 showLiveDelta ? controller.pontosAoVivo(id) : 0,
                             onTapParticipante: (id) {
@@ -208,23 +212,6 @@ class _RankingScreenState extends State<RankingScreen> {
                               );
                             },
                           ),
-                          const SizedBox(height: 12),
-                          for (final linha in ranking.take(6))
-                            RankingParticipanteCard(
-                              linha: linha,
-                              liveDelta: showLiveDelta
-                                  ? controller.pontosAoVivo(
-                                      linha.participanteId,
-                                    )
-                                  : 0,
-                              onTap: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.participante,
-                                  arguments: linha.participanteId,
-                                );
-                              },
-                            ),
                         ],
                       ),
                     ),
@@ -439,30 +426,18 @@ class _RankingScreenState extends State<RankingScreen> {
         if (point.step >= start && point.step <= end) point,
     ];
   }
-
-  Map<String, Color> _participantColors() {
-    final result = <String, Color>{};
-    for (var index = 0; index < controller.data.participantes.length; index++) {
-      final participante = controller.data.participantes[index];
-      result[participante.participanteId] = ParticipantColors.resolve(
-        participanteId: participante.participanteId,
-        index: index,
-        corHex: participante.corHex,
-      );
-    }
-
-    return result;
-  }
 }
 
 class _ParticipantFilter extends StatelessWidget {
-  final List<dynamic> ranking;
+  final List<LinhaPontuacaoParticipante> ranking;
   final Set<String> selecionados;
+  final Map<String, Color> participantColors;
   final void Function(String participanteId, bool selected) onChanged;
 
   const _ParticipantFilter({
     required this.ranking,
     required this.selecionados,
+    required this.participantColors,
     required this.onChanged,
   });
 
@@ -474,6 +449,14 @@ class _ParticipantFilter extends StatelessWidget {
       children: [
         for (final linha in ranking)
           FilterChip(
+            avatar: Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: participantColors[linha.participanteId],
+                shape: BoxShape.circle,
+              ),
+            ),
             label: Text(linha.nome),
             selected: selecionados.contains(linha.participanteId),
             onSelected: (value) => onChanged(linha.participanteId, value),
@@ -572,11 +555,13 @@ class _EvolutionRangeFilter extends StatelessWidget {
 
 class _RankingPointsGrid extends StatelessWidget {
   final List<LinhaPontuacaoParticipante> ranking;
+  final Map<String, Color> participantColors;
   final int Function(String participanteId) liveDelta;
   final ValueChanged<String> onTapParticipante;
 
   const _RankingPointsGrid({
     required this.ranking,
+    required this.participantColors,
     required this.liveDelta,
     required this.onTapParticipante,
   });
@@ -584,49 +569,241 @@ class _RankingPointsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    const tableWidth = 1080.0;
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(colors.surfaceContainerHigh),
-          columns: const [
-            DataColumn(label: Text('#')),
-            DataColumn(label: Text('Participante')),
-            DataColumn(numeric: true, label: Text('Total')),
-            DataColumn(numeric: true, label: Text('+Live')),
-            DataColumn(numeric: true, label: Text('Jogos')),
-            DataColumn(numeric: true, label: Text('Grupos')),
-            DataColumn(numeric: true, label: Text('Final')),
-            DataColumn(numeric: true, label: Text('Pont.')),
-            DataColumn(numeric: true, label: Text('Max')),
-            DataColumn(numeric: true, label: Text('+5')),
-            DataColumn(numeric: true, label: Text('+3')),
-            DataColumn(numeric: true, label: Text('+2')),
-            DataColumn(numeric: true, label: Text('+1')),
-          ],
-          rows: [
-            for (final linha in ranking)
-              DataRow(
-                onSelectChanged: (_) => onTapParticipante(linha.participanteId),
-                cells: [
-                  DataCell(Text('${linha.posicao}º')),
-                  DataCell(Text(linha.nome)),
-                  DataCell(Text('${linha.pontosTotal}')),
-                  DataCell(Text('${liveDelta(linha.participanteId)}')),
-                  DataCell(Text('${linha.pontosJogos}')),
-                  DataCell(Text('${linha.pontosGrupos}')),
-                  DataCell(Text('${linha.pontosFinal}')),
-                  DataCell(Text('${linha.palpitesPontuaveis}')),
-                  DataCell(Text('${linha.palpitesPontuaveis * 5}')),
-                  DataCell(Text('${linha.placaresExatos}')),
-                  DataCell(Text('${linha.palpitesComTresPontos}')),
-                  DataCell(Text('${linha.palpitesComDoisPontos}')),
-                  DataCell(Text('${linha.palpitesComUmPonto}')),
-                ],
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colors.surfaceContainerHigh,
+              colors.surfaceContainerLow.withValues(alpha: 0.72),
+            ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: tableWidth,
+            child: Column(
+              children: [
+                _RankingGridHeader(colors: colors),
+                for (final linha in ranking)
+                  _RankingGridRow(
+                    linha: linha,
+                    color: participantColors[linha.participanteId],
+                    liveDelta: liveDelta(linha.participanteId),
+                    onTap: () => onTapParticipante(linha.participanteId),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RankingGridHeader extends StatelessWidget {
+  final ColorScheme colors;
+
+  const _RankingGridHeader({required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      color: colors.surfaceContainerHighest.withValues(alpha: 0.68),
+      child: Row(
+        children: const [
+          _GridHeaderCell(label: '#', width: 62),
+          _GridHeaderCell(label: 'Participante', width: 220, alignStart: true),
+          _GridHeaderCell(label: 'Total', width: 72),
+          _GridHeaderCell(label: '+Live', width: 62),
+          _GridHeaderCell(label: 'Jogos', width: 72),
+          _GridHeaderCell(label: 'Grupos', width: 72),
+          _GridHeaderCell(label: 'Final', width: 62),
+          _GridHeaderCell(label: 'Max', width: 62),
+          _GridHeaderCell(label: '+5', width: 58),
+          _GridHeaderCell(label: '+3', width: 58),
+          _GridHeaderCell(label: '+2', width: 58),
+          _GridHeaderCell(label: '+1', width: 58),
+          _GridHeaderCell(label: '0', width: 58),
+          _GridHeaderCell(label: 'Pont.', width: 66),
+        ],
+      ),
+    );
+  }
+}
+
+class _RankingGridRow extends StatelessWidget {
+  final LinhaPontuacaoParticipante linha;
+  final Color? color;
+  final int liveDelta;
+  final VoidCallback onTap;
+
+  const _RankingGridRow({
+    required this.linha,
+    required this.color,
+    required this.liveDelta,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final accent = color ?? colors.primary;
+    final zeros =
+        linha.palpitesPontuaveis -
+        linha.placaresExatos -
+        linha.palpitesComTresPontos -
+        linha.palpitesComDoisPontos -
+        linha.palpitesComUmPonto;
+
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 62),
+        decoration: BoxDecoration(
+          color: ParticipantColors.softBackgroundFor(accent, colors),
+          border: Border(
+            bottom: BorderSide(
+              color: colors.outlineVariant.withValues(alpha: 0.5),
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(width: 5, color: accent),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 62,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: ParticipantPositionBadge(
+                          position: linha.posicao,
+                          color: accent,
+                          size: 34,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 220,
+                      child: ParticipantNameInline(
+                        name: linha.nome,
+                        color: accent,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    _GridValueCell(
+                      value: '${linha.pontosTotal}',
+                      width: 72,
+                      strong: true,
+                    ),
+                    _GridValueCell(
+                      value: liveDelta > 0 ? '+$liveDelta' : '0',
+                      width: 62,
+                      color: liveDelta > 0 ? accent : colors.onSurfaceVariant,
+                    ),
+                    _GridValueCell(value: '${linha.pontosJogos}', width: 72),
+                    _GridValueCell(value: '${linha.pontosGrupos}', width: 72),
+                    _GridValueCell(value: '${linha.pontosFinal}', width: 62),
+                    _GridValueCell(
+                      value: '${linha.palpitesPontuaveis * 5}',
+                      width: 62,
+                    ),
+                    _GridValueCell(value: '${linha.placaresExatos}', width: 58),
+                    _GridValueCell(
+                      value: '${linha.palpitesComTresPontos}',
+                      width: 58,
+                    ),
+                    _GridValueCell(
+                      value: '${linha.palpitesComDoisPontos}',
+                      width: 58,
+                    ),
+                    _GridValueCell(
+                      value: '${linha.palpitesComUmPonto}',
+                      width: 58,
+                    ),
+                    _GridValueCell(value: '${zeros.clamp(0, 999)}', width: 58),
+                    _GridValueCell(
+                      value: '${linha.palpitesPontuaveis}',
+                      width: 66,
+                    ),
+                  ],
+                ),
               ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GridHeaderCell extends StatelessWidget {
+  final String label;
+  final double width;
+  final bool alignStart;
+
+  const _GridHeaderCell({
+    required this.label,
+    required this.width,
+    this.alignStart = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        label,
+        textAlign: alignStart ? TextAlign.left : TextAlign.center,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+class _GridValueCell extends StatelessWidget {
+  final String value;
+  final double width;
+  final bool strong;
+  final Color? color;
+
+  const _GridValueCell({
+    required this.value,
+    required this.width,
+    this.strong = false,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        value,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: color,
+          fontWeight: strong ? FontWeight.w900 : FontWeight.w800,
         ),
       ),
     );

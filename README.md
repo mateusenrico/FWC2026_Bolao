@@ -452,7 +452,7 @@ A tool:
 6. gera logs em `logs/update_sportsdb/`.
 7. tenta enriquecer times, venues e liga com metadados visuais da TheSportsDB.
 
-No app em execução, o controller também faz uma atualização inicial ao carregar e mantém um timer de 5 segundos. A consulta automática desse timer aplica refresh completo quando há jogo ao vivo; fora disso, o relógio local apenas evita que jogos recém-iniciados ou já estourados fiquem com status incoerente.
+No app em execução, o controller também faz uma atualização inicial ao carregar e mantém um timer de 5 segundos. A consulta automática desse timer aplica os dados dinâmicos que realmente mudaram, como placar, status, mídia e eventos associados, sem colocar a UI inteira em estado de carregamento. Fora disso, o relógio local apenas evita que jogos recém-iniciados ou já estourados fiquem com status incoerente.
 
 Na tela de detalhe da partida, o app consulta sob demanda os endpoints `lookuptimeline.php`, `lookuplineup.php`, `eventresults.php` e `lookupeventstats.php` por `idEvent`. Esses dados são cacheados por partida e invalidados quando o jogo está ao vivo, para permitir que gols/cartões/estatísticas acompanhem o refresh sem pesar a tela inicial.
 
@@ -506,10 +506,13 @@ Finalizado ou praticamente fechado:
 - [x] detalhe de partida com timeline, estatísticas e escalação quando a SportsDB disponibilizar
 - [x] tela de jogos
 - [x] tela de ranking com pódio, evolução e pontos projetados
+- [x] ranking da home simplificado, ordenado por consolidado + ao vivo quando houver jogo em andamento
 - [x] ranking com evolução por partida ou por dia brasileiro
 - [x] ranking com gráfico por pontos ou posição e recorte por faixa de partidas/dias
+- [x] gráfico do ranking reescala o eixo X conforme o recorte filtrado
 - [x] ranking com cores fixas por participante e destaque ouro/prata/bronze no gráfico
-- [x] ranking com grid de pontos detalhado
+- [x] ranking com tabela detalhada de pontos, acento visual por participante e contagem de +5/+3/+2/+1/0
+- [x] ranking da home com setas de subida/queda/empate comparando posição consolidada e posição ao vivo
 - [x] tela de detalhe de participante
 - [x] tela de grupos com detalhe clicável
 - [x] tela de simulações
@@ -519,12 +522,12 @@ Finalizado ou praticamente fechado:
 - [x] tela de detalhe de time com jogos e estatísticas
 - [x] dashboard inicial com cards de navegação
 - [x] dashboard mobile com atalhos compactos por ícone
-- [x] destaque ao vivo com grid compacto dos palpites e pontos parciais
+- [x] destaque ao vivo ou próximo jogo com grid compacto dos palpites; jogos ao vivo mostram pontos parciais
 - [x] tema Material 3 seguindo sistema por padrão, com alternância claro/escuro no AppBar
 - [x] paleta visual inspirada na identidade FWC 2026
 - [x] widget de jogos ao vivo em telas internas
 - [x] indicador visual de próxima atualização automática
-- [x] atualização inicial automática e refresh de 5 segundos quando houver jogo ao vivo
+- [x] atualização inicial automática e refresh incremental de 5 segundos quando houver jogo ao vivo
 - [x] metadados visuais de times, venues e liga
 - [x] widgets de imagem remota para badges, banners, venues e liga
 - [x] imagens remotas com cache do Flutter/browser, `gaplessPlayback` e fallback HTML no Web para CORS

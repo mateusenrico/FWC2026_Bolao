@@ -148,8 +148,12 @@ class _RankingEvolutionPainter extends CustomPainter {
     canvas.drawLine(chart.bottomLeft, chart.bottomRight, axisPaint);
     canvas.drawLine(chart.bottomLeft, chart.topLeft, axisPaint);
 
+    final minStep = points.fold<int>(
+      points.first.step,
+      (min, point) => math.min(min, point.step),
+    );
     final maxStep = points.fold<int>(
-      1,
+      points.first.step,
       (max, point) => math.max(max, point.step),
     );
     final maxPoints = points.fold<int>(1, (max, point) {
@@ -172,9 +176,10 @@ class _RankingEvolutionPainter extends CustomPainter {
       final path = Path();
       for (var i = 0; i < participantPoints.length; i++) {
         final point = participantPoints[i];
-        final x = maxStep <= 1
+        final x = maxStep <= minStep
             ? chart.left
-            : chart.left + ((point.step - 1) / (maxStep - 1)) * chart.width;
+            : chart.left +
+                  ((point.step - minStep) / (maxStep - minStep)) * chart.width;
         final y = _yForPoint(
           chart: chart,
           point: point,
@@ -218,9 +223,10 @@ class _RankingEvolutionPainter extends CustomPainter {
 
       for (var i = 0; i < participantPoints.length; i++) {
         final point = participantPoints[i];
-        final x = maxStep <= 1
+        final x = maxStep <= minStep
             ? chart.left
-            : chart.left + ((point.step - 1) / (maxStep - 1)) * chart.width;
+            : chart.left +
+                  ((point.step - minStep) / (maxStep - minStep)) * chart.width;
         final y = _yForPoint(
           chart: chart,
           point: point,

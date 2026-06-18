@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app_theme.dart';
+import '../../models/participante.dart';
 
 class ParticipantColors {
   const ParticipantColors._();
@@ -53,6 +54,34 @@ class ParticipantColors {
     }
 
     return Color(parsed);
+  }
+
+  static Map<String, Color> mapFromParticipantes(
+    List<Participante> participantes,
+  ) {
+    return {
+      for (var index = 0; index < participantes.length; index++)
+        participantes[index].participanteId: resolve(
+          participanteId: participantes[index].participanteId,
+          index: index,
+          corHex: participantes[index].corHex,
+        ),
+    };
+  }
+
+  static Color foregroundFor(Color background) {
+    return background.computeLuminance() > 0.58
+        ? const Color(0xFF08090F)
+        : Colors.white;
+  }
+
+  static Color softBackgroundFor(Color color, ColorScheme colors) {
+    return Color.alphaBlend(
+      color.withValues(
+        alpha: colors.brightness == Brightness.dark ? 0.28 : 0.18,
+      ),
+      colors.surface,
+    );
   }
 
   static Color medalColor(int? position) {

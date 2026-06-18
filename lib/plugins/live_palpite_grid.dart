@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../core/functions/participant_colors.dart';
 import '../core/functions/palpite_match_groups.dart';
 import '../models/jogo.dart';
 
 class LivePalpiteGrid extends StatelessWidget {
   final Jogo jogo;
   final List<GrupoPalpitesJogo> groups;
+  final Map<String, Color> participantColors;
   final VoidCallback? Function(String participanteId) onTapParticipante;
 
   const LivePalpiteGrid({
     super.key,
     required this.jogo,
     required this.groups,
+    this.participantColors = const {},
     required this.onTapParticipante,
   });
 
@@ -27,10 +30,17 @@ class LivePalpiteGrid extends StatelessWidget {
             }
             return a.linha.nome.compareTo(b.linha.nome);
           });
+    final hasScore =
+        jogo.temResultado &&
+        jogo.golsMandante != null &&
+        jogo.golsVisitante != null;
+    final isLive = jogo.isEmAndamento;
 
     return Card(
       margin: const EdgeInsets.only(top: 8),
-      color: colors.errorContainer.withValues(alpha: 0.22),
+      color: isLive
+          ? colors.errorContainer.withValues(alpha: 0.22)
+          : colors.surfaceContainerHigh.withValues(alpha: 0.72),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -42,7 +52,9 @@ class LivePalpiteGrid extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Palpites com o placar parcial',
+                    isLive
+                        ? 'Palpites com o placar parcial'
+                        : 'Palpites para este jogo',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -51,7 +63,7 @@ class LivePalpiteGrid extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  jogo.placarTexto,
+                  hasScore ? jogo.placarTexto : '${items.length} palpites',
                   style: Theme.of(
                     context,
                   ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900),
@@ -70,7 +82,10 @@ class LivePalpiteGrid extends StatelessWidget {
                     for (final item in items)
                       _LivePalpiteChip(
                         item: item,
+                        participantColor:
+                            participantColors[item.linha.participanteId],
                         maxWidth: maxWidth,
+                        showPoints: hasScore,
                         onTap: onTapParticipante(item.linha.participanteId),
                       ),
                   ],
@@ -86,12 +101,16 @@ class LivePalpiteGrid extends StatelessWidget {
 
 class _LivePalpiteChip extends StatelessWidget {
   final PalpiteJogoAgrupado item;
+  final Color? participantColor;
   final double maxWidth;
+  final bool showPoints;
   final VoidCallback? onTap;
 
   const _LivePalpiteChip({
     required this.item,
+    required this.participantColor,
     required this.maxWidth,
+    required this.showPoints,
     required this.onTap,
   });
 
@@ -99,12 +118,13 @@ class _LivePalpiteChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final score = item.pontuacao;
-    final background = score?.placarExato == true
+    final accent = participantColor ?? colors.primary;
+    final background = showPoints && score?.placarExato == true
         ? colors.primary
-        : item.pontuando
+        : showPoints && item.pontuando
         ? colors.secondaryContainer
-        : colors.surfaceContainerHighest;
-    final foreground = score?.placarExato == true
+        : ParticipantColors.softBackgroundFor(accent, colors);
+    final foreground = showPoints && score?.placarExato == true
         ? colors.onPrimary
         : colors.onSurface;
 
@@ -121,6 +141,15 @@ class _LivePalpiteChip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     item.linha.nome,
@@ -140,7 +169,7 @@ class _LivePalpiteChip extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                if (item.pontuando) ...[
+                if (showPoints && item.pontuando) ...[
                   const SizedBox(width: 5),
                   Text(
                     '+${item.pontosNoJogo}',

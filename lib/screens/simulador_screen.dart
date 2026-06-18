@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_routes.dart';
+import '../core/functions/participant_colors.dart';
 import '../core/functions/team_normalizer.dart';
 import '../core/sistema_pontuacao_participantes.dart';
 import '../core/sistema_pontuacao_times.dart';
@@ -53,6 +54,9 @@ class _SimuladorScreenState extends State<SimuladorScreen> {
         final dataSimulada = _dataSimulada();
         final ranking = SistemaPontuacaoParticipantes.calcularClassificacao(
           dataSimulada,
+        );
+        final participantColors = ParticipantColors.mapFromParticipantes(
+          controller.data.participantes,
         );
         final tabelas = SistemaPontuacaoTimes.calcularTabelasReais(
           dataSimulada.jogos,
@@ -140,6 +144,8 @@ class _SimuladorScreenState extends State<SimuladorScreen> {
                           for (final linha in ranking)
                             RankingParticipanteCard(
                               linha: linha,
+                              participantColor:
+                                  participantColors[linha.participanteId],
                               onTap: () => Navigator.pushNamed(
                                 context,
                                 AppRoutes.participante,

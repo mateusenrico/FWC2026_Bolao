@@ -1,6 +1,6 @@
 # Checkup de pedidos e cobertura
 
-Ultima revisao: v2.4.0-dev.
+Ultima revisao: v2.4.1-dev.
 
 Este documento consolida os pedidos feitos durante a evolucao do app e o estado
 de implementacao. Quando algo depende de fonte externa, a implementacao fica
@@ -22,18 +22,22 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Investigar times, venues, liga e endpoints auxiliares da SportsDB | Completo | `tools/update_sportsdb.dart`, `SportsDbApiService`, `assets/data/*_sportsdb.json` |
 | Refresh inicial ao abrir o app | Completo | `BolaoController.iniciarAtualizacaoAutomatica` |
 | Refresh automatico durante jogos ao vivo | Completo | Timer de 5s em `BolaoController` |
+| Refresh automatico sem apagar a tela ou voltar para a home | Completo | Atualizacao automatica so notifica UI quando dados dinamicos mudam |
 | Remover dependencia visual do botao de refresh manual | Completo | `ApiRefreshAction` mostra apenas tema e indicador |
 | Barra/indicador de proxima atualizacao | Completo | `RefreshCountdownIndicator` |
 | Jogos iniciados sem placar contam provisoriamente como 0x0 para ranking projetado | Completo | `BolaoController._aplicarRelogioLocal`, `_mesclarJogoComEvento` |
 | Jogos futuros podem exibir 0x0 sem pontuar | Completo | `SistemaPalpites`, testes |
 | Ranking consolidado vs com ao vivo, com toggle apenas quando houver ao vivo | Completo | `RankingModeSelector`, controller |
 | No ranking consolidado, ordem por pontos consolidados; no projetado, ordem por pontos com ao vivo | Completo | `BolaoController.alterarOrdenacaoRanking` |
+| Ranking da home sem toggle, ordenado por consolidado + ao vivo e mostrando setas de deslocamento | Completo | `_RankingSection`, `RankingParticipanteCard` |
 | Tela de ranking detalhada com podio | Completo | `RankingScreen`, `RankingPodium` |
 | Grafico de evolucao por pontos ou posicao | Completo | `RankingEvolutionChart`, `RankingScreen` |
 | Evolucao por partida ou por dia brasileiro | Completo | `RankingScreen` |
+| Grafico reescala o eixo X ao filtrar faixa de partidas/dias | Completo | `RankingEvolutionChart` |
 | Cores fixas por participante em `participantes.json` | Completo | `ParticipantColors`, testes |
+| Usar cor da pessoa como acento visual global onde nomes aparecem | Completo | `ParticipantPositionBadge`, `ParticipantNameInline`, ranking e palpites |
 | Legenda do grafico ordenada por ranking atual | Completo | `RankingEvolutionChart` |
-| Grid detalhado de pontos no ranking | Completo | `RankingScreen` |
+| Lista detalhada do ranking sem tabela redundante e com +5/+3/+2/+1/0 | Completo | `RankingScreen` |
 | Tela do participante com filtros de palpites (+5, zerados, futuros etc.) | Completo | `ParticipanteDetailScreen` |
 | Tela do participante mostra palpite vs resultado/parcial com cores e pontos | Completo | `PalpiteJogoCard` |
 | Separar grupos e mata-mata nas exibicoes de jogos | Completo | `JogosScreen`, `MataMataBracketView` |
@@ -53,7 +57,8 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Home como dashboard, nao landing page | Completo | `HomeScreen` |
 | Atalhos da home compactos no celular | Completo | `_DashboardTile` |
 | AppBar da home sem titulo duplicado | Completo | `HomeScreen` |
-| Destaque ao vivo com grid compacto dos palpites | Completo | `LivePalpiteGrid` |
+| Destaque ao vivo ou proximo jogo com grid compacto dos palpites | Completo | `LivePalpiteGrid`, `HomeScreen` |
+| Dois ou mais jogos ao vivo em paralelo no dashboard | Completo | `HomeScreen` empilha no celular e distribui em duas colunas no desktop |
 | Detalhe da partida com palpites agrupados por resultado apostado | Completo | `PalpiteMatchGroups`, `PalpiteResultGroupCard` |
 | Exibir os palpites logo abaixo dos dados basicos da partida | Completo | `JogoDetailScreen` |
 | Paineis dos times abaixo dos palpites e em tamanho menor | Completo | `TeamMatchPanel(compact: true)` no detalhe de jogo |

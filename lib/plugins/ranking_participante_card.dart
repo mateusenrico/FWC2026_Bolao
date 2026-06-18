@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 
 import '../core/sistema_pontuacao_participantes.dart';
+import 'participant_identity.dart';
 
 class RankingParticipanteCard extends StatelessWidget {
   final LinhaPontuacaoParticipante linha;
   final int liveDelta;
+  final Color? participantColor;
+  final int? movementDelta;
+  final int? displayPoints;
+  final String? pointsLabel;
   final VoidCallback? onTap;
 
   const RankingParticipanteCard({
     super.key,
     required this.linha,
     this.liveDelta = 0,
+    this.participantColor,
+    this.movementDelta,
+    this.displayPoints,
+    this.pointsLabel,
     this.onTap,
   });
 
@@ -27,34 +36,30 @@ class RankingParticipanteCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: _positionColor(colorScheme),
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '${linha.posicao}º',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: _positionForeground(colorScheme),
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
+              ParticipantPositionBadge(
+                position: linha.posicao,
+                color: participantColor ?? _positionColor(colorScheme),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      linha.nome,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                    Row(
+                      children: [
+                        if (movementDelta != null) ...[
+                          _MovementIndicator(delta: movementDelta!),
+                          const SizedBox(width: 8),
+                        ],
+                        Expanded(
+                          child: ParticipantNameInline(
+                            name: linha.nome,
+                            color: participantColor,
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w900),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -76,18 +81,20 @@ class RankingParticipanteCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '${linha.pontosTotal}',
+                        '${displayPoints ?? linha.pontosTotal}',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      if (liveDelta > 0) ...[
+                      if (liveDelta != 0) ...[
                         const SizedBox(width: 5),
                         Text(
-                          '+$liveDelta',
+                          liveDelta > 0 ? '+$liveDelta' : '$liveDelta',
                           style: Theme.of(context).textTheme.labelLarge
                               ?.copyWith(
-                                color: colorScheme.primary,
+                                color: liveDelta > 0
+                                    ? participantColor ?? colorScheme.primary
+                                    : colorScheme.error,
                                 fontWeight: FontWeight.w900,
                               ),
                         ),
@@ -95,7 +102,7 @@ class RankingParticipanteCard extends StatelessWidget {
                     ],
                   ),
                   Text(
-                    liveDelta > 0 ? 'proj.' : 'pontos',
+                    pointsLabel ?? (liveDelta > 0 ? 'proj.' : 'pontos'),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -121,13 +128,47 @@ class RankingParticipanteCard extends StatelessWidget {
       _ => colors.surfaceContainerHighest,
     };
   }
+}
 
-  Color _positionForeground(ColorScheme colors) {
-    return switch (linha.posicao) {
-      1 => colors.onPrimary,
-      2 => colors.onSecondaryContainer,
-      3 => colors.onTertiaryContainer,
-      _ => colors.onSurfaceVariant,
+class _MovementIndicator extends StatelessWidget {
+  final int delta;
+
+  const _MovementIndicator({required this.delta});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final (icon, color, label) = switch (delta) {
+      > 0 => (
+        Icons.arrow_upward,
+        Colors.green,
+        'Subiu $delta ${delta == 1 ? 'posição' : 'posições'} com o placar ao vivo',
+      ),
+      < 0 => (
+        Icons.arrow_downward,
+        colors.error,
+        'Caiu ${delta.abs()} ${delta == -1 ? 'posição' : 'posições'} com o placar ao vivo',
+      ),
+      _ => (
+        Icons.drag_handle,
+        Colors.amber,
+        'Manteve a posição com o placar ao vivo',
+      ),
     };
+
+    return Tooltip(
+      message: label,
+      child: Container(
+        width: 24,
+        height: 24,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.16),
+          shape: BoxShape.circle,
+          border: Border.all(color: color.withValues(alpha: 0.46)),
+        ),
+        child: Icon(icon, size: 15, color: color),
+      ),
+    );
   }
 }
