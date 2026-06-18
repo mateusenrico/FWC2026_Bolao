@@ -12,6 +12,7 @@ class TeamOverviewCard extends StatelessWidget {
   final TimeSportsDb? sportsDb;
   final LinhaTabelaTime? tableLine;
   final String? badgeUrl;
+  final String? flagUrl;
   final String? imageUrl;
   final VoidCallback? onTap;
 
@@ -21,6 +22,7 @@ class TeamOverviewCard extends StatelessWidget {
     required this.sportsDb,
     required this.tableLine,
     required this.badgeUrl,
+    this.flagUrl,
     this.imageUrl,
     this.onTap,
   });
@@ -28,7 +30,7 @@ class TeamOverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final image = imageUrl ?? sportsDb?.melhorImagem;
+    final image = flagUrl ?? imageUrl ?? sportsDb?.melhorImagem;
 
     return Card(
       clipBehavior: Clip.antiAlias,

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fwc2026_bolao/core/functions/country_flag_urls.dart';
+
 Future<void> main(List<String> args) async {
   final root = Directory.current;
   final cache = _MediaAssetCache(root);
@@ -63,10 +65,30 @@ class _MediaAssetCache {
   }
 
   void _collect() {
+    final league = _readJsonObject('assets/data/liga_sportsdb.json');
+    if (league.isNotEmpty) {
+      final label = _string(league['nome']) ?? 'fifa-world-cup';
+      _add(league['badgeUrl'], 'app_icons', 'league-badge');
+      _add(league['badgeUrl'], 'league_images', label);
+      _add(league['logoUrl'], 'league_images', label);
+      _add(league['posterUrl'], 'league_images', label);
+      _add(league['bannerUrl'], 'league_images', label);
+      _add(league['fanartUrl'], 'league_images', label);
+      _collectRawImages(league['raw'], 'league_images', label);
+    }
+
     for (final item in _readJsonList('assets/data/times_sportsdb.json')) {
       final label = _string(item['nomeBolao']) ?? _string(item['nomeApi']);
+      final raw = item['raw'];
+      final rawCountry = raw is Map ? _string(raw['strCountry']) : null;
+      final flagUrl =
+          CountryFlagUrls.forTeamName(_string(item['nomeBolao'])) ??
+          CountryFlagUrls.forTeamName(_string(item['timeKey'])) ??
+          CountryFlagUrls.forCountry(_string(item['pais'])) ??
+          CountryFlagUrls.forCountry(rawCountry);
       _add(item['badgeUrl'], 'team_badges', label);
       _add(item['logoUrl'], 'team_badges', label);
+      _add(flagUrl, 'team_flags', label);
       _add(item['bannerUrl'], 'team_images', label);
       _add(item['fanartUrl'], 'team_images', label);
       _add(item['equipamentoUrl'], 'team_images', label);
@@ -97,17 +119,6 @@ class _MediaAssetCache {
       _add(item['thumbUrl'], 'venue_images', label);
       _add(item['fanartUrl'], 'venue_images', label);
       _collectRawImages(item['raw'], 'venue_images', label);
-    }
-
-    final league = _readJsonObject('assets/data/liga_sportsdb.json');
-    if (league.isNotEmpty) {
-      final label = _string(league['nome']) ?? 'fifa-world-cup';
-      _add(league['badgeUrl'], 'league_images', label);
-      _add(league['logoUrl'], 'league_images', label);
-      _add(league['posterUrl'], 'league_images', label);
-      _add(league['bannerUrl'], 'league_images', label);
-      _add(league['fanartUrl'], 'league_images', label);
-      _collectRawImages(league['raw'], 'league_images', label);
     }
   }
 

@@ -85,6 +85,15 @@ class _JogoDetailScreenState extends State<JogoDetailScreen> {
                                   controller: controller,
                                   jogo: jogo,
                                 ),
+                                if (controller.imagemDoEstadio(jogo.jogoId) !=
+                                    null) ...[
+                                  const SizedBox(height: 12),
+                                  _VenueImageCard(
+                                    imageUrl: controller.imagemDoEstadio(
+                                      jogo.jogoId,
+                                    ),
+                                  ),
+                                ],
                                 const SizedBox(height: 18),
                                 const SectionHeader(
                                   title: 'Palpites dos participantes',
@@ -231,7 +240,10 @@ class _MatchHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final backgroundUrl = controller.imagemDoEstadio(jogo.jogoId);
+    final backgroundUrl =
+        controller.imagemDoJogo(jogo.jogoId) ??
+        controller.bannerDoJogo(jogo.jogoId) ??
+        controller.imagemDoEstadio(jogo.jogoId);
 
     return Container(
       constraints: const BoxConstraints(minHeight: 240),
@@ -491,6 +503,13 @@ class _MatchMetadata extends StatelessWidget {
               title: 'Partida',
               value: '#${jogo.matchNumber}',
             ),
+            _Info(
+              icon: jogo.isAdiado
+                  ? Icons.event_busy_outlined
+                  : Icons.event_available_outlined,
+              title: 'Planejamento',
+              value: jogo.isAdiado ? 'Adiada' : 'Confirmada',
+            ),
           ],
         ),
       ),
@@ -535,6 +554,55 @@ class _Info extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VenueImageCard extends StatelessWidget {
+  final String? imageUrl;
+
+  const _VenueImageCard({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Stack(
+        alignment: Alignment.bottomLeft,
+        children: [
+          RemoteImage(
+            url: imageUrl,
+            aspectRatio: 16 / 5,
+            fit: BoxFit.cover,
+            borderRadius: BorderRadius.zero,
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.62),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Text(
+              'Estádio',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const Positioned(right: 12, bottom: 10, child: MediaCredit()),
         ],
       ),
     );

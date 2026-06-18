@@ -1361,7 +1361,19 @@ class TournamentDataUpdater {
     }
 
     final sportsStatus = sportsDb?['strStatus']?.toString().toUpperCase();
+    final sportsPostponed = sportsDb?['strPostponed']?.toString().toLowerCase();
     final elapsed = DateTime.now().toUtc().difference(kickoffUtc).inMinutes;
+
+    if (sportsPostponed == 'yes' ||
+        sportsStatus == 'POSTPONED' ||
+        sportsStatus == 'PST') {
+      return const _ResultData(
+        homeScore: null,
+        awayScore: null,
+        resultFinal: false,
+        source: 'sportsdb_adiado',
+      );
+    }
 
     if ({'LIVE', '1H', '2H', 'HT'}.contains(sportsStatus) ||
         (elapsed >= 0 && elapsed <= 180)) {
@@ -2290,6 +2302,13 @@ class TournamentDataUpdater {
     }
 
     final sportsStatus = sportsDb?['strStatus']?.toString().toUpperCase();
+    final sportsPostponed = sportsDb?['strPostponed']?.toString().toLowerCase();
+
+    if (sportsPostponed == 'yes' ||
+        sportsStatus == 'POSTPONED' ||
+        sportsStatus == 'PST') {
+      return 'adiado';
+    }
 
     if ({'LIVE', '1H', '2H', 'HT'}.contains(sportsStatus)) {
       return 'em_andamento';
@@ -2376,6 +2395,7 @@ class TournamentDataUpdater {
     return switch (_sportsDbStatusCanonico(event)) {
       'encerrado' => 3,
       'em_andamento' => 2,
+      'adiado' => 1,
       'agendado' => 1,
       _ => 0,
     };
@@ -2383,6 +2403,11 @@ class TournamentDataUpdater {
 
   String _sportsDbStatusCanonico(Map<String, dynamic> event) {
     final status = event['strStatus']?.toString().toUpperCase();
+    final postponed = event['strPostponed']?.toString().toLowerCase();
+    if (postponed == 'yes' || status == 'POSTPONED' || status == 'PST') {
+      return 'adiado';
+    }
+
     if ({'FT', 'AET', 'PEN', 'FINISHED', 'MATCH FINISHED'}.contains(status)) {
       return 'encerrado';
     }

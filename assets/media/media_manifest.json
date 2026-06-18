@@ -1,6 +1,11 @@
 {
-  "generatedAt": "2026-06-18T22:29:20.345650Z",
+  "generatedAt": "2026-06-18T23:24:10.556707Z",
   "items": [
+    {
+      "remoteUrl": "https://r2.thesportsdb.com/images/media/league/badge/e7er5g1696521789.png",
+      "assetPath": "assets/media/app_icons/league-badge_68e77f34.png",
+      "category": "app_icons"
+    },
     {
       "remoteUrl": "https://r2.thesportsdb.com/images/media/league/fanart/lpw0xp1724783055.jpg",
       "assetPath": "assets/media/league_images/fifa-world-cup_3305fdbb.jpg",
@@ -489,11 +494,6 @@
     {
       "remoteUrl": "https://r2.thesportsdb.com/images/media/event/thumb/dzhwsf1775058317.jpg",
       "assetPath": "assets/media/match_images/mexico-vs-south-africa_643289d5.jpg",
-      "category": "match_images"
-    },
-    {
-      "remoteUrl": "https://r2.thesportsdb.com/images/media/league/badge/e7er5g1696521789.png",
-      "assetPath": "assets/media/match_images/mexico-vs-south-africa_68e77f34.png",
       "category": "match_images"
     },
     {
@@ -1130,6 +1130,246 @@
       "remoteUrl": "https://r2.thesportsdb.com/images/media/team/badge/u5bgze1597943605.png",
       "assetPath": "assets/media/team_badges/uzbequist-o_eda9529e.png",
       "category": "team_badges"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/de.png",
+      "assetPath": "assets/media/team_flags/alemanha_6a8ad0d3.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/sa.png",
+      "assetPath": "assets/media/team_flags/ar-bia-saudita_3672ff7c.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/dz.png",
+      "assetPath": "assets/media/team_flags/arg-lia_2baff75a.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/ar.png",
+      "assetPath": "assets/media/team_flags/argentina_4016576b.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/au.png",
+      "assetPath": "assets/media/team_flags/austr-lia_3c97e2ea.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/be.png",
+      "assetPath": "assets/media/team_flags/b-lgica_575f0195.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/ba.png",
+      "assetPath": "assets/media/team_flags/b-snia-e-herzegovina_af1fdcc9.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/br.png",
+      "assetPath": "assets/media/team_flags/brasil_8f6bb8c0.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/cv.png",
+      "assetPath": "assets/media/team_flags/cabo-verde_f1343849.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/ca.png",
+      "assetPath": "assets/media/team_flags/canad_f992ecec.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/qa.png",
+      "assetPath": "assets/media/team_flags/catar_eb9c21de.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/co.png",
+      "assetPath": "assets/media/team_flags/col-mbia_9b5c52be.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/kr.png",
+      "assetPath": "assets/media/team_flags/coreia-do-sul_5010ed1d.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/ci.png",
+      "assetPath": "assets/media/team_flags/costa-do-marfim_563a7304.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/hr.png",
+      "assetPath": "assets/media/team_flags/cro-cia_60216276.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/cw.png",
+      "assetPath": "assets/media/team_flags/cura-ao_db0c0176.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/eg.png",
+      "assetPath": "assets/media/team_flags/egito_d83a07d0.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/ec.png",
+      "assetPath": "assets/media/team_flags/equador_00a578bc.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/gb-sct.png",
+      "assetPath": "assets/media/team_flags/esc-cia_65a60f8e.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/es.png",
+      "assetPath": "assets/media/team_flags/espanha_3269306c.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/us.png",
+      "assetPath": "assets/media/team_flags/estados-unidos_1506479c.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/fr.png",
+      "assetPath": "assets/media/team_flags/fran-a_f945bbd4.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/za.png",
+      "assetPath": "assets/media/team_flags/frica-do-sul_955f8fa1.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/gh.png",
+      "assetPath": "assets/media/team_flags/gana_ed187d5b.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/ht.png",
+      "assetPath": "assets/media/team_flags/haiti_4ce4963c.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/nl.png",
+      "assetPath": "assets/media/team_flags/holanda_3efd449e.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/gb-eng.png",
+      "assetPath": "assets/media/team_flags/inglaterra_dc79661c.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/ir.png",
+      "assetPath": "assets/media/team_flags/ir_4b5f9893.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/iq.png",
+      "assetPath": "assets/media/team_flags/iraque_9fa39246.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/jp.png",
+      "assetPath": "assets/media/team_flags/jap-o_104249ae.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/jo.png",
+      "assetPath": "assets/media/team_flags/jord-nia_9d70b59f.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/ma.png",
+      "assetPath": "assets/media/team_flags/marrocos_cc0f5c4a.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/mx.png",
+      "assetPath": "assets/media/team_flags/mexico_bb0617b5.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/no.png",
+      "assetPath": "assets/media/team_flags/noruega_8106b28b.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/nz.png",
+      "assetPath": "assets/media/team_flags/nova-zel-ndia_f821bb74.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/pa.png",
+      "assetPath": "assets/media/team_flags/panam_a0d95fdb.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/py.png",
+      "assetPath": "assets/media/team_flags/paraguai_dc3757d3.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/pt.png",
+      "assetPath": "assets/media/team_flags/portugal_7a83dc24.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/cd.png",
+      "assetPath": "assets/media/team_flags/rd-congo_e75a2c33.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/cz.png",
+      "assetPath": "assets/media/team_flags/rep-blica-tcheca_d8d359ed.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/sn.png",
+      "assetPath": "assets/media/team_flags/senegal_d61bef81.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/ch.png",
+      "assetPath": "assets/media/team_flags/su-a_4f1b2097.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/se.png",
+      "assetPath": "assets/media/team_flags/su-cia_27544390.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/tn.png",
+      "assetPath": "assets/media/team_flags/tun-sia_74bb51ee.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/tr.png",
+      "assetPath": "assets/media/team_flags/turquia_d87a4172.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/uy.png",
+      "assetPath": "assets/media/team_flags/uruguai_dee2861a.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/at.png",
+      "assetPath": "assets/media/team_flags/ustria_9f2cbbdd.png",
+      "category": "team_flags"
+    },
+    {
+      "remoteUrl": "https://flagcdn.com/w640/uz.png",
+      "assetPath": "assets/media/team_flags/uzbequist-o_6da6b507.png",
+      "category": "team_flags"
     },
     {
       "remoteUrl": "https://r2.thesportsdb.com/images/media/team/fanart/y1tzpn1777369942.jpg",

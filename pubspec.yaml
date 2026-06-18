@@ -102,7 +102,9 @@ flutter:
     - assets/data/liga_sportsdb.json
     - assets/media/media_manifest.json
     - assets/media/team_badges/
+    - assets/media/team_flags/
     - assets/media/team_images/
+    - assets/media/app_icons/
     - assets/media/venue_images/
     - assets/media/match_images/
     - assets/media/league_images/

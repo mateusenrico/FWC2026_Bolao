@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/functions/date_time_utils.dart';
 import '../core/functions/team_normalizer.dart';
 import '../models/jogo.dart';
-import 'remote_media.dart';
+import 'match_media.dart';
 import 'team_badge.dart';
 
 class PartidaCard extends StatelessWidget {
@@ -31,7 +31,7 @@ class PartidaCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final date = AppDateTime.horarioBrasilia(jogo);
-    final hasImage = destaque && imageUrl != null && imageUrl!.isNotEmpty;
+    final hasImage = imageUrl != null && imageUrl!.isNotEmpty;
     final content = _PartidaCardContent(
       jogo: jogo,
       date: date,
@@ -64,11 +64,10 @@ class PartidaCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(
-                      width: 176,
-                      child: RemoteImage(
-                        url: imageUrl,
-                        height: 126,
-                        borderRadius: BorderRadius.circular(8),
+                      width: destaque ? 176 : 132,
+                      child: MatchBannerImage(
+                        imageUrl: imageUrl,
+                        destaque: destaque,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -82,9 +81,10 @@ class PartidaCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(
-                  height: 96,
-                  child: RemoteImage(
-                    url: imageUrl,
+                  height: destaque ? 96 : 72,
+                  child: MatchBannerImage(
+                    imageUrl: imageUrl,
+                    destaque: destaque,
                     borderRadius: BorderRadius.zero,
                   ),
                 ),
@@ -441,6 +441,11 @@ class _StatusChip extends StatelessWidget {
         'Finalizado',
         colorScheme.secondaryContainer,
         colorScheme.onSecondaryContainer,
+      ),
+      'adiado' => (
+        'Adiado',
+        colorScheme.tertiaryContainer,
+        colorScheme.onTertiaryContainer,
       ),
       _ => (
         isToday ? 'Em breve' : 'Agendado',

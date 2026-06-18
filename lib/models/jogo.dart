@@ -230,6 +230,8 @@ class Jogo {
 
   bool get isAgendado => statusJogo == 'agendado';
 
+  bool get isAdiado => statusJogo == 'adiado';
+
   String get confrontoPrevisto {
     return '$mandantePrevisto x $visitantePrevisto';
   }
@@ -264,6 +266,8 @@ class Jogo {
         return 'Encerrado';
       case 'em_andamento':
         return 'Em andamento';
+      case 'adiado':
+        return 'Adiado';
       case 'agendado':
         return 'Agendado';
       default:

@@ -24,7 +24,7 @@ class MatchApiDetails extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final notableTimeline =
         details?.timeline
-            .where((item) => item.isGoal || item.isCard)
+            .where((item) => item.isNotable)
             .toList(growable: false) ??
         const <SportsDbTimelineItem>[];
 
@@ -151,7 +151,7 @@ class _TimelinePreview extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Gols e cartões',
+          'Gols, anulados e cartões',
           style: Theme.of(
             context,
           ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
@@ -177,6 +177,8 @@ class _TimelineChip extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final color = item.isGoal
         ? colors.primaryContainer
+        : item.isCancelled
+        ? colors.surfaceContainerHighest
         : item.isRedCard
         ? colors.errorContainer
         : colors.tertiaryContainer;

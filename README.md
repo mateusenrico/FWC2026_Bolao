@@ -19,7 +19,7 @@ O projeto é pessoal/privado, pensado para um grupo pequeno de participantes. A 
 | Cache de imagens | `tools/cache_media_assets.dart` |
 | Deploy | GitHub Actions |
 | Hospedagem | Cloudflare Pages |
-| Fontes externas | TheSportsDB, FixtureDownload, TheStatsAPI fixture seed |
+| Fontes externas | TheSportsDB, FlagCDN/Flagpedia, FixtureDownload, TheStatsAPI fixture seed |
 | Créditos/licenças | `THIRD_PARTY_NOTICES.md` |
 | Fluxo Git | `dev` → `test` → `main` |
 
@@ -167,7 +167,8 @@ UI atual:
 - dashboard responsivo com placares ao vivo/proximos jogos, ranking parcial e mini grafico;
 - tela de ranking com cards compactos, podio, evolucao por pontos/posicao e marcadores fixos por participante;
 - chaveamento de mata-mata com conectores no desktop e leitura vertical no celular;
-- badges, bandeiras e imagens vindas primeiro do cache local e depois das URLs externas.
+- badges, bandeiras, banners de partidas, imagem de estadio e icones vindos primeiro do cache local e depois das URLs externas;
+- splash inicial espera uma consulta da API antes de exibir o dashboard, preservando a base local se a API falhar.
 
 ---
 
@@ -203,7 +204,9 @@ fwc2026_bolao/
 │   │   └── liga_sportsdb.json
 │   └── media/
 │       ├── media_manifest.json
+│       ├── app_icons/
 │       ├── team_badges/
+│       ├── team_flags/
 │       ├── team_images/
 │       ├── venue_images/
 │       ├── match_images/

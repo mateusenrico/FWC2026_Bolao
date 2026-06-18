@@ -191,6 +191,9 @@ class _GroupDetail extends StatelessWidget {
             jogo: jogo,
             badgeMandante: controller.badgeDoTime(jogo.mandantePrevisto),
             badgeVisitante: controller.badgeDoTime(jogo.visitantePrevisto),
+            imageUrl:
+                controller.bannerDoJogo(jogo.jogoId) ??
+                controller.imagemDoJogo(jogo.jogoId),
             onTap: () => Navigator.pushNamed(
               context,
               AppRoutes.jogo,
@@ -249,6 +252,9 @@ class _ProjectedReferenceCard extends StatelessWidget {
       jogo: projectedGame,
       badgeMandante: controller.badgeDoTime(projectedGame.mandantePrevisto),
       badgeVisitante: controller.badgeDoTime(projectedGame.visitantePrevisto),
+      imageUrl:
+          controller.bannerDoJogo(jogo.jogoId) ??
+          controller.imagemDoJogo(jogo.jogoId),
       onTap: () =>
           Navigator.pushNamed(context, AppRoutes.jogo, arguments: jogo.jogoId),
     );

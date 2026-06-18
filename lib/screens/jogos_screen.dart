@@ -205,6 +205,9 @@ class _GroupBlock extends StatelessWidget {
                 jogo: jogo,
                 badgeMandante: controller.badgeDoTime(jogo.mandantePrevisto),
                 badgeVisitante: controller.badgeDoTime(jogo.visitantePrevisto),
+                imageUrl:
+                    controller.bannerDoJogo(jogo.jogoId) ??
+                    controller.imagemDoJogo(jogo.jogoId),
                 onTap: () => Navigator.pushNamed(
                   context,
                   AppRoutes.jogo,
@@ -287,6 +290,9 @@ class _KnockoutGames extends StatelessWidget {
               jogo: jogo,
               badgeMandante: controller.badgeDoTime(jogo.mandantePrevisto),
               badgeVisitante: controller.badgeDoTime(jogo.visitantePrevisto),
+              imageUrl:
+                  controller.bannerDoJogo(jogo.jogoId) ??
+                  controller.imagemDoJogo(jogo.jogoId),
               onTap: () => Navigator.pushNamed(
                 context,
                 AppRoutes.jogo,
