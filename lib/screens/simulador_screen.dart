@@ -113,6 +113,16 @@ class _SimuladorScreenState extends State<SimuladorScreen> {
                               setState(() => _query = value);
                             },
                           ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: _temPlacarSimulado
+                                  ? _limparSimulacao
+                                  : null,
+                              icon: const Icon(Icons.backspace_outlined),
+                              label: const Text('Limpar placares'),
+                            ),
+                          ),
                           const SizedBox(height: 14),
                           _SimulationInputs(
                             controller: controller,
@@ -143,6 +153,7 @@ class _SimuladorScreenState extends State<SimuladorScreen> {
                               padding: const EdgeInsets.all(14),
                               child: MataMataBracketView(
                                 chaveamento: chaveamento,
+                                badgeUrlForTeam: controller.badgeDoTime,
                               ),
                             ),
                           ),
@@ -217,6 +228,25 @@ class _SimuladorScreenState extends State<SimuladorScreen> {
         .toList(growable: false);
 
     return controller.data.copyWith(jogos: jogos);
+  }
+
+  bool get _temPlacarSimulado {
+    bool preenchido(TextEditingController controller) {
+      return controller.text.trim().isNotEmpty;
+    }
+
+    return _homeControllers.values.any(preenchido) ||
+        _awayControllers.values.any(preenchido);
+  }
+
+  void _limparSimulacao() {
+    for (final controller in _homeControllers.values) {
+      controller.clear();
+    }
+    for (final controller in _awayControllers.values) {
+      controller.clear();
+    }
+    setState(() {});
   }
 }
 

@@ -3,6 +3,7 @@ import '../core/functions/json_utils.dart';
 class Participante {
   final String participanteId;
   final String nome;
+  final String? corHex;
 
   final int jogosPalpitados;
   final int jogosSemPalpite;
@@ -16,6 +17,7 @@ class Participante {
   const Participante({
     required this.participanteId,
     required this.nome,
+    required this.corHex,
     required this.jogosPalpitados,
     required this.jogosSemPalpite,
     required this.jogosPalpitadosFaseGrupos,
@@ -28,6 +30,7 @@ class Participante {
     return Participante(
       participanteId: JsonUtils.stringValue(json, 'participanteId'),
       nome: JsonUtils.stringValue(json, 'nome'),
+      corHex: JsonUtils.nullableString(json, 'corHex'),
       jogosPalpitados: JsonUtils.intValue(json, 'jogosPalpitados'),
       jogosSemPalpite: JsonUtils.intValue(json, 'jogosSemPalpite'),
       jogosPalpitadosFaseGrupos: JsonUtils.intValue(
@@ -47,6 +50,7 @@ class Participante {
     return {
       'participanteId': participanteId,
       'nome': nome,
+      'corHex': corHex,
       'jogosPalpitados': jogosPalpitados,
       'jogosSemPalpite': jogosSemPalpite,
       'jogosPalpitadosFaseGrupos': jogosPalpitadosFaseGrupos,

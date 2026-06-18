@@ -264,7 +264,10 @@ class _KnockoutGames extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                MataMataBracketView(chaveamento: chaveamento),
+                MataMataBracketView(
+                  chaveamento: chaveamento,
+                  badgeUrlForTeam: controller.badgeDoTime,
+                ),
               ],
             ),
           ),

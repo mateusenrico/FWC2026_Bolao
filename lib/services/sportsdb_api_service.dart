@@ -17,35 +17,10 @@ class SportsDbApiService {
     this.timeout = const Duration(seconds: 20),
   });
 
-  Future<SportsDbApiResult> fetchRefreshResult() async {
-    final nowUtc = DateTime.now().toUtc();
-
-    final requests = <SportsDbEndpointRequest>[
-      SportsDbEndpointRequest(
-        name: 'eventsseason',
-        uri: Uri.parse('$baseUrl/eventsseason.php?id=$leagueId&s=$season'),
-      ),
-      SportsDbEndpointRequest(
-        name: 'eventsnextleague',
-        uri: Uri.parse('$baseUrl/eventsnextleague.php?id=$leagueId'),
-      ),
-      SportsDbEndpointRequest(
-        name: 'eventspastleague',
-        uri: Uri.parse('$baseUrl/eventspastleague.php?id=$leagueId'),
-      ),
-    ];
-
-    for (var offset = -3; offset <= 1; offset++) {
-      final date = nowUtc.add(Duration(days: offset));
-      final dateText = _dateOnly(date);
-
-      requests.add(
-        SportsDbEndpointRequest(
-          name: 'eventsday:$dateText',
-          uri: Uri.parse('$baseUrl/eventsday.php?d=$dateText&s=Soccer'),
-        ),
-      );
-    }
+  Future<SportsDbApiResult> fetchRefreshResult({
+    Iterable<String> eventIds = const [],
+  }) async {
+    final requests = buildRefreshRequests(eventIds: eventIds);
 
     final endpointResults = await Future.wait(requests.map(_fetchEndpointSafe));
 
@@ -63,6 +38,59 @@ class SportsDbApiService {
       events: byId.values.toList(growable: false),
       endpoints: endpointResults,
     );
+  }
+
+  List<SportsDbEndpointRequest> buildRefreshRequests({
+    DateTime? nowUtc,
+    Iterable<String> eventIds = const [],
+  }) {
+    final currentUtc = (nowUtc ?? DateTime.now().toUtc()).toUtc();
+
+    final requests = <SportsDbEndpointRequest>[
+      SportsDbEndpointRequest(
+        name: 'eventsseason',
+        uri: Uri.parse('$baseUrl/eventsseason.php?id=$leagueId&s=$season'),
+      ),
+      SportsDbEndpointRequest(
+        name: 'eventsnextleague',
+        uri: Uri.parse('$baseUrl/eventsnextleague.php?id=$leagueId'),
+      ),
+      SportsDbEndpointRequest(
+        name: 'eventspastleague',
+        uri: Uri.parse('$baseUrl/eventspastleague.php?id=$leagueId'),
+      ),
+    ];
+
+    for (var offset = -3; offset <= 1; offset++) {
+      final date = currentUtc.add(Duration(days: offset));
+      final dateText = _dateOnly(date);
+
+      requests.add(
+        SportsDbEndpointRequest(
+          name: 'eventsday:$dateText',
+          uri: Uri.parse('$baseUrl/eventsday.php?d=$dateText&s=Soccer'),
+        ),
+      );
+    }
+
+    final uniqueEventIds = <String>{};
+    for (final eventId in eventIds) {
+      final normalized = eventId.trim();
+      if (normalized.isNotEmpty) {
+        uniqueEventIds.add(normalized);
+      }
+    }
+
+    for (final eventId in uniqueEventIds) {
+      requests.add(
+        SportsDbEndpointRequest(
+          name: 'lookupevent:$eventId',
+          uri: Uri.parse('$baseUrl/lookupevent.php?id=$eventId'),
+        ),
+      );
+    }
+
+    return requests;
   }
 
   Future<List<SportsDbEvent>> fetchRefreshEvents() async {

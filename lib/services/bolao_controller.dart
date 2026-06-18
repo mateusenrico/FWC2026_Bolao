@@ -154,7 +154,9 @@ class BolaoController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _apiService.fetchRefreshResult();
+      final result = await _apiService.fetchRefreshResult(
+        eventIds: _eventIdsParaLookupIndividual(),
+      );
       _ultimoResultadoApi = result;
 
       if (!result.hasAnySuccessfulEndpoint) {
@@ -452,6 +454,47 @@ class BolaoController extends ChangeNotifier {
       _ordenacaoRanking = OrdenacaoRanking.consolidado;
     }
     _atualizarClassificacaoExibida();
+  }
+
+  List<String> _eventIdsParaLookupIndividual() {
+    final nowUtc = DateTime.now().toUtc();
+    final windowStart = nowUtc.subtract(const Duration(hours: 12));
+    final windowEnd = nowUtc.add(const Duration(hours: 36));
+
+    final candidates =
+        _data.jogos
+            .where((jogo) => jogo.idEventAtual != null)
+            .where((jogo) {
+              if (jogo.isEmAndamento) {
+                return true;
+              }
+
+              final kickoff = jogo.dataUtc?.toUtc();
+              if (kickoff == null) {
+                return false;
+              }
+
+              return !kickoff.isBefore(windowStart) &&
+                  !kickoff.isAfter(windowEnd);
+            })
+            .toList(growable: false)
+          ..sort((a, b) {
+            final aDate = a.dataUtc?.toUtc();
+            final bDate = b.dataUtc?.toUtc();
+            if (aDate == null || bDate == null) {
+              return a.ordem.compareTo(b.ordem);
+            }
+
+            final aDistance = aDate.difference(nowUtc).inMinutes.abs();
+            final bDistance = bDate.difference(nowUtc).inMinutes.abs();
+            return aDistance.compareTo(bDistance);
+          });
+
+    return candidates
+        .map((jogo) => jogo.idEventAtual!)
+        .toSet()
+        .take(16)
+        .toList(growable: false);
   }
 
   void _atualizarClassificacaoExibida() {

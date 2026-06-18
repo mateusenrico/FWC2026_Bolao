@@ -42,6 +42,7 @@ class TeamBadge extends StatelessWidget {
           : Image.network(
               imageUrl!,
               fit: BoxFit.contain,
+              gaplessPlayback: true,
               errorBuilder: (_, _, _) {
                 return Center(
                   child: Text(
