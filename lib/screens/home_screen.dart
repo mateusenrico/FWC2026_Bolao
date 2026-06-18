@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, _) {
         final destaques = controller.proximosDestaques;
         final jogos = controller.jogosPorPeriodo(_periodo);
-        final classificacao = controller.classificacao;
+        // final classificacao = controller.classificacao;
 
         return Scaffold(
           appBar: AppBar(
