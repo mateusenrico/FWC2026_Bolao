@@ -102,4 +102,4 @@ Home
 └── botão de tabela → classificação dos grupos
 ```
 
-Todos os AppBars possuem atualização da SportsDB. A seta padrão do Navigator permite voltar para a tela anterior.
+Os AppBars mantêm o controle de tema e exibem apenas um indicador discreto enquanto a atualização automática está em andamento. A seta padrão do Navigator permite voltar para a tela anterior.
