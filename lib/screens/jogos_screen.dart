@@ -35,16 +35,15 @@ class _JogosScreenState extends State<JogosScreen> {
 
     try {
       const service = SportsDbApiService();
-      final events = await service.fetchRefreshEvents();
+      final result = await service.fetchRefreshResult();
 
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _liveEvents = events;
-        _refreshMessage =
-            'SportsDB consultada: ${events.length} eventos recebidos.';
+        _liveEvents = result.events;
+        _refreshMessage = result.summaryText;
       });
     } catch (error) {
       if (!mounted) {
