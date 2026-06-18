@@ -3,7 +3,7 @@ class TeamNormalizer {
 
   static String key(String value) {
     final normalized = normalize(value);
-    return _teamAliases[normalized] ?? normalized;
+    return _aliases[normalized] ?? normalized;
   }
 
   static String normalize(String value) {
@@ -33,174 +33,68 @@ class TeamNormalizer {
         .replaceAll('û', 'u')
         .replaceAll('ü', 'u')
         .replaceAll('ç', 'c')
+        .replaceAll('&', ' and ')
+        .replaceAll(RegExp(r"['’]"), ' ')
         .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
   }
+
+  static const Map<String, String> _aliases = {
+    'africa do sul': 'south africa',
+    'korea republic': 'south korea',
+    'republic of korea': 'south korea',
+    'coreia do sul': 'south korea',
+    'czech republic': 'czechia',
+    'republica tcheca': 'czechia',
+    'bosnia herzegovina': 'bosnia and herzegovina',
+    'bosnia e herzegovina': 'bosnia and herzegovina',
+    'usa': 'united states',
+    'us': 'united states',
+    'estados unidos': 'united states',
+    'paraguai': 'paraguay',
+    'turkiye': 'turkey',
+    'turquia': 'turkey',
+    'alemanha': 'germany',
+    'curacau': 'curacao',
+    'cote d ivoire': 'ivory coast',
+    'cote divoire': 'ivory coast',
+    'costa do marfim': 'ivory coast',
+    'equador': 'ecuador',
+    'holanda': 'netherlands',
+    'paises baixos': 'netherlands',
+    'japao': 'japan',
+    'suecia': 'sweden',
+    'belgica': 'belgium',
+    'egito': 'egypt',
+    'ir iran': 'iran',
+    'ira': 'iran',
+    'irao': 'iran',
+    'nova zelandia': 'new zealand',
+    'espanha': 'spain',
+    'cape verde': 'cape verde',
+    'cabo verde': 'cape verde',
+    'arabia saudita': 'saudi arabia',
+    'uruguai': 'uruguay',
+    'franca': 'france',
+    'iraque': 'iraq',
+    'noruega': 'norway',
+    'argelia': 'algeria',
+    'jordania': 'jordan',
+    'dr congo': 'dr congo',
+    'rd congo': 'dr congo',
+    'congo dr': 'dr congo',
+    'congo rd': 'dr congo',
+    'democratic republic of congo': 'dr congo',
+    'congo democratic republic': 'dr congo',
+    'uzbequistao': 'uzbekistan',
+    'inglaterra': 'england',
+    'croacia': 'croatia',
+    'gana': 'ghana',
+    'brasil': 'brazil',
+    'marrocos': 'morocco',
+    'escocia': 'scotland',
+    'catar': 'qatar',
+    'suica': 'switzerland',
+  };
 }
-
-const Map<String, String> _teamAliases = {
-  'mexico': 'mexico',
-
-  'south africa': 'south africa',
-  'africa do sul': 'south africa',
-
-  'south korea': 'south korea',
-  'coreia do sul': 'south korea',
-  'korea republic': 'south korea',
-
-  'czechia': 'czechia',
-  'republica tcheca': 'czechia',
-
-  'canada': 'canada',
-
-  'bosnia and herzegovina': 'bosnia and herzegovina',
-  'bosnia e herzegovina': 'bosnia and herzegovina',
-  'bosnia herzegovina': 'bosnia and herzegovina',
-
-  'qatar': 'qatar',
-  'catar': 'qatar',
-
-  'switzerland': 'switzerland',
-  'suica': 'switzerland',
-  'suíca': 'switzerland',
-  'suiça': 'switzerland',
-
-  'brazil': 'brazil',
-  'brasil': 'brazil',
-
-  'morocco': 'morocco',
-  'marrocos': 'morocco',
-
-  'haiti': 'haiti',
-
-  'scotland': 'scotland',
-  'escocia': 'scotland',
-  'escócia': 'scotland',
-
-  'united states': 'united states',
-  'usa': 'united states',
-  'us': 'united states',
-  'estados unidos': 'united states',
-
-  'paraguay': 'paraguay',
-  'paraguai': 'paraguay',
-
-  'australia': 'australia',
-
-  'turkey': 'turkey',
-  'turkiye': 'turkey',
-  'turquia': 'turkey',
-
-  'germany': 'germany',
-  'alemanha': 'germany',
-
-  'curacao': 'curacao',
-  'curacau': 'curacao',
-
-  'ivory coast': 'ivory coast',
-  'cote d ivoire': 'ivory coast',
-  'côte d ivoire': 'ivory coast',
-  'costa do marfim': 'ivory coast',
-
-  'ecuador': 'ecuador',
-
-  'netherlands': 'netherlands',
-  'holanda': 'netherlands',
-  'paises baixos': 'netherlands',
-  'países baixos': 'netherlands',
-
-  'japan': 'japan',
-  'japao': 'japan',
-  'japão': 'japan',
-
-  'sweden': 'sweden',
-  'suecia': 'sweden',
-  'suécia': 'sweden',
-
-  'tunisia': 'tunisia',
-  'tunisia pt': 'tunisia',
-
-  'belgium': 'belgium',
-  'belgica': 'belgium',
-  'bélgica': 'belgium',
-
-  'egypt': 'egypt',
-  'egito': 'egypt',
-
-  'iran': 'iran',
-  'ira': 'iran',
-  'irã': 'iran',
-  'irao': 'iran',
-  'irão': 'iran',
-
-  'new zealand': 'new zealand',
-  'nova zelandia': 'new zealand',
-  'nova zelândia': 'new zealand',
-
-  'spain': 'spain',
-  'espanha': 'spain',
-
-  'cape verde': 'cape verde',
-  'cabo verde': 'cape verde',
-
-  'saudi arabia': 'saudi arabia',
-  'arabia saudita': 'saudi arabia',
-  'arábia saudita': 'saudi arabia',
-
-  'uruguay': 'uruguay',
-  'uruguai': 'uruguay',
-
-  'france': 'france',
-  'franca': 'france',
-  'frança': 'france',
-
-  'senegal': 'senegal',
-
-  'iraq': 'iraq',
-  'iraque': 'iraq',
-
-  'norway': 'norway',
-  'noruega': 'norway',
-
-  'argentina': 'argentina',
-
-  'algeria': 'algeria',
-  'argelia': 'algeria',
-  'argélia': 'algeria',
-
-  'austria': 'austria',
-  'áustria': 'austria',
-
-  'jordan': 'jordan',
-  'jordania': 'jordan',
-  'jordânia': 'jordan',
-
-  'portugal': 'portugal',
-
-  'dr congo': 'dr congo',
-  'rd congo': 'dr congo',
-  'congo dr': 'dr congo',
-  'democratic republic of congo': 'dr congo',
-  'congo democratic republic': 'dr congo',
-  'congo rd': 'dr congo',
-
-  'uzbekistan': 'uzbekistan',
-  'uzbequistao': 'uzbekistan',
-  'uzbequistão': 'uzbekistan',
-
-  'colombia': 'colombia',
-  'colômbia': 'colombia',
-
-  'england': 'england',
-  'inglaterra': 'england',
-
-  'croatia': 'croatia',
-  'croacia': 'croatia',
-  'croácia': 'croatia',
-
-  'ghana': 'ghana',
-
-  'panama': 'panama',
-  'panamá': 'panama',
-};

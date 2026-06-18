@@ -32,7 +32,10 @@ class TimeParticipante {
       grupo: JsonUtils.stringValue(json, 'grupo'),
       jogosIds: JsonUtils.stringList(json, 'jogosIds'),
       rankingGrupo: JsonUtils.nullableInt(json, 'rankingGrupo'),
-      rankingGrupoProvisorio: JsonUtils.boolValue(json, 'rankingGrupoProvisorio'),
+      rankingGrupoProvisorio: JsonUtils.boolValue(
+        json,
+        'rankingGrupoProvisorio',
+      ),
       estatisticasGrupo: EstatisticasGrupo.fromJson(
         JsonUtils.mapValue(json, 'estatisticasGrupo'),
       ),
@@ -102,9 +105,18 @@ class EstatisticasGrupo {
       fairPlayPontos: JsonUtils.nullableInt(json, 'fairPlayPontos'),
       cartoesAmarelos: JsonUtils.nullableInt(json, 'cartoesAmarelos'),
       cartoesVermelhos: JsonUtils.nullableInt(json, 'cartoesVermelhos'),
-      cartoesVermelhosIndiretos: JsonUtils.nullableInt(json, 'cartoesVermelhosIndiretos'),
-      cartoesAmareloVermelho: JsonUtils.nullableInt(json, 'cartoesAmareloVermelho'),
-      observacaoDesempate: JsonUtils.nullableString(json, 'observacaoDesempate'),
+      cartoesVermelhosIndiretos: JsonUtils.nullableInt(
+        json,
+        'cartoesVermelhosIndiretos',
+      ),
+      cartoesAmareloVermelho: JsonUtils.nullableInt(
+        json,
+        'cartoesAmareloVermelho',
+      ),
+      observacaoDesempate: JsonUtils.nullableString(
+        json,
+        'observacaoDesempate',
+      ),
     );
   }
 

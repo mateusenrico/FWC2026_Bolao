@@ -5,14 +5,22 @@ import 'package:http/http.dart' as http;
 
 import 'package:fwc2026_bolao/core/team_normalizer.dart';
 
-const String apiKey = '123';
-const String apiBaseUrl = 'https://www.thesportsdb.com/api/v1/json/$apiKey';
+const String _sportsDbApiKey = '123';
+const String _sportsDbBaseUrl =
+    'https://www.thesportsdb.com/api/v1/json/$_sportsDbApiKey';
+const String _fixtureDownloadUrl =
+    'https://fixturedownload.com/feed/json/fifa-world-cup-2026';
 
-void main(List<String> args) async {
+Future<void> main(List<String> args) async {
   final config = UpdateConfig.fromArgs(args);
-  final updater = SportsDbJsonUpdater(config);
 
-  await updater.run();
+  try {
+    await TournamentDataUpdater(config).run();
+  } catch (error, stackTrace) {
+    stderr.writeln('Falha ao atualizar os dados: $error');
+    stderr.writeln(stackTrace);
+    exitCode = 1;
+  }
 }
 
 class UpdateConfig {
@@ -31,11 +39,18 @@ class UpdateConfig {
   });
 
   factory UpdateConfig.fromArgs(List<String> args) {
-    String leagueId = '4429';
-    String season = '2026';
-    bool includeDayScan = true;
-    DateTime dayScanStart = DateTime(2026, 6, 11);
-    DateTime dayScanEnd = DateTime(2026, 7, 19);
+    final tournamentEnd = DateTime.utc(2026, 7, 19);
+    final defaultEndCandidate =
+        DateTime.now().toUtc().add(const Duration(days: 1));
+    final defaultEnd = defaultEndCandidate.isAfter(tournamentEnd)
+        ? tournamentEnd
+        : defaultEndCandidate;
+
+    var leagueId = '4429';
+    var season = '2026';
+    var includeDayScan = true;
+    var dayScanStart = DateTime.utc(2026, 6, 11);
+    var dayScanEnd = defaultEnd;
 
     for (final arg in args) {
       if (arg.startsWith('--league-id=')) {
@@ -50,13 +65,25 @@ class UpdateConfig {
         final parsed = DateTime.tryParse(
           arg.substring('--from='.length).trim(),
         );
+
         if (parsed != null) {
-          dayScanStart = parsed;
+          dayScanStart = DateTime.utc(
+            parsed.year,
+            parsed.month,
+            parsed.day,
+          );
         }
       } else if (arg.startsWith('--to=')) {
-        final parsed = DateTime.tryParse(arg.substring('--to='.length).trim());
+        final parsed = DateTime.tryParse(
+          arg.substring('--to='.length).trim(),
+        );
+
         if (parsed != null) {
-          dayScanEnd = parsed;
+          dayScanEnd = DateTime.utc(
+            parsed.year,
+            parsed.month,
+            parsed.day,
+          );
         }
       }
     }
@@ -71,141 +98,191 @@ class UpdateConfig {
   }
 }
 
-class SportsDbJsonUpdater {
+class TournamentDataUpdater {
   final UpdateConfig config;
 
-  SportsDbJsonUpdater(this.config);
+  TournamentDataUpdater(this.config);
 
-  final Directory dataDir = Directory('assets/data');
+  final Directory _dataDirectory = Directory('assets/data');
 
-  File get jogosFile => File('assets/data/jogos.json');
+  File get _gamesFile => File('assets/data/jogos.json');
 
-  File get historicoFile => File('assets/data/historico_partidas.json');
+  File get _historyFile =>
+      File('assets/data/historico_partidas.json');
 
-  File get timesFile => File('assets/data/times_participantes.json');
+  File get _teamsFile =>
+      File('assets/data/times_participantes.json');
+
+  File get _guessesFile => File('assets/data/palpites.json');
+
+  File get _fixtureSeedFile =>
+      File('tools/data/world_cup_2026_fixtures.json');
 
   Future<void> run() async {
-    _assertFilesExist();
+    _assertRequiredFilesExist();
 
-    final backupDir = await _backupJsonFiles();
+    final backupDirectory = await _backupDataFiles();
 
-    stdout.writeln('Backup criado em: ${backupDir.path}');
-    stdout.writeln('');
-
-    final jogos = await _readJsonList(jogosFile);
-    final historico = await _readJsonList(historicoFile);
-    final times = await _readJsonList(timesFile);
-
-    final apiEvents = await _fetchAllEvents();
-
-    stdout.writeln('');
-    stdout.writeln('Eventos únicos recebidos da API: ${apiEvents.length}');
-    stdout.writeln('');
-
-    final mergeResult = _mergeApiEvents(
-      jogos: jogos,
-      historico: historico,
-      apiEvents: apiEvents,
-    );
-
-    _recalcularTimesParticipantes(
-      jogos: jogos,
-      historico: historico,
-      times: times,
-    );
-
-    await _writeJsonList(jogosFile, jogos);
-    await _writeJsonList(historicoFile, historico);
-    await _writeJsonList(timesFile, times);
-
-    stdout.writeln('Atualização concluída.');
-    stdout.writeln('');
-    stdout.writeln('Resumo:');
     stdout.writeln(
-      '- Eventos API processados: ${mergeResult.eventosProcessados}',
+      'Backup criado em: ${backupDirectory.path}',
     );
-    stdout.writeln(
-      '- Eventos ignorados sem idEvent: ${mergeResult.eventosIgnoradosSemId}',
-    );
-    stdout.writeln(
-      '- Histórico atualizado por idEvent: ${mergeResult.historicoAtualizadoPorIdEvent}',
-    );
-    stdout.writeln(
-      '- Histórico atualizado por jogoId: ${mergeResult.historicoAtualizadoPorJogoId}',
-    );
-    stdout.writeln('- Histórico inserido: ${mergeResult.historicoInserido}');
-    stdout.writeln(
-      '- Jogos canônicos atualizados: ${mergeResult.jogosAtualizados}',
-    );
-    stdout.writeln('- Jogos canônicos criados: ${mergeResult.jogosCriados}');
-    stdout.writeln(
-      '- Duplicatas API removidas: ${mergeResult.duplicatasApiRemovidas}',
-    );
-    stdout.writeln(
-      '- Eventos com match canônico: ${mergeResult.eventosComMatchCanonico}',
-    );
-    stdout.writeln(
-      '- Eventos sem match canônico: ${mergeResult.eventosSemMatchCanonico}',
-    );
-    stdout.writeln('');
-    _printJogosEncerradosSemResultado(jogos);
-  }
 
-  void _assertFilesExist() {
-    if (!dataDir.existsSync()) {
-      throw StateError('Pasta não encontrada: ${dataDir.path}');
+    final fixtureRoot = await _readJsonObject(
+      _fixtureSeedFile,
+    );
+    final fixtures = _asMapList(fixtureRoot['fixtures']);
+    final oldGames = await _readJsonList(_gamesFile);
+    final oldHistory = await _readJsonList(_historyFile);
+    final teams = await _readJsonList(_teamsFile);
+
+    if (fixtures.length != 104) {
+      throw StateError(
+        'A fonte canônica deveria conter 104 partidas, '
+        'mas contém ${fixtures.length}.',
+      );
     }
 
-    for (final file in [jogosFile, historicoFile, timesFile]) {
+    final stableIds = _buildStableIds(
+      fixtures: fixtures,
+      oldGames: oldGames,
+    );
+
+    final oldGamesByMatchNumber =
+        _mapOldGamesToMatchNumbers(
+      fixtures: fixtures,
+      oldGames: oldGames,
+      stableIds: stableIds,
+    );
+
+    final sportsDbEvents = await _loadSportsDbEvents(
+      existingHistory: oldHistory,
+      fixtures: fixtures,
+      oldGamesByMatchNumber: oldGamesByMatchNumber,
+    );
+
+    final sportsDbByMatchNumber =
+        _mapSportsDbEventsToMatches(
+      events: sportsDbEvents,
+      fixtures: fixtures,
+      oldGamesByMatchNumber: oldGamesByMatchNumber,
+    );
+
+    final fixtureDownloadByMatchNumber =
+        await _fetchFixtureDownloadByMatchNumber();
+
+    final games = _buildCanonicalGames(
+      fixtures: fixtures,
+      stableIds: stableIds,
+      oldGamesByMatchNumber: oldGamesByMatchNumber,
+      sportsDbByMatchNumber: sportsDbByMatchNumber,
+      fixtureDownloadByMatchNumber:
+          fixtureDownloadByMatchNumber,
+      teams: teams,
+    );
+
+    final history = _buildCanonicalHistory(
+      sportsDbEvents: sportsDbEvents,
+      fixtures: fixtures,
+      games: games,
+      oldGamesByMatchNumber: oldGamesByMatchNumber,
+    );
+
+    _updateTeams(
+      teams: teams,
+      games: games,
+    );
+
+    await _validate(
+      games: games,
+      history: history,
+      teams: teams,
+    );
+
+    await _writeJsonList(_gamesFile, games);
+    await _writeJsonList(_historyFile, history);
+    await _writeJsonList(_teamsFile, teams);
+
+    _printSummary(
+      games: games,
+      history: history,
+      sportsDbEvents: sportsDbEvents,
+      sportsDbByMatchNumber: sportsDbByMatchNumber,
+      fixtureDownloadByMatchNumber:
+          fixtureDownloadByMatchNumber,
+    );
+  }
+
+  void _assertRequiredFilesExist() {
+    final requiredFiles = [
+      _gamesFile,
+      _historyFile,
+      _teamsFile,
+      _fixtureSeedFile,
+    ];
+
+    for (final file in requiredFiles) {
       if (!file.existsSync()) {
-        throw StateError('Arquivo não encontrado: ${file.path}');
+        throw StateError(
+          'Arquivo obrigatório não encontrado: ${file.path}',
+        );
       }
     }
   }
 
-  Future<Directory> _backupJsonFiles() async {
+  Future<Directory> _backupDataFiles() async {
     final timestamp = _timestampForPath(DateTime.now());
-    final backupDir = Directory('assets/data/backups/$timestamp');
+    final backupDirectory = Directory(
+      'assets/data/backups/$timestamp',
+    );
 
-    await backupDir.create(recursive: true);
+    await backupDirectory.create(recursive: true);
 
-    final jsonFiles = dataDir
+    final files = _dataDirectory
         .listSync()
         .whereType<File>()
-        .where((file) => file.path.endsWith('.json'))
-        .toList();
+        .where((file) => file.path.endsWith('.json'));
 
-    for (final file in jsonFiles) {
+    for (final file in files) {
       final fileName = file.uri.pathSegments.last;
-      await file.copy('${backupDir.path}/$fileName');
+
+      await file.copy(
+        '${backupDirectory.path}/$fileName',
+      );
     }
 
-    return backupDir;
+    return backupDirectory;
   }
 
-  Future<List<Map<String, dynamic>>> _readJsonList(File file) async {
-    final raw = await file.readAsString();
-    final decoded = jsonDecode(raw);
+  Future<Map<String, dynamic>> _readJsonObject(
+    File file,
+  ) async {
+    final decoded = jsonDecode(await file.readAsString());
+
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+
+    if (decoded is Map) {
+      return Map<String, dynamic>.from(decoded);
+    }
+
+    throw FormatException(
+      '${file.path} deveria conter um objeto JSON.',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _readJsonList(
+    File file,
+  ) async {
+    final decoded = jsonDecode(await file.readAsString());
 
     if (decoded is! List) {
       throw FormatException(
-        '${file.path} deveria conter uma lista JSON na raiz.',
+        '${file.path} deveria conter uma lista JSON.',
       );
     }
 
-    return decoded.map((item) {
-      if (item is Map<String, dynamic>) {
-        return item;
-      }
-
-      if (item is Map) {
-        return Map<String, dynamic>.from(item);
-      }
-
-      throw FormatException(
-        'Item inválido em ${file.path}: ${item.runtimeType}',
-      );
-    }).toList();
+    return _asMapList(decoded);
   }
 
   Future<void> _writeJsonList(
@@ -213,480 +290,963 @@ class SportsDbJsonUpdater {
     List<Map<String, dynamic>> data,
   ) async {
     const encoder = JsonEncoder.withIndent('  ');
-    await file.writeAsString('${encoder.convert(data)}\n');
+
+    await file.writeAsString(
+      '${encoder.convert(data)}\n',
+    );
   }
 
-  Future<List<Map<String, dynamic>>> _fetchAllEvents() async {
-    final allEvents = <Map<String, dynamic>>[];
-
-    final urls = <Uri>[
-      Uri.parse(
-        '$apiBaseUrl/eventsseason.php?id=${config.leagueId}&s=${config.season}',
-      ),
-      Uri.parse('$apiBaseUrl/eventsnextleague.php?id=${config.leagueId}'),
-      Uri.parse('$apiBaseUrl/eventspastleague.php?id=${config.leagueId}'),
-    ];
-
-    for (final uri in urls) {
-      final events = await _fetchEventsFromUri(uri);
-      allEvents.addAll(events);
+  List<Map<String, dynamic>> _asMapList(dynamic value) {
+    if (value is! List) {
+      return const [];
     }
 
-    if (config.includeDayScan) {
-      final dayEvents = await _fetchDayEvents(
-        start: config.dayScanStart,
-        end: config.dayScanEnd,
+    return value.map((item) {
+      if (item is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(item);
+      }
+
+      if (item is Map) {
+        return Map<String, dynamic>.from(item);
+      }
+
+      throw FormatException(
+        'Esperado objeto JSON, recebido: '
+        '${item.runtimeType}.',
       );
-
-      allEvents.addAll(dayEvents);
-    }
-
-    return _uniqueByIdEvent(allEvents);
+    }).toList();
   }
 
-  Future<List<Map<String, dynamic>>> _fetchDayEvents({
-    required DateTime start,
-    required DateTime end,
-  }) async {
-    final events = <Map<String, dynamic>>[];
+  Map<int, String> _buildStableIds({
+    required List<Map<String, dynamic>> fixtures,
+    required List<Map<String, dynamic>> oldGames,
+  }) {
+    final result = <int, String>{};
+    final usedIds = <String>{};
 
-    var current = DateTime(start.year, start.month, start.day);
-    final last = DateTime(end.year, end.month, end.day);
+    final canonicalOldGames = oldGames.where(
+      (game) => !_isApiGeneratedGame(game),
+    );
 
-    while (!current.isAfter(last)) {
-      final date = _dateOnly(current);
-      final uri = Uri.parse('$apiBaseUrl/eventsday.php?d=$date&s=Soccer');
-      final dayEvents = await _fetchEventsFromUri(uri);
+    for (final game in canonicalOldGames) {
+      final matchNumber = _asInt(game['matchNumber']);
+      final gameId = game['jogoId']?.toString();
 
-      events.addAll(dayEvents);
-
-      current = current.add(const Duration(days: 1));
+      if (matchNumber != null &&
+          matchNumber >= 1 &&
+          matchNumber <= 104 &&
+          gameId != null &&
+          gameId.isNotEmpty &&
+          usedIds.add(gameId)) {
+        result[matchNumber] = gameId;
+      }
     }
 
-    return events;
-  }
+    final groupFixtureByPair =
+        <String, Map<String, dynamic>>{};
 
-  Future<List<Map<String, dynamic>>> _fetchEventsFromUri(Uri uri) async {
-    stdout.writeln('GET $uri');
-
-    final response = await http.get(uri);
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      stderr.writeln('Falha HTTP ${response.statusCode}: $uri');
-      return const [];
+    for (final fixture in fixtures) {
+      if (fixture['stage'] == 'group-stage') {
+        groupFixtureByPair[_pairKey(
+          fixture['homeTeam']?.toString() ?? '',
+          fixture['awayTeam']?.toString() ?? '',
+        )] = fixture;
+      }
     }
 
-    final decoded = jsonDecode(response.body);
-    final rawEvents = decoded['events'];
+    for (final game in canonicalOldGames) {
+      final gameId = game['jogoId']?.toString();
 
-    if (rawEvents == null || rawEvents is! List) {
-      return const [];
-    }
-
-    return rawEvents
-        .map((item) {
-          if (item is Map<String, dynamic>) {
-            return item;
-          }
-
-          if (item is Map) {
-            return Map<String, dynamic>.from(item);
-          }
-
-          return <String, dynamic>{};
-        })
-        .where((event) {
-          return event.isNotEmpty &&
-              event['idLeague']?.toString() == config.leagueId;
-        })
-        .toList();
-  }
-
-  List<Map<String, dynamic>> _uniqueByIdEvent(
-    List<Map<String, dynamic>> events,
-  ) {
-    final byId = <String, Map<String, dynamic>>{};
-
-    for (final event in events) {
-      final idEvent = event['idEvent']?.toString();
-
-      if (idEvent == null || idEvent.isEmpty) {
+      if (gameId == null ||
+          gameId.isEmpty ||
+          usedIds.contains(gameId) ||
+          game['faseTipo'] != 'fase_de_grupos') {
         continue;
       }
 
-      byId[idEvent] = event;
+      final fixture = groupFixtureByPair[_pairKey(
+        game['mandantePrevisto']?.toString() ?? '',
+        game['visitantePrevisto']?.toString() ?? '',
+      )];
+
+      final matchNumber =
+          _asInt(fixture?['matchNumber']);
+
+      if (matchNumber != null &&
+          !result.containsKey(matchNumber)) {
+        result[matchNumber] = gameId;
+        usedIds.add(gameId);
+      }
+    }
+
+    final availableKnockoutFixtures = fixtures
+        .where(
+          (fixture) =>
+              fixture['stage'] != 'group-stage' &&
+              !result.containsKey(
+                _asInt(fixture['matchNumber']),
+              ),
+        )
+        .toList();
+
+    for (final game in canonicalOldGames) {
+      final gameId = game['jogoId']?.toString();
+
+      if (gameId == null ||
+          gameId.isEmpty ||
+          usedIds.contains(gameId) ||
+          game['faseTipo'] != 'mata_mata') {
+        continue;
+      }
+
+      final gameTime =
+          _parseUtc(game['dataUtc']?.toString());
+
+      if (gameTime == null ||
+          availableKnockoutFixtures.isEmpty) {
+        continue;
+      }
+
+      Map<String, dynamic>? bestFixture;
+      var bestDifference = 1 << 62;
+
+      for (final fixture in availableKnockoutFixtures) {
+        final fixtureTime = _parseUtc(
+          fixture['kickoffUtc']?.toString(),
+        );
+
+        if (fixtureTime == null) {
+          continue;
+        }
+
+        final difference = gameTime
+            .difference(fixtureTime)
+            .inSeconds
+            .abs();
+
+        if (difference < bestDifference) {
+          bestDifference = difference;
+          bestFixture = fixture;
+        }
+      }
+
+      final matchNumber =
+          _asInt(bestFixture?['matchNumber']);
+
+      if (matchNumber != null &&
+          !result.containsKey(matchNumber)) {
+        result[matchNumber] = gameId;
+        usedIds.add(gameId);
+        availableKnockoutFixtures.remove(bestFixture);
+      }
+    }
+
+    for (var matchNumber = 1;
+        matchNumber <= 104;
+        matchNumber++) {
+      result.putIfAbsent(
+        matchNumber,
+        () => 'wc2026_m${matchNumber.toString().padLeft(3, '0')}',
+      );
+    }
+
+    return result;
+  }
+
+  Map<int, Map<String, dynamic>>
+      _mapOldGamesToMatchNumbers({
+    required List<Map<String, dynamic>> fixtures,
+    required List<Map<String, dynamic>> oldGames,
+    required Map<int, String> stableIds,
+  }) {
+    final oldById = <String, Map<String, dynamic>>{
+      for (final game in oldGames)
+        if (game['jogoId'] != null)
+          game['jogoId'].toString(): game,
+    };
+
+    return {
+      for (final entry in stableIds.entries)
+        if (oldById[entry.value] != null)
+          entry.key: oldById[entry.value]!,
+    };
+  }
+
+  Future<List<Map<String, dynamic>>> _loadSportsDbEvents({
+    required List<Map<String, dynamic>> existingHistory,
+    required List<Map<String, dynamic>> fixtures,
+    required Map<int, Map<String, dynamic>>
+        oldGamesByMatchNumber,
+  }) async {
+    final byId = <String, Map<String, dynamic>>{};
+
+    for (final record in existingHistory) {
+      final idEvent = record['idEvent']?.toString();
+
+      if (idEvent != null && idEvent.isNotEmpty) {
+        byId[idEvent] = Map<String, dynamic>.from(record);
+      }
+    }
+
+    final fetchedEvents = await _fetchSportsDbEvents();
+
+    for (final event in fetchedEvents) {
+      final idEvent = event['idEvent']?.toString();
+
+      if (idEvent != null && idEvent.isNotEmpty) {
+        byId[idEvent] = event;
+      }
     }
 
     return byId.values.toList();
   }
 
-  MergeResult _mergeApiEvents({
-    required List<Map<String, dynamic>> jogos,
-    required List<Map<String, dynamic>> historico,
-    required List<Map<String, dynamic>> apiEvents,
-  }) {
-    final historicoPorIdEvent = <String, Map<String, dynamic>>{
-      for (final partida in historico)
-        if (partida['idEvent'] != null) partida['idEvent'].toString(): partida,
-    };
+  Future<List<Map<String, dynamic>>>
+      _fetchSportsDbEvents() async {
+    final allEvents = <Map<String, dynamic>>[];
 
-    final historicoPorJogoId = <String, Map<String, dynamic>>{
-      for (final partida in historico)
-        if (partida['jogoId'] != null) partida['jogoId'].toString(): partida,
-    };
+    final coreUris = [
+      Uri.parse(
+        '$_sportsDbBaseUrl/eventsseason.php'
+        '?id=${config.leagueId}&s=${config.season}',
+      ),
+      Uri.parse(
+        '$_sportsDbBaseUrl/eventsnextleague.php'
+        '?id=${config.leagueId}',
+      ),
+      Uri.parse(
+        '$_sportsDbBaseUrl/eventspastleague.php'
+        '?id=${config.leagueId}',
+      ),
+    ];
 
-    final jogosPorIdEvent = <String, Map<String, dynamic>>{
-      for (final jogo in jogos)
-        if (jogo['idEventAtual'] != null) jogo['idEventAtual'].toString(): jogo,
-    };
+    for (final uri in coreUris) {
+      allEvents.addAll(
+        await _fetchSportsDbEventsFromUri(uri),
+      );
+    }
 
-    int maxOrdem = 0;
+    if (config.includeDayScan) {
+      var current = config.dayScanStart;
+      final last = config.dayScanEnd;
 
-    for (final jogo in jogos) {
-      final ordem = _asInt(jogo['ordem']) ?? 0;
+      while (!current.isAfter(last)) {
+        final uri = Uri.parse(
+          '$_sportsDbBaseUrl/eventsday.php'
+          '?d=${_dateOnly(current)}&s=Soccer',
+        );
 
-      if (ordem > maxOrdem) {
-        maxOrdem = ordem;
+        allEvents.addAll(
+          await _fetchSportsDbEventsFromUri(uri),
+        );
+
+        current = current.add(const Duration(days: 1));
       }
     }
 
-    final result = MergeResult();
-    final jogosParaRemover = <Map<String, dynamic>>[];
+    final byId = <String, Map<String, dynamic>>{};
 
-    for (final event in apiEvents) {
-      result.eventosProcessados++;
-
+    for (final event in allEvents) {
       final idEvent = event['idEvent']?.toString();
 
-      if (idEvent == null || idEvent.isEmpty) {
-        result.eventosIgnoradosSemId++;
+      if (idEvent != null && idEvent.isNotEmpty) {
+        byId[idEvent] = event;
+      }
+    }
+
+    return byId.values.toList();
+  }
+
+  Future<List<Map<String, dynamic>>>
+      _fetchSportsDbEventsFromUri(Uri uri) async {
+    stdout.writeln('GET $uri');
+
+    try {
+      final response = await http.get(uri);
+
+      if (response.statusCode < 200 ||
+          response.statusCode >= 300) {
+        stderr.writeln(
+          'Aviso: SportsDB respondeu '
+          '${response.statusCode} para $uri.',
+        );
+        return const [];
+      }
+
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is! Map) {
+        return const [];
+      }
+
+      final rawEvents = decoded['events'];
+
+      if (rawEvents is! List) {
+        return const [];
+      }
+
+      return _asMapList(rawEvents).where((event) {
+        return event['idLeague']?.toString() ==
+                config.leagueId &&
+            event['strSeason']?.toString() ==
+                config.season;
+      }).toList();
+    } catch (error) {
+      stderr.writeln(
+        'Aviso: não foi possível consultar $uri: $error',
+      );
+      return const [];
+    }
+  }
+
+  Future<Map<int, Map<String, dynamic>>>
+      _fetchFixtureDownloadByMatchNumber() async {
+    stdout.writeln('GET $_fixtureDownloadUrl');
+
+    try {
+      final response = await http.get(
+        Uri.parse(_fixtureDownloadUrl),
+      );
+
+      if (response.statusCode < 200 ||
+          response.statusCode >= 300) {
+        stderr.writeln(
+          'Aviso: FixtureDownload respondeu '
+          '${response.statusCode}.',
+        );
+        return const {};
+      }
+
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is! List) {
+        return const {};
+      }
+
+      final result = <int, Map<String, dynamic>>{};
+
+      for (final record in _asMapList(decoded)) {
+        final matchNumber =
+            _asInt(record['MatchNumber']);
+
+        if (matchNumber != null) {
+          result[matchNumber] = record;
+        }
+      }
+
+      return result;
+    } catch (error) {
+      stderr.writeln(
+        'Aviso: não foi possível consultar '
+        'FixtureDownload: $error',
+      );
+      return const {};
+    }
+  }
+
+  Map<int, Map<String, dynamic>>
+      _mapSportsDbEventsToMatches({
+    required List<Map<String, dynamic>> events,
+    required List<Map<String, dynamic>> fixtures,
+    required Map<int, Map<String, dynamic>>
+        oldGamesByMatchNumber,
+  }) {
+    final matchByExistingEventId = <String, int>{};
+
+    for (final entry in oldGamesByMatchNumber.entries) {
+      final idEvent =
+          entry.value['idEventAtual']?.toString();
+
+      if (idEvent != null && idEvent.isNotEmpty) {
+        matchByExistingEventId[idEvent] = entry.key;
+      }
+    }
+
+    final groupFixtureByPair =
+        <String, Map<String, dynamic>>{};
+
+    for (final fixture in fixtures) {
+      if (fixture['stage'] == 'group-stage') {
+        groupFixtureByPair[_pairKey(
+          fixture['homeTeam']?.toString() ?? '',
+          fixture['awayTeam']?.toString() ?? '',
+        )] = fixture;
+      }
+    }
+
+    final result = <int, Map<String, dynamic>>{};
+
+    for (final event in events) {
+      final idEvent = event['idEvent']?.toString();
+
+      int? matchNumber;
+
+      if (idEvent != null) {
+        matchNumber = matchByExistingEventId[idEvent];
+      }
+
+      if (matchNumber == null) {
+        final fixture = groupFixtureByPair[_pairKey(
+          event['strHomeTeam']?.toString() ?? '',
+          event['strAwayTeam']?.toString() ?? '',
+        )];
+
+        matchNumber = _asInt(fixture?['matchNumber']);
+      }
+
+      matchNumber ??= _nearestFixtureMatchNumber(
+        event: event,
+        fixtures: fixtures,
+      );
+
+      if (matchNumber == null) {
+        stderr.writeln(
+          'Aviso: evento SportsDB sem partida canônica: '
+          '${event['strHomeTeam']} x '
+          '${event['strAwayTeam']} '
+          '(idEvent=${event['idEvent']}).',
+        );
         continue;
       }
 
-      final jogoPorIdEvent = jogosPorIdEvent[idEvent];
+      final previous = result[matchNumber];
 
-      final jogoCanonicoPorTimesHorario = _findCanonicalJogoByTeamsAndTime(
-        event: event,
-        jogos: jogos,
-      );
-
-      if (jogoCanonicoPorTimesHorario != null) {
-        result.eventosComMatchCanonico++;
-      } else {
-        result.eventosSemMatchCanonico++;
-        stdout.writeln(
-          'Sem match canônico: ${event['strHomeTeam']} x ${event['strAwayTeam']} | '
-          'idEvent=${event['idEvent']} | '
-          'dateEvent=${event['dateEvent']} | '
-          'dateEventLocal=${event['dateEventLocal']} | '
-          'strTimestamp=${event['strTimestamp']}',
-        );
+      if (previous == null ||
+          _sportsDbEventPriority(event) >=
+              _sportsDbEventPriority(previous)) {
+        result[matchNumber] = event;
       }
-
-      Map<String, dynamic>? jogoEscolhido;
-
-      if (jogoCanonicoPorTimesHorario != null) {
-        jogoEscolhido = jogoCanonicoPorTimesHorario;
-
-        if (jogoPorIdEvent != null &&
-            !identical(jogoPorIdEvent, jogoEscolhido)) {
-          _desvincularIdEvent(jogoPorIdEvent, idEvent);
-
-          if (_isApiGeneratedJogo(jogoPorIdEvent)) {
-            jogosParaRemover.add(jogoPorIdEvent);
-          }
-        }
-      } else if (jogoPorIdEvent != null) {
-        jogoEscolhido = jogoPorIdEvent;
-      } else {
-        maxOrdem++;
-
-        jogoEscolhido = _createJogoFromApiEvent(event: event, ordem: maxOrdem);
-
-        jogos.add(jogoEscolhido);
-        result.jogosCriados++;
-      }
-
-      final jogoId = jogoEscolhido['jogoId'].toString();
-
-      _updateJogoFromApiEvent(jogo: jogoEscolhido, event: event);
-
-      jogosPorIdEvent[idEvent] = jogoEscolhido;
-
-      final historicoEntry = _buildHistoricoEntry(
-        event: event,
-        jogo: jogoEscolhido,
-      );
-
-      final historicoById = historicoPorIdEvent[idEvent];
-      final historicoByJogo = historicoPorJogoId[jogoId];
-
-      if (historicoById != null) {
-        historicoById
-          ..clear()
-          ..addAll(historicoEntry);
-
-        result.historicoAtualizadoPorIdEvent++;
-      } else if (historicoByJogo != null) {
-        historicoByJogo
-          ..clear()
-          ..addAll(historicoEntry);
-
-        result.historicoAtualizadoPorJogoId++;
-      } else {
-        historico.add(historicoEntry);
-
-        historicoPorIdEvent[idEvent] = historicoEntry;
-        historicoPorJogoId[jogoId] = historicoEntry;
-
-        result.historicoInserido++;
-      }
-
-      result.jogosAtualizados++;
     }
 
-    if (jogosParaRemover.isNotEmpty) {
-      final idsParaRemover = jogosParaRemover
-          .map((jogo) => jogo['jogoId']?.toString())
-          .whereType<String>()
-          .toSet();
+    return result;
+  }
 
-      jogos.removeWhere((jogo) {
-        final jogoId = jogo['jogoId']?.toString();
+  int? _nearestFixtureMatchNumber({
+    required Map<String, dynamic> event,
+    required List<Map<String, dynamic>> fixtures,
+  }) {
+    final eventTime = _parseSportsDbUtc(
+      event['strTimestamp']?.toString(),
+    );
 
-        return jogoId != null && idsParaRemover.contains(jogoId);
+    if (eventTime == null) {
+      return null;
+    }
+
+    Map<String, dynamic>? bestFixture;
+    var bestDifference = 1 << 62;
+
+    for (final fixture in fixtures) {
+      final fixtureTime = _parseUtc(
+        fixture['kickoffUtc']?.toString(),
+      );
+
+      if (fixtureTime == null) {
+        continue;
+      }
+
+      final difference = eventTime
+          .difference(fixtureTime)
+          .inSeconds
+          .abs();
+
+      if (difference < bestDifference) {
+        bestDifference = difference;
+        bestFixture = fixture;
+      }
+    }
+
+    if (bestDifference > const Duration(hours: 36).inSeconds) {
+      return null;
+    }
+
+    return _asInt(bestFixture?['matchNumber']);
+  }
+
+  int _sportsDbEventPriority(
+    Map<String, dynamic> event,
+  ) {
+    var priority = 0;
+
+    if (_hasScore(event)) {
+      priority += 10;
+    }
+
+    if (_sportsDbIsFinal(event)) {
+      priority += 100;
+    }
+
+    return priority;
+  }
+
+  List<Map<String, dynamic>> _buildCanonicalGames({
+    required List<Map<String, dynamic>> fixtures,
+    required Map<int, String> stableIds,
+    required Map<int, Map<String, dynamic>>
+        oldGamesByMatchNumber,
+    required Map<int, Map<String, dynamic>>
+        sportsDbByMatchNumber,
+    required Map<int, Map<String, dynamic>>
+        fixtureDownloadByMatchNumber,
+    required List<Map<String, dynamic>> teams,
+  }) {
+    final chronologicalFixtures = [...fixtures]
+      ..sort((a, b) {
+        final timeA = _parseUtc(
+          a['kickoffUtc']?.toString(),
+        );
+        final timeB = _parseUtc(
+          b['kickoffUtc']?.toString(),
+        );
+
+        final comparison = timeA!.compareTo(timeB!);
+
+        if (comparison != 0) {
+          return comparison;
+        }
+
+        return _asInt(a['matchNumber'])!
+            .compareTo(_asInt(b['matchNumber'])!);
       });
 
-      result.duplicatasApiRemovidas += idsParaRemover.length;
+    final chronologicalOrder = <int, int>{};
+
+    for (var index = 0;
+        index < chronologicalFixtures.length;
+        index++) {
+      chronologicalOrder[
+          _asInt(
+            chronologicalFixtures[index]['matchNumber'],
+          )!] = index + 1;
     }
 
-    jogos.sort((a, b) {
-      final ordemA = _asInt(a['ordem']) ?? 999999;
-      final ordemB = _asInt(b['ordem']) ?? 999999;
-      return ordemA.compareTo(ordemB);
-    });
+    final groupRoundByMatchNumber =
+        _buildGroupRounds(fixtures);
 
-    historico.sort((a, b) {
-      final ordemA = _asInt(a['ordemBolao']) ?? 999999;
-      final ordemB = _asInt(b['ordemBolao']) ?? 999999;
-      return ordemA.compareTo(ordemB);
+    final teamByKey = <String, Map<String, dynamic>>{
+      for (final team in teams)
+        TeamNormalizer.key(
+          team['nome']?.toString() ?? '',
+        ): team,
+    };
+
+    final result = <Map<String, dynamic>>[];
+
+    for (final fixture in fixtures) {
+      final matchNumber =
+          _asInt(fixture['matchNumber'])!;
+      final stage = fixture['stage']?.toString() ?? '';
+      final group = _nullableString(fixture['group']);
+      final kickoffUtc =
+          _parseUtc(fixture['kickoffUtc']?.toString())!;
+
+      final oldGame =
+          oldGamesByMatchNumber[matchNumber];
+      final sportsDb =
+          sportsDbByMatchNumber[matchNumber];
+      final fixtureDownload =
+          fixtureDownloadByMatchNumber[matchNumber];
+
+      final resultData = _chooseResult(
+        oldGame: oldGame,
+        sportsDb: sportsDb,
+        fixtureDownload: fixtureDownload,
+        kickoffUtc: kickoffUtc,
+      );
+
+      final mandanteReference = _buildParticipantReference(
+        fixture['homeTeam']?.toString() ?? '',
+        stableIds: stableIds,
+        teamByKey: teamByKey,
+      );
+      final visitanteReference = _buildParticipantReference(
+        fixture['awayTeam']?.toString() ?? '',
+        stableIds: stableIds,
+        teamByKey: teamByKey,
+      );
+
+      final status = _canonicalStatus(
+        kickoffUtc: kickoffUtc,
+        sportsDb: sportsDb,
+        resultFinal: resultData.resultFinal,
+      );
+
+      result.add({
+        'jogoId': stableIds[matchNumber],
+        'matchNumber': matchNumber,
+        'ordem': chronologicalOrder[matchNumber],
+        'fase': stage == 'group-stage'
+            ? 'Grupo $group'
+            : _stageLabel(stage),
+        'faseCodigo': stage,
+        'faseTipo': stage == 'group-stage'
+            ? 'fase_de_grupos'
+            : 'mata_mata',
+        'grupo': group,
+        'rodada': stage == 'group-stage'
+            ? groupRoundByMatchNumber[matchNumber]
+            : null,
+        'roundNumber': _roundNumber(
+          stage,
+          groupRoundByMatchNumber[matchNumber],
+        ),
+        'dataTorneio':
+            fixture['date']?.toString() ?? '',
+        'dataUtc': _formatUtc(kickoffUtc),
+        'dataLocal': _formatBrasilia(kickoffUtc),
+        'horaLocal':
+            _formatTime(kickoffUtc.subtract(
+          const Duration(hours: 3),
+        )),
+        'estadio':
+            fixture['stadium']?.toString() ?? '',
+        'cidadeSede':
+            fixture['hostCity']?.toString() ?? '',
+        'matchUrl':
+            fixture['matchUrl']?.toString() ?? '',
+        'fonteFixture': 'thestatsapi',
+        'mandantePrevisto':
+            mandanteReference['descricao'],
+        'visitantePrevisto':
+            visitanteReference['descricao'],
+        'mandanteReferencia': mandanteReference,
+        'visitanteReferencia': visitanteReference,
+        'idEventAtual':
+            sportsDb?['idEvent']?.toString() ??
+                oldGame?['idEventAtual']?.toString(),
+        'statusJogo': status,
+        'golsMandante': resultData.homeScore,
+        'golsVisitante': resultData.awayScore,
+        'vencedor': _winner(
+          resultData.homeScore,
+          resultData.awayScore,
+        ),
+        'temHistoricoApi': sportsDb != null,
+        'temResultadoApi':
+            sportsDb != null && _hasScore(sportsDb),
+        'temResultado': resultData.hasScore,
+        'resultadoFinal': resultData.resultFinal,
+        'fonteResultado': resultData.source,
+      });
+    }
+
+    result.sort(
+      (a, b) => _asInt(a['ordem'])!
+          .compareTo(_asInt(b['ordem'])!),
+    );
+
+    return result;
+  }
+
+  Map<int, int> _buildGroupRounds(
+    List<Map<String, dynamic>> fixtures,
+  ) {
+    final byGroup =
+        <String, List<Map<String, dynamic>>>{};
+
+    for (final fixture in fixtures) {
+      final group = _nullableString(fixture['group']);
+
+      if (fixture['stage'] == 'group-stage' &&
+          group != null) {
+        byGroup.putIfAbsent(group, () => []).add(fixture);
+      }
+    }
+
+    final result = <int, int>{};
+
+    for (final groupFixtures in byGroup.values) {
+      groupFixtures.sort((a, b) {
+        return _parseUtc(a['kickoffUtc']?.toString())!
+            .compareTo(
+          _parseUtc(b['kickoffUtc']?.toString())!,
+        );
+      });
+
+      for (var index = 0;
+          index < groupFixtures.length;
+          index++) {
+        result[_asInt(
+          groupFixtures[index]['matchNumber'],
+        )!] = (index ~/ 2) + 1;
+      }
+    }
+
+    return result;
+  }
+
+  Map<String, dynamic> _buildParticipantReference(
+    String source, {
+    required Map<int, String> stableIds,
+    required Map<String, Map<String, dynamic>>
+        teamByKey,
+  }) {
+    final teamKey = TeamNormalizer.key(source);
+    final team = teamByKey[teamKey];
+
+    if (team != null) {
+      return {
+        'tipo': 'time',
+        'descricao': team['nome'],
+        'timeId': team['timeId'],
+        'timeKey': teamKey,
+        'nomeFonte': source,
+      };
+    }
+
+    var match = RegExp(
+      r'^Group ([A-L]) winners$',
+      caseSensitive: false,
+    ).firstMatch(source);
+
+    if (match != null) {
+      final group = match.group(1)!.toUpperCase();
+
+      return {
+        'tipo': 'posicao_grupo',
+        'descricao': '1º do Grupo $group',
+        'grupo': group,
+        'posicao': 1,
+      };
+    }
+
+    match = RegExp(
+      r'^Group ([A-L]) runners-up$',
+      caseSensitive: false,
+    ).firstMatch(source);
+
+    if (match != null) {
+      final group = match.group(1)!.toUpperCase();
+
+      return {
+        'tipo': 'posicao_grupo',
+        'descricao': '2º do Grupo $group',
+        'grupo': group,
+        'posicao': 2,
+      };
+    }
+
+    match = RegExp(
+      r'^Group ([A-L](?:/[A-L])+) third place$',
+      caseSensitive: false,
+    ).firstMatch(source);
+
+    if (match != null) {
+      final groups =
+          match.group(1)!.toUpperCase().split('/');
+
+      return {
+        'tipo': 'melhor_terceiro',
+        'descricao': '3º de ${groups.join('/')}',
+        'posicao': 3,
+        'gruposElegiveis': groups,
+      };
+    }
+
+    match = RegExp(
+      r'^Winner Match (\d+)$',
+      caseSensitive: false,
+    ).firstMatch(source);
+
+    if (match != null) {
+      final matchNumber = int.parse(match.group(1)!);
+
+      return {
+        'tipo': 'vencedor_jogo',
+        'descricao': 'Vencedor do jogo $matchNumber',
+        'matchNumberReferencia': matchNumber,
+        'jogoIdReferencia': stableIds[matchNumber],
+      };
+    }
+
+    match = RegExp(
+      r'^Loser Match (\d+)$',
+      caseSensitive: false,
+    ).firstMatch(source);
+
+    if (match != null) {
+      final matchNumber = int.parse(match.group(1)!);
+
+      return {
+        'tipo': 'perdedor_jogo',
+        'descricao': 'Perdedor do jogo $matchNumber',
+        'matchNumberReferencia': matchNumber,
+        'jogoIdReferencia': stableIds[matchNumber],
+      };
+    }
+
+    return {
+      'tipo': 'texto',
+      'descricao': source,
+      'nomeFonte': source,
+    };
+  }
+
+  _ResultData _chooseResult({
+    required Map<String, dynamic>? oldGame,
+    required Map<String, dynamic>? sportsDb,
+    required Map<String, dynamic>? fixtureDownload,
+    required DateTime kickoffUtc,
+  }) {
+    if (sportsDb != null && _sportsDbIsFinal(sportsDb)) {
+      return _ResultData(
+        homeScore: _asInt(sportsDb['intHomeScore']),
+        awayScore: _asInt(sportsDb['intAwayScore']),
+        resultFinal: true,
+        source: 'sportsdb',
+      );
+    }
+
+    final fixtureHomeScore =
+        _asInt(fixtureDownload?['HomeTeamScore']);
+    final fixtureAwayScore =
+        _asInt(fixtureDownload?['AwayTeamScore']);
+
+    if (fixtureHomeScore != null &&
+        fixtureAwayScore != null) {
+      final winner = fixtureDownload?['Winner']
+          ?.toString()
+          .trim();
+
+      final oldEnough = DateTime.now()
+              .toUtc()
+              .difference(kickoffUtc)
+              .inMinutes >
+          180;
+
+      return _ResultData(
+        homeScore: fixtureHomeScore,
+        awayScore: fixtureAwayScore,
+        resultFinal:
+            (winner != null && winner.isNotEmpty) ||
+                oldEnough,
+        source: 'fixturedownload',
+      );
+    }
+
+    final oldHomeScore =
+        _asInt(oldGame?['golsMandante']);
+    final oldAwayScore =
+        _asInt(oldGame?['golsVisitante']);
+    final oldFinal =
+        oldGame?['resultadoFinal'] == true;
+
+    if (oldHomeScore != null &&
+        oldAwayScore != null &&
+        oldFinal) {
+      return _ResultData(
+        homeScore: oldHomeScore,
+        awayScore: oldAwayScore,
+        resultFinal: true,
+        source:
+            oldGame?['fonteResultado']?.toString() ??
+                'base_anterior',
+      );
+    }
+
+    if (sportsDb != null && _hasScore(sportsDb)) {
+      return _ResultData(
+        homeScore: _asInt(sportsDb['intHomeScore']),
+        awayScore: _asInt(sportsDb['intAwayScore']),
+        resultFinal: false,
+        source: 'sportsdb',
+      );
+    }
+
+    if (oldHomeScore != null && oldAwayScore != null) {
+      return _ResultData(
+        homeScore: oldHomeScore,
+        awayScore: oldAwayScore,
+        resultFinal: oldFinal,
+        source:
+            oldGame?['fonteResultado']?.toString() ??
+                'base_anterior',
+      );
+    }
+
+    return const _ResultData(
+      homeScore: null,
+      awayScore: null,
+      resultFinal: false,
+      source: null,
+    );
+  }
+
+  List<Map<String, dynamic>> _buildCanonicalHistory({
+    required List<Map<String, dynamic>> sportsDbEvents,
+    required List<Map<String, dynamic>> fixtures,
+    required List<Map<String, dynamic>> games,
+    required Map<int, Map<String, dynamic>>
+        oldGamesByMatchNumber,
+  }) {
+    final eventByMatchNumber =
+        _mapSportsDbEventsToMatches(
+      events: sportsDbEvents,
+      fixtures: fixtures,
+      oldGamesByMatchNumber: oldGamesByMatchNumber,
+    );
+
+    final gameByMatchNumber = <int, Map<String, dynamic>>{
+      for (final game in games)
+        _asInt(game['matchNumber'])!: game,
+    };
+
+    final result = <Map<String, dynamic>>[];
+
+    for (final entry in eventByMatchNumber.entries) {
+      final matchNumber = entry.key;
+      final event = entry.value;
+      final game = gameByMatchNumber[matchNumber]!;
+
+      result.add({
+        ...event,
+        'historicoId':
+            'sportsdb_${event['idEvent']}',
+        'fonteDados': 'sportsdb',
+        'matchNumber': matchNumber,
+        'jogoId': game['jogoId'],
+        'eventTimeGMT': game['dataUtc'],
+        'fase': game['fase'],
+        'faseCodigo': game['faseCodigo'],
+        'faseTipo': game['faseTipo'],
+        'grupo': game['grupo'],
+        'rodada': game['rodada'],
+        'roundNumber': game['roundNumber'],
+        'statusJogoCanonico': game['statusJogo'],
+        'ordemBolao': game['ordem'],
+        'mandantePrevisto':
+            game['mandantePrevisto'],
+        'visitantePrevisto':
+            game['visitantePrevisto'],
+        'temResultado': _hasScore(event),
+        'resultadoFinal': _sportsDbIsFinal(event),
+      });
+    }
+
+    result.sort((a, b) {
+      return _asInt(a['matchNumber'])!
+          .compareTo(_asInt(b['matchNumber'])!);
     });
 
     return result;
   }
 
-  Map<String, dynamic>? _findCanonicalJogoByTeamsAndTime({
-    required Map<String, dynamic> event,
-    required List<Map<String, dynamic>> jogos,
+  void _updateTeams({
+    required List<Map<String, dynamic>> teams,
+    required List<Map<String, dynamic>> games,
   }) {
-    final homeKey = TeamNormalizer.key(event['strHomeTeam']?.toString() ?? '');
-    final awayKey = TeamNormalizer.key(event['strAwayTeam']?.toString() ?? '');
-
-    if (homeKey.isEmpty || awayKey.isEmpty) {
-      return null;
-    }
-
-    final eventUtc = _apiEventDateTimeUtc(event);
-    final eventDateUtc = eventUtc == null
-        ? _eventDateOnly(event)
-        : _dateOnly(eventUtc);
-    final eventDateLocal = event['dateEventLocal']?.toString();
-
-    Map<String, dynamic>? bestMatch;
-    int bestDiffMinutes = 999999;
-
-    for (final jogo in jogos) {
-      if (_isApiGeneratedJogo(jogo)) {
-        continue;
-      }
-
-      final mandanteKey = TeamNormalizer.key(
-        jogo['mandantePrevisto']?.toString() ?? '',
-      );
-      final visitanteKey = TeamNormalizer.key(
-        jogo['visitantePrevisto']?.toString() ?? '',
-      );
-
-      final sameOrder = mandanteKey == homeKey && visitanteKey == awayKey;
-      final invertedOrder = mandanteKey == awayKey && visitanteKey == homeKey;
-
-      if (!sameOrder && !invertedOrder) {
-        continue;
-      }
-
-      final jogoUtc = _jogoDateTimeUtc(jogo);
-
-      if (eventUtc != null && jogoUtc != null) {
-        final diff = eventUtc.difference(jogoUtc).inMinutes.abs();
-
-        if (diff < bestDiffMinutes) {
-          bestDiffMinutes = diff;
-          bestMatch = jogo;
-        }
-
-        continue;
-      }
-
-      final jogoDate = _jogoDateOnly(jogo);
-
-      final dateMatches =
-          jogoDate != null &&
-          (jogoDate == eventDateUtc || jogoDate == eventDateLocal);
-
-      if (dateMatches) {
-        return jogo;
-      }
-    }
-
-    if (bestMatch != null && bestDiffMinutes <= 30 * 60) {
-      return bestMatch;
-    }
-
-    return null;
-  }
-
-  bool _isApiGeneratedJogo(Map<String, dynamic> jogo) {
-    final origem = jogo['origem']?.toString();
-    final jogoId = jogo['jogoId']?.toString() ?? '';
-
-    return origem == 'api' || jogoId.startsWith('gapi');
-  }
-
-  void _desvincularIdEvent(Map<String, dynamic> jogo, String idEvent) {
-    if (jogo['idEventAtual']?.toString() == idEvent) {
-      jogo['idEventAtual'] = null;
-    }
-
-    jogo['temHistoricoApi'] = false;
-    jogo['temResultadoApi'] = false;
-  }
-
-  Map<String, dynamic> _createJogoFromApiEvent({
-    required Map<String, dynamic> event,
-    required int ordem,
-  }) {
-    final idEvent = event['idEvent']?.toString() ?? '';
-    final home = event['strHomeTeam']?.toString() ?? '';
-    final away = event['strAwayTeam']?.toString() ?? '';
-    final timestampUtc = _apiEventDateTimeUtc(event);
-
-    final group = _extractGroup(event);
-    final faseTipo = group == null ? 'desconhecido' : 'fase_de_grupos';
-
-    return {
-      'jogoId': 'gapi$idEvent',
-      'ordem': ordem,
-      'fase': group == null ? 'API' : 'Grupo $group',
-      'faseTipo': faseTipo,
-      'grupo': group,
-      'rodada': _asInt(event['intRound']),
-      'dataLocal': timestampUtc?.toLocal().toIso8601String(),
-      'dataUtc': timestampUtc?.toUtc().toIso8601String(),
-      'horaLocal': timestampUtc == null
-          ? null
-          : _formatTime(timestampUtc.toLocal()),
-      'statusJogo': _statusCanonicoFromEvent(event),
-      'mandantePrevisto': home,
-      'visitantePrevisto': away,
-      'idEventAtual': idEvent,
-      'temHistoricoApi': true,
-      'temResultadoApi': _eventHasScore(event),
-      'origem': 'api',
-    };
-  }
-
-  void _updateJogoFromApiEvent({
-    required Map<String, dynamic> jogo,
-    required Map<String, dynamic> event,
-  }) {
-    final idEvent = event['idEvent']?.toString();
-
-    if (idEvent != null && idEvent.isNotEmpty) {
-      jogo['idEventAtual'] = idEvent;
-    }
-
-    jogo['temHistoricoApi'] = true;
-    jogo['temResultadoApi'] = _eventHasScore(event);
-    jogo['statusJogo'] = _statusCanonicoFromEvent(event);
-
-    final timestampUtc = _apiEventDateTimeUtc(event);
-
-    if (timestampUtc != null) {
-      jogo['dataUtc'] = timestampUtc.toUtc().toIso8601String();
-      jogo['dataLocal'] = timestampUtc.toLocal().toIso8601String();
-      jogo['horaLocal'] = _formatTime(timestampUtc.toLocal());
-    }
-
-    final group = _extractGroup(event);
-
-    if ((jogo['grupo'] == null || jogo['grupo'].toString().isEmpty) &&
-        group != null) {
-      jogo['grupo'] = group;
-    }
-
-    if ((jogo['faseTipo'] == null || jogo['faseTipo'].toString().isEmpty) &&
-        group != null) {
-      jogo['faseTipo'] = 'fase_de_grupos';
-    }
-  }
-
-  Map<String, dynamic> _buildHistoricoEntry({
-    required Map<String, dynamic> event,
-    required Map<String, dynamic> jogo,
-  }) {
-    final homeScore = _asInt(event['intHomeScore']);
-    final awayScore = _asInt(event['intAwayScore']);
-    final temResultado = homeScore != null && awayScore != null;
-    final statusCanonico = _statusCanonicoFromEvent(event);
-    final timestampUtc = _apiEventDateTimeUtc(event);
-
-    return {
-      ...event,
-      'jogoId': jogo['jogoId'],
-      'idEvent': event['idEvent']?.toString(),
-      'strEvent': event['strEvent'],
-      'strHomeTeam': event['strHomeTeam'],
-      'strAwayTeam': event['strAwayTeam'],
-      'intHomeScore': homeScore,
-      'intAwayScore': awayScore,
-      'dateEvent': event['dateEvent'],
-      'dateEventLocal': event['dateEventLocal'],
-      'strTime': event['strTime'],
-      'strTimeLocal': event['strTimeLocal'],
-      'strTimestamp': event['strTimestamp'],
-      'strVenue': event['strVenue'],
-      'strCity': event['strCity'],
-      'strCountry': event['strCountry'],
-      'strStatus': event['strStatus'],
-      'eventTimeGMT': timestampUtc?.toUtc().toIso8601String(),
-      'temporalStatus': statusCanonico,
-      'faseTipo': jogo['faseTipo'],
-      'grupo': jogo['grupo'],
-      'statusJogoCanonico': statusCanonico,
-      'ordemBolao': jogo['ordem'],
-      'mandantePrevisto': jogo['mandantePrevisto'],
-      'visitantePrevisto': jogo['visitantePrevisto'],
-      'temResultado': temResultado,
-    };
-  }
-
-  void _recalcularTimesParticipantes({
-    required List<Map<String, dynamic>> jogos,
-    required List<Map<String, dynamic>> historico,
-    required List<Map<String, dynamic>> times,
-  }) {
-    final historicoPorJogoId = <String, Map<String, dynamic>>{
-      for (final partida in historico)
-        if (partida['jogoId'] != null) partida['jogoId'].toString(): partida,
+    final teamByKey = <String, Map<String, dynamic>>{
+      for (final team in teams)
+        TeamNormalizer.key(
+          team['nome']?.toString() ?? '',
+        ): team,
     };
 
-    final timesPorKey = <String, Map<String, dynamic>>{
-      for (final time in times)
-        TeamNormalizer.key(time['nome']?.toString() ?? ''): time,
-    };
-
-    for (final time in times) {
-      time['estatisticasGrupo'] = {
+    for (final team in teams) {
+      team['jogosIds'] = <String>[];
+      team['rankingGrupo'] = null;
+      team['rankingGrupoProvisorio'] = true;
+      team['estatisticasGrupo'] = {
         'pontos': 0,
         'jogos': 0,
         'vitorias': 0,
@@ -701,304 +1261,516 @@ class SportsDbJsonUpdater {
         'cartoesVermelhosIndiretos': null,
         'cartoesAmareloVermelho': null,
         'observacaoDesempate':
-            'Ranking provisório calculado sem dados de fair play.',
+            'Classificação provisória sem dados de fair play.',
       };
-      time['rankingGrupo'] = null;
-      time['rankingGrupoProvisorio'] = true;
     }
 
-    for (final jogo in jogos) {
-      if (jogo['faseTipo'] != 'fase_de_grupos') {
+    for (final game in games) {
+      if (game['faseTipo'] != 'fase_de_grupos') {
         continue;
       }
 
-      final jogoId = jogo['jogoId']?.toString();
+      final homeReference =
+          _asStringMap(game['mandanteReferencia']);
+      final awayReference =
+          _asStringMap(game['visitanteReferencia']);
 
-      if (jogoId == null) {
+      final homeKey =
+          homeReference['timeKey']?.toString();
+      final awayKey =
+          awayReference['timeKey']?.toString();
+
+      final homeTeam =
+          homeKey == null ? null : teamByKey[homeKey];
+      final awayTeam =
+          awayKey == null ? null : teamByKey[awayKey];
+
+      if (homeTeam == null || awayTeam == null) {
         continue;
       }
 
-      final partida = historicoPorJogoId[jogoId];
+      (homeTeam['jogosIds'] as List)
+          .add(game['jogoId']);
+      (awayTeam['jogosIds'] as List)
+          .add(game['jogoId']);
 
-      if (partida == null) {
+      if (game['resultadoFinal'] != true) {
         continue;
       }
 
-      final homeScore = _asInt(partida['intHomeScore']);
-      final awayScore = _asInt(partida['intAwayScore']);
+      final homeScore =
+          _asInt(game['golsMandante']);
+      final awayScore =
+          _asInt(game['golsVisitante']);
 
       if (homeScore == null || awayScore == null) {
         continue;
       }
 
-      final mandante =
-          timesPorKey[TeamNormalizer.key(
-            jogo['mandantePrevisto']?.toString() ?? '',
-          )];
-      final visitante =
-          timesPorKey[TeamNormalizer.key(
-            jogo['visitantePrevisto']?.toString() ?? '',
-          )];
-
-      if (mandante == null || visitante == null) {
-        continue;
-      }
-
-      _aplicarResultadoGrupo(
-        time: mandante,
-        golsPro: homeScore,
-        golsContra: awayScore,
+      _applyGroupResult(
+        team: homeTeam,
+        goalsFor: homeScore,
+        goalsAgainst: awayScore,
       );
-
-      _aplicarResultadoGrupo(
-        time: visitante,
-        golsPro: awayScore,
-        golsContra: homeScore,
+      _applyGroupResult(
+        team: awayTeam,
+        goalsFor: awayScore,
+        goalsAgainst: homeScore,
       );
     }
 
-    final grupos = <String, List<Map<String, dynamic>>>{};
+    final teamsByGroup =
+        <String, List<Map<String, dynamic>>>{};
 
-    for (final time in times) {
-      final grupo = time['grupo']?.toString() ?? '';
-      grupos.putIfAbsent(grupo, () => []).add(time);
+    for (final team in teams) {
+      final group = team['grupo']?.toString() ?? '';
+
+      teamsByGroup
+          .putIfAbsent(group, () => [])
+          .add(team);
     }
 
-    for (final grupoTimes in grupos.values) {
-      grupoTimes.sort((a, b) {
-        final statsA = Map<String, dynamic>.from(a['estatisticasGrupo'] as Map);
-        final statsB = Map<String, dynamic>.from(b['estatisticasGrupo'] as Map);
+    for (final groupTeams in teamsByGroup.values) {
+      groupTeams.sort((a, b) {
+        final statsA =
+            _asStringMap(a['estatisticasGrupo']);
+        final statsB =
+            _asStringMap(b['estatisticasGrupo']);
 
-        final pontos = (_asInt(statsB['pontos']) ?? 0).compareTo(
-          _asInt(statsA['pontos']) ?? 0,
-        );
-        if (pontos != 0) return pontos;
+        final points = (_asInt(statsB['pontos']) ?? 0)
+            .compareTo(_asInt(statsA['pontos']) ?? 0);
 
-        final saldo = (_asInt(statsB['saldoGols']) ?? 0).compareTo(
+        if (points != 0) {
+          return points;
+        }
+
+        final goalDifference =
+            (_asInt(statsB['saldoGols']) ?? 0)
+                .compareTo(
           _asInt(statsA['saldoGols']) ?? 0,
         );
-        if (saldo != 0) return saldo;
 
-        final golsPro = (_asInt(statsB['golsPro']) ?? 0).compareTo(
+        if (goalDifference != 0) {
+          return goalDifference;
+        }
+
+        final goalsFor =
+            (_asInt(statsB['golsPro']) ?? 0)
+                .compareTo(
           _asInt(statsA['golsPro']) ?? 0,
         );
-        if (golsPro != 0) return golsPro;
 
-        return (a['nome']?.toString() ?? '').compareTo(
+        if (goalsFor != 0) {
+          return goalsFor;
+        }
+
+        return (a['nome']?.toString() ?? '')
+            .compareTo(
           b['nome']?.toString() ?? '',
         );
       });
 
-      for (var index = 0; index < grupoTimes.length; index++) {
-        grupoTimes[index]['rankingGrupo'] = index + 1;
+      for (var index = 0;
+          index < groupTeams.length;
+          index++) {
+        groupTeams[index]['rankingGrupo'] = index + 1;
       }
     }
+
+    teams.sort((a, b) {
+      final groupComparison =
+          (a['grupo']?.toString() ?? '').compareTo(
+        b['grupo']?.toString() ?? '',
+      );
+
+      if (groupComparison != 0) {
+        return groupComparison;
+      }
+
+      return (_asInt(a['rankingGrupo']) ?? 999)
+          .compareTo(
+        _asInt(b['rankingGrupo']) ?? 999,
+      );
+    });
   }
 
-  void _aplicarResultadoGrupo({
-    required Map<String, dynamic> time,
-    required int golsPro,
-    required int golsContra,
+  void _applyGroupResult({
+    required Map<String, dynamic> team,
+    required int goalsFor,
+    required int goalsAgainst,
   }) {
-    final stats = Map<String, dynamic>.from(time['estatisticasGrupo'] as Map);
+    final stats =
+        _asStringMap(team['estatisticasGrupo']);
 
-    stats['jogos'] = (_asInt(stats['jogos']) ?? 0) + 1;
-    stats['golsPro'] = (_asInt(stats['golsPro']) ?? 0) + golsPro;
-    stats['golsContra'] = (_asInt(stats['golsContra']) ?? 0) + golsContra;
+    stats['jogos'] =
+        (_asInt(stats['jogos']) ?? 0) + 1;
+    stats['golsPro'] =
+        (_asInt(stats['golsPro']) ?? 0) + goalsFor;
+    stats['golsContra'] =
+        (_asInt(stats['golsContra']) ?? 0) +
+            goalsAgainst;
     stats['saldoGols'] =
-        (_asInt(stats['golsPro']) ?? 0) - (_asInt(stats['golsContra']) ?? 0);
+        (_asInt(stats['golsPro']) ?? 0) -
+            (_asInt(stats['golsContra']) ?? 0);
 
-    if (golsPro > golsContra) {
-      stats['vitorias'] = (_asInt(stats['vitorias']) ?? 0) + 1;
-      stats['pontos'] = (_asInt(stats['pontos']) ?? 0) + 3;
-    } else if (golsPro == golsContra) {
-      stats['empates'] = (_asInt(stats['empates']) ?? 0) + 1;
-      stats['pontos'] = (_asInt(stats['pontos']) ?? 0) + 1;
+    if (goalsFor > goalsAgainst) {
+      stats['vitorias'] =
+          (_asInt(stats['vitorias']) ?? 0) + 1;
+      stats['pontos'] =
+          (_asInt(stats['pontos']) ?? 0) + 3;
+    } else if (goalsFor == goalsAgainst) {
+      stats['empates'] =
+          (_asInt(stats['empates']) ?? 0) + 1;
+      stats['pontos'] =
+          (_asInt(stats['pontos']) ?? 0) + 1;
     } else {
-      stats['derrotas'] = (_asInt(stats['derrotas']) ?? 0) + 1;
+      stats['derrotas'] =
+          (_asInt(stats['derrotas']) ?? 0) + 1;
     }
 
-    time['estatisticasGrupo'] = stats;
+    team['estatisticasGrupo'] = stats;
   }
 
-  void _printJogosEncerradosSemResultado(List<Map<String, dynamic>> jogos) {
-    final pendentes = jogos.where((jogo) {
-      return jogo['statusJogo'] == 'encerrado' &&
-          jogo['temResultadoApi'] != true;
-    }).toList();
-
-    if (pendentes.isEmpty) {
-      stdout.writeln('Nenhum jogo encerrado sem resultado API.');
-      return;
+  Future<void> _validate({
+    required List<Map<String, dynamic>> games,
+    required List<Map<String, dynamic>> history,
+    required List<Map<String, dynamic>> teams,
+  }) async {
+    if (games.length != 104) {
+      throw StateError(
+        'jogos.json deveria terminar com 104 partidas.',
+      );
     }
 
-    stdout.writeln('Jogos encerrados ainda sem resultado API:');
+    final gameIds = games
+        .map((game) => game['jogoId']?.toString())
+        .whereType<String>()
+        .toSet();
+    final matchNumbers = games
+        .map((game) => _asInt(game['matchNumber']))
+        .whereType<int>()
+        .toSet();
 
-    for (final jogo in pendentes) {
-      stdout.writeln(
-        '- ${jogo['mandantePrevisto']} x ${jogo['visitantePrevisto']} | ${jogo['dataLocal']} | ${jogo['jogoId']}',
+    if (gameIds.length != 104 ||
+        matchNumbers.length != 104) {
+      throw StateError(
+        'Há jogoId ou matchNumber duplicado.',
+      );
+    }
+
+    for (var matchNumber = 1;
+        matchNumber <= 104;
+        matchNumber++) {
+      if (!matchNumbers.contains(matchNumber)) {
+        throw StateError(
+          'matchNumber ausente: $matchNumber.',
+        );
+      }
+    }
+
+    final invalidHistory = history.where(
+      (record) =>
+          !gameIds.contains(
+            record['jogoId']?.toString(),
+          ),
+    );
+
+    if (invalidHistory.isNotEmpty) {
+      throw StateError(
+        '${invalidHistory.length} registros históricos '
+        'apontam para jogos inexistentes.',
+      );
+    }
+
+    if (_guessesFile.existsSync()) {
+      final guesses = await _readJsonList(_guessesFile);
+      final invalidGuesses = guesses.where(
+        (guess) =>
+            !gameIds.contains(
+              guess['jogoId']?.toString(),
+            ),
+      );
+
+      if (invalidGuesses.isNotEmpty) {
+        throw StateError(
+          '${invalidGuesses.length} palpites apontam '
+          'para jogos inexistentes.',
+        );
+      }
+    }
+
+    if (teams.length != 48) {
+      throw StateError(
+        'times_participantes.json deveria conter '
+        '48 seleções.',
+      );
+    }
+
+    final teamsWithWrongGameCount = teams.where(
+      (team) =>
+          team['jogosIds'] is! List ||
+          (team['jogosIds'] as List).length != 3,
+    );
+
+    if (teamsWithWrongGameCount.isNotEmpty) {
+      throw StateError(
+        '${teamsWithWrongGameCount.length} seleções '
+        'não possuem exatamente 3 jogos de grupo.',
       );
     }
   }
 
-  bool _eventHasScore(Map<String, dynamic> event) {
-    return _asInt(event['intHomeScore']) != null &&
-        _asInt(event['intAwayScore']) != null;
+  void _printSummary({
+    required List<Map<String, dynamic>> games,
+    required List<Map<String, dynamic>> history,
+    required List<Map<String, dynamic>> sportsDbEvents,
+    required Map<int, Map<String, dynamic>>
+        sportsDbByMatchNumber,
+    required Map<int, Map<String, dynamic>>
+        fixtureDownloadByMatchNumber,
+  }) {
+    final finalResults = games.where(
+      (game) => game['resultadoFinal'] == true,
+    );
+    final fixtureFallbackResults = games.where(
+      (game) =>
+          game['fonteResultado'] == 'fixturedownload',
+    );
+
+    stdout.writeln('');
+    stdout.writeln('Atualização concluída.');
+    stdout.writeln('- Jogos canônicos: ${games.length}');
+    stdout.writeln(
+      '- Registros SportsDB preservados: ${history.length}',
+    );
+    stdout.writeln(
+      '- Eventos SportsDB disponíveis: '
+      '${sportsDbEvents.length}',
+    );
+    stdout.writeln(
+      '- Eventos SportsDB mapeados: '
+      '${sportsDbByMatchNumber.length}',
+    );
+    stdout.writeln(
+      '- Partidas FixtureDownload disponíveis: '
+      '${fixtureDownloadByMatchNumber.length}',
+    );
+    stdout.writeln(
+      '- Resultados finais consolidados: '
+      '${finalResults.length}',
+    );
+    stdout.writeln(
+      '- Resultados usando fallback FixtureDownload: '
+      '${fixtureFallbackResults.length}',
+    );
+
+    final withoutResult = games.where(
+      (game) =>
+          game['statusJogo'] == 'encerrado' &&
+          game['resultadoFinal'] != true,
+    );
+
+    if (withoutResult.isNotEmpty) {
+      stdout.writeln(
+        'Partidas encerradas ainda sem resultado final:',
+      );
+
+      for (final game in withoutResult) {
+        stdout.writeln(
+          '- Jogo ${game['matchNumber']}: '
+          '${game['mandantePrevisto']} x '
+          '${game['visitantePrevisto']}',
+        );
+      }
+    }
   }
 
-  String _statusCanonicoFromEvent(Map<String, dynamic> event) {
-    final status = event['strStatus']?.toString().toUpperCase().trim();
-
-    if (status == 'FT' ||
-        status == 'AET' ||
-        status == 'PEN' ||
-        status == 'FINISHED') {
+  String _canonicalStatus({
+    required DateTime kickoffUtc,
+    required Map<String, dynamic>? sportsDb,
+    required bool resultFinal,
+  }) {
+    if (resultFinal) {
       return 'encerrado';
     }
 
-    if (status == 'LIVE' ||
-        status == '1H' ||
-        status == '2H' ||
-        status == 'HT') {
+    final sportsStatus =
+        sportsDb?['strStatus']?.toString().toUpperCase();
+
+    if ({
+      'LIVE',
+      '1H',
+      '2H',
+      'HT',
+    }.contains(sportsStatus)) {
       return 'em_andamento';
     }
 
-    if (_eventHasScore(event)) {
-      return 'encerrado';
-    }
+    final difference = DateTime.now()
+        .toUtc()
+        .difference(kickoffUtc)
+        .inMinutes;
 
-    final timestampUtc = _apiEventDateTimeUtc(event);
-
-    if (timestampUtc == null) {
+    if (difference < 0) {
       return 'agendado';
     }
 
-    final nowUtc = DateTime.now().toUtc();
-
-    if (nowUtc.isBefore(timestampUtc)) {
-      return 'agendado';
-    }
-
-    if (nowUtc.difference(timestampUtc).inMinutes <= 130) {
+    if (difference <= 180) {
       return 'em_andamento';
     }
 
     return 'encerrado';
   }
 
-  DateTime? _apiEventDateTimeUtc(Map<String, dynamic> event) {
-    final value = event['strTimestamp']?.toString();
+  bool _sportsDbIsFinal(Map<String, dynamic> event) {
+    final status =
+        event['strStatus']?.toString().toUpperCase();
 
+    return _hasScore(event) &&
+        {
+          'FT',
+          'AET',
+          'PEN',
+          'FINISHED',
+        }.contains(status);
+  }
+
+  bool _hasScore(Map<String, dynamic> event) {
+    return _asInt(event['intHomeScore']) != null &&
+        _asInt(event['intAwayScore']) != null;
+  }
+
+  bool _isApiGeneratedGame(Map<String, dynamic> game) {
+    final gameId = game['jogoId']?.toString() ?? '';
+
+    return game['origem'] == 'api' ||
+        gameId.startsWith('gapi');
+  }
+
+  String _pairKey(String first, String second) {
+    final values = [
+      TeamNormalizer.key(first),
+      TeamNormalizer.key(second),
+    ]..sort();
+
+    return '${values[0]}|${values[1]}';
+  }
+
+  String _stageLabel(String stage) {
+    switch (stage) {
+      case 'round-of-32':
+        return 'Fase de 32';
+      case 'round-of-16':
+        return 'Oitavas de final';
+      case 'quarter-finals':
+        return 'Quartas de final';
+      case 'semi-finals':
+        return 'Semifinal';
+      case 'third-place':
+        return 'Disputa de 3º lugar';
+      case 'final':
+        return 'Final';
+      default:
+        return stage;
+    }
+  }
+
+  int _roundNumber(String stage, int? groupRound) {
+    switch (stage) {
+      case 'group-stage':
+        return groupRound ?? 0;
+      case 'round-of-32':
+        return 4;
+      case 'round-of-16':
+        return 5;
+      case 'quarter-finals':
+        return 6;
+      case 'semi-finals':
+        return 7;
+      case 'third-place':
+      case 'final':
+        return 8;
+      default:
+        return 0;
+    }
+  }
+
+  String? _winner(int? homeScore, int? awayScore) {
+    if (homeScore == null || awayScore == null) {
+      return null;
+    }
+
+    if (homeScore > awayScore) {
+      return 'mandante';
+    }
+
+    if (awayScore > homeScore) {
+      return 'visitante';
+    }
+
+    return 'empate';
+  }
+
+  DateTime? _parseUtc(String? value) {
     if (value == null || value.trim().isEmpty) {
       return null;
     }
 
-    final normalized = value.endsWith('Z') || value.contains('+')
-        ? value
-        : '${value}Z';
+    return DateTime.tryParse(value)?.toUtc();
+  }
+
+  DateTime? _parseSportsDbUtc(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+
+    final text = value.trim();
+    final hasOffset = text.endsWith('Z') ||
+        RegExp(r'[+-]\d{2}:\d{2}$').hasMatch(text);
+    final normalized = hasOffset ? text : '${text}Z';
 
     return DateTime.tryParse(normalized)?.toUtc();
   }
 
-  DateTime? _jogoDateTimeUtc(Map<String, dynamic> jogo) {
-    final dataUtc = DateTime.tryParse(jogo['dataUtc']?.toString() ?? '');
-
-    if (dataUtc != null) {
-      return dataUtc.toUtc();
-    }
-
-    final dataLocal = DateTime.tryParse(jogo['dataLocal']?.toString() ?? '');
-
-    if (dataLocal != null) {
-      return dataLocal.toUtc();
-    }
-
-    return null;
+  String _formatUtc(DateTime value) {
+    return value
+        .toUtc()
+        .toIso8601String()
+        .split('.')
+        .first
+        .replaceFirst(RegExp(r'$'), 'Z');
   }
 
-  String? _eventDateOnly(Map<String, dynamic> event) {
-    final dateEvent = event['dateEvent']?.toString();
+  String _formatBrasilia(DateTime utc) {
+    final local =
+        utc.toUtc().subtract(const Duration(hours: 3));
 
-    if (dateEvent != null && dateEvent.length >= 10) {
-      return dateEvent.substring(0, 10);
-    }
-
-    final timestampUtc = _apiEventDateTimeUtc(event);
-
-    if (timestampUtc == null) {
-      return null;
-    }
-
-    return _dateOnly(timestampUtc);
+    return '${local.year.toString().padLeft(4, '0')}-'
+        '${local.month.toString().padLeft(2, '0')}-'
+        '${local.day.toString().padLeft(2, '0')}T'
+        '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}:'
+        '${local.second.toString().padLeft(2, '0')}-03:00';
   }
 
-  String? _jogoDateOnly(Map<String, dynamic> jogo) {
-    final dataUtc = _jogoDateTimeUtc(jogo);
-
-    if (dataUtc == null) {
-      return null;
-    }
-
-    return _dateOnly(dataUtc);
+  String _formatTime(DateTime value) {
+    return '${value.hour.toString().padLeft(2, '0')}:'
+        '${value.minute.toString().padLeft(2, '0')}';
   }
 
-  String? _extractGroup(Map<String, dynamic> event) {
-    final direct = event['strGroup']?.toString().trim();
-
-    if (direct != null &&
-        RegExp(r'^[A-L]$', caseSensitive: false).hasMatch(direct)) {
-      return direct.toUpperCase();
-    }
-
-    final candidates = [
-      event['strGroup'],
-      event['strRound'],
-      event['strDescriptionEN'],
-      event['strEvent'],
-    ];
-
-    for (final candidate in candidates) {
-      final text = candidate?.toString();
-
-      if (text == null) {
-        continue;
-      }
-
-      final match = RegExp(
-        r'Group\s+([A-L])',
-        caseSensitive: false,
-      ).firstMatch(text);
-
-      if (match != null) {
-        return match.group(1)?.toUpperCase();
-      }
-    }
-
-    return null;
+  String _dateOnly(DateTime value) {
+    return '${value.year.toString().padLeft(4, '0')}-'
+        '${value.month.toString().padLeft(2, '0')}-'
+        '${value.day.toString().padLeft(2, '0')}';
   }
 
-  String _dateOnly(DateTime date) {
-    final year = date.year.toString().padLeft(4, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-
-    return '$year-$month-$day';
-  }
-
-  String _formatTime(DateTime date) {
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-
-    return '$hour:$minute';
-  }
-
-  String _timestampForPath(DateTime date) {
-    final year = date.year.toString().padLeft(4, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    final second = date.second.toString().padLeft(2, '0');
+  String _timestampForPath(DateTime value) {
+    final year = value.year.toString().padLeft(4, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    final hour = value.hour.toString().padLeft(2, '0');
+    final minute = value.minute.toString().padLeft(2, '0');
+    final second = value.second.toString().padLeft(2, '0');
 
     return '$year$month${day}_$hour$minute$second';
   }
@@ -1012,36 +1784,50 @@ class SportsDbJsonUpdater {
       return value;
     }
 
-    if (value is double) {
-      return value.toInt();
-    }
-
     if (value is num) {
       return value.toInt();
     }
 
-    final text = value.toString().trim();
+    return int.tryParse(value.toString());
+  }
 
-    if (text.isEmpty) {
+  String? _nullableString(dynamic value) {
+    if (value == null) {
       return null;
     }
 
-    return int.tryParse(text);
+    final text = value.toString().trim();
+
+    return text.isEmpty ? null : text;
+  }
+
+  Map<String, dynamic> _asStringMap(dynamic value) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+
+    if (value is Map) {
+      return Map<String, dynamic>.from(value);
+    }
+
+    return <String, dynamic>{};
   }
 }
 
-class MergeResult {
-  int eventosProcessados = 0;
-  int eventosIgnoradosSemId = 0;
+class _ResultData {
+  final int? homeScore;
+  final int? awayScore;
+  final bool resultFinal;
+  final String? source;
 
-  int historicoAtualizadoPorIdEvent = 0;
-  int historicoAtualizadoPorJogoId = 0;
-  int historicoInserido = 0;
+  const _ResultData({
+    required this.homeScore,
+    required this.awayScore,
+    required this.resultFinal,
+    required this.source,
+  });
 
-  int jogosAtualizados = 0;
-  int jogosCriados = 0;
-  int duplicatasApiRemovidas = 0;
-
-  int eventosComMatchCanonico = 0;
-  int eventosSemMatchCanonico = 0;
+  bool get hasScore {
+    return homeScore != null && awayScore != null;
+  }
 }

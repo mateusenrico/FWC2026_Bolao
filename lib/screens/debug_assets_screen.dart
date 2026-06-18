@@ -21,12 +21,22 @@ class _DebugAssetsScreenState extends State<DebugAssetsScreen> {
   Future<String> _carregarDiagnostico() async {
     final data = await AssetLoader.carregarBolaoData();
 
-    final palpitesCompletos = data.palpites.where((palpite) => palpite.isCompleto).length;
-    final palpitesVazios = data.palpites.where((palpite) => palpite.isVazio).length;
-    final palpitesIncompletos = data.palpites.where((palpite) => palpite.isIncompleto).length;
+    final palpitesCompletos = data.palpites
+        .where((palpite) => palpite.isCompleto)
+        .length;
+    final palpitesVazios = data.palpites
+        .where((palpite) => palpite.isVazio)
+        .length;
+    final palpitesIncompletos = data.palpites
+        .where((palpite) => palpite.isIncompleto)
+        .length;
 
-    final jogosComHistorico = data.jogos.where((jogo) => jogo.temHistoricoApi).length;
-    final jogosComResultado = data.jogos.where((jogo) => jogo.temResultadoApi).length;
+    final jogosComHistorico = data.jogos
+        .where((jogo) => jogo.temHistoricoApi)
+        .length;
+    final jogosComResultado = data.jogos
+        .where((jogo) => jogo.temResultadoApi)
+        .length;
 
     return '''
 Assets carregados com sucesso.
@@ -58,16 +68,12 @@ ${data.palpites.isEmpty ? '-' : data.palpites.first.placarTexto}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Debug assets'),
-      ),
+      appBar: AppBar(title: const Text('Debug assets')),
       body: FutureBuilder<String>(
         future: _diagnosticoFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {

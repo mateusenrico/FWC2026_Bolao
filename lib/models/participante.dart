@@ -30,8 +30,14 @@ class Participante {
       nome: JsonUtils.stringValue(json, 'nome'),
       jogosPalpitados: JsonUtils.intValue(json, 'jogosPalpitados'),
       jogosSemPalpite: JsonUtils.intValue(json, 'jogosSemPalpite'),
-      jogosPalpitadosFaseGrupos: JsonUtils.intValue(json, 'jogosPalpitadosFaseGrupos'),
-      jogosSemPalpiteFaseGrupos: JsonUtils.intValue(json, 'jogosSemPalpiteFaseGrupos'),
+      jogosPalpitadosFaseGrupos: JsonUtils.intValue(
+        json,
+        'jogosPalpitadosFaseGrupos',
+      ),
+      jogosSemPalpiteFaseGrupos: JsonUtils.intValue(
+        json,
+        'jogosSemPalpiteFaseGrupos',
+      ),
       totalJogosPrevistos: JsonUtils.intValue(json, 'totalJogosPrevistos'),
       totalJogosFaseGrupos: JsonUtils.intValue(json, 'totalJogosFaseGrupos'),
     );

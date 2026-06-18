@@ -12,69 +12,50 @@ class SportsDbApiService {
 
   const SportsDbApiService({this.leagueId = '4429', this.season = '2026'});
 
-  Future<List<SportsDbEvent>> fetchSeasonEvents() async {
-    final uri = Uri.parse('$baseUrl/eventsseason.php?id=$leagueId&s=$season');
-    return _fetchEvents(uri);
-  }
+  Future<List<SportsDbEvent>> fetchRefreshEvents() async {
+    final nowUtc = DateTime.now().toUtc();
 
-  Future<List<SportsDbEvent>> fetchNextLeagueEvents() async {
-    final uri = Uri.parse('$baseUrl/eventsnextleague.php?id=$leagueId');
-    return _fetchEvents(uri);
-  }
+    final uris = <Uri>[
+      Uri.parse('$baseUrl/eventsseason.php?id=$leagueId&s=$season'),
+      Uri.parse('$baseUrl/eventsnextleague.php?id=$leagueId'),
+      Uri.parse('$baseUrl/eventspastleague.php?id=$leagueId'),
+    ];
 
-  Future<List<SportsDbEvent>> fetchPastLeagueEvents() async {
-    final uri = Uri.parse('$baseUrl/eventspastleague.php?id=$leagueId');
-    return _fetchEvents(uri);
-  }
-
-  Future<List<SportsDbEvent>> fetchDayEvents(DateTime date) async {
-    final dateText = _dateOnly(date);
-    final uri = Uri.parse('$baseUrl/eventsday.php?d=$dateText&s=Soccer');
-    final events = await _fetchEvents(uri);
-
-    return events
-        .where((event) => event.idLeague == leagueId)
-        .toList(growable: false);
-  }
-
-  Future<List<SportsDbEvent>> fetchDayScan({
-    DateTime? start,
-    DateTime? end,
-  }) async {
-    final startDate = start ?? DateTime(2026, 6, 11);
-    final endDate = end ?? DateTime(2026, 7, 19);
-
-    final allEvents = <SportsDbEvent>[];
-
-    var current = DateTime(startDate.year, startDate.month, startDate.day);
-    final last = DateTime(endDate.year, endDate.month, endDate.day);
-
-    while (!current.isAfter(last)) {
-      final events = await fetchDayEvents(current);
-      allEvents.addAll(events);
-      current = current.add(const Duration(days: 1));
+    for (var offset = -3; offset <= 1; offset++) {
+      final date = nowUtc.add(Duration(days: offset));
+      uris.add(
+        Uri.parse(
+          '$baseUrl/eventsday.php'
+          '?d=${_dateOnly(date)}&s=Soccer',
+        ),
+      );
     }
 
-    return allEvents;
-  }
-
-  Future<List<SportsDbEvent>> fetchAllCoreEvents() async {
-    final allEvents = <SportsDbEvent>[
-      ...await fetchSeasonEvents(),
-      ...await fetchNextLeagueEvents(),
-      ...await fetchPastLeagueEvents(),
-      ...await fetchDayScan(),
-    ];
+    final responses = await Future.wait(uris.map(_fetchEventsSafe));
 
     final byId = <String, SportsDbEvent>{};
 
-    for (final event in allEvents) {
-      if (event.idEvent.isNotEmpty) {
-        byId[event.idEvent] = event;
+    for (final events in responses) {
+      for (final event in events) {
+        if (event.idLeague == leagueId && event.idEvent.isNotEmpty) {
+          byId[event.idEvent] = event;
+        }
       }
     }
 
     return byId.values.toList(growable: false);
+  }
+
+  Future<List<SportsDbEvent>> fetchAllCoreEvents() {
+    return fetchRefreshEvents();
+  }
+
+  Future<List<SportsDbEvent>> _fetchEventsSafe(Uri uri) async {
+    try {
+      return await _fetchEvents(uri);
+    } catch (_) {
+      return const [];
+    }
   }
 
   Future<List<SportsDbEvent>> _fetchEvents(Uri uri) async {
@@ -85,6 +66,11 @@ class SportsDbApiService {
     }
 
     final decoded = jsonDecode(response.body);
+
+    if (decoded is! Map) {
+      return const [];
+    }
+
     final rawEvents = decoded['events'];
 
     if (rawEvents == null || rawEvents is! List) {
@@ -104,9 +90,6 @@ class SportsDbApiService {
           throw FormatException(
             'Evento inválido vindo da API: ${item.runtimeType}',
           );
-        })
-        .where((event) {
-          return event.idLeague == leagueId;
         })
         .toList(growable: false);
   }
@@ -136,10 +119,13 @@ class SportsDbEvent {
   final String? strTime;
   final String? strTimeLocal;
   final DateTime? strTimestampUtc;
+
   final String? strVenue;
   final String? strCity;
   final String? strCountry;
   final String? strStatus;
+  final String? strGroup;
+  final int? intRound;
 
   const SportsDbEvent({
     required this.idEvent,
@@ -158,6 +144,8 @@ class SportsDbEvent {
     required this.strCity,
     required this.strCountry,
     required this.strStatus,
+    required this.strGroup,
+    required this.intRound,
   });
 
   factory SportsDbEvent.fromJson(Map<String, dynamic> json) {
@@ -178,6 +166,8 @@ class SportsDbEvent {
       strCity: _nullableString(json['strCity']),
       strCountry: _nullableString(json['strCountry']),
       strStatus: _nullableString(json['strStatus']),
+      strGroup: _nullableString(json['strGroup']),
+      intRound: _nullableInt(json['intRound']),
     );
   }
 
@@ -185,25 +175,21 @@ class SportsDbEvent {
     return intHomeScore != null && intAwayScore != null;
   }
 
+  bool get isFinal {
+    final status = strStatus?.toUpperCase().trim();
+
+    return temPlacar && {'FT', 'AET', 'PEN', 'FINISHED'}.contains(status);
+  }
+
   String get statusCanonico {
     final status = strStatus?.toUpperCase().trim();
 
-    if (status == 'FT' ||
-        status == 'AET' ||
-        status == 'PEN' ||
-        status == 'FINISHED') {
+    if ({'FT', 'AET', 'PEN', 'FINISHED'}.contains(status)) {
       return 'encerrado';
     }
 
-    if (status == 'LIVE' ||
-        status == '1H' ||
-        status == '2H' ||
-        status == 'HT') {
+    if ({'LIVE', '1H', '2H', 'HT'}.contains(status)) {
       return 'em_andamento';
-    }
-
-    if (temPlacar) {
-      return 'encerrado';
     }
 
     if (strTimestampUtc == null) {
@@ -216,7 +202,7 @@ class SportsDbEvent {
       return 'agendado';
     }
 
-    if (nowUtc.difference(strTimestampUtc!).inMinutes <= 130) {
+    if (nowUtc.difference(strTimestampUtc!).inMinutes <= 180) {
       return 'em_andamento';
     }
 
@@ -234,9 +220,10 @@ class SportsDbEvent {
       return null;
     }
 
-    final normalized = text.endsWith('Z') || text.contains('+')
-        ? text
-        : '${text}Z';
+    final hasOffset =
+        text.endsWith('Z') || RegExp(r'[+-]\d{2}:\d{2}$').hasMatch(text);
+
+    final normalized = hasOffset ? text : '${text}Z';
 
     return DateTime.tryParse(normalized)?.toUtc();
   }
@@ -248,11 +235,7 @@ class SportsDbEvent {
 
     final text = value.toString().trim();
 
-    if (text.isEmpty) {
-      return null;
-    }
-
-    return text;
+    return text.isEmpty ? null : text;
   }
 
   static int? _nullableInt(dynamic value) {
@@ -262,10 +245,6 @@ class SportsDbEvent {
 
     if (value is int) {
       return value;
-    }
-
-    if (value is double) {
-      return value.toInt();
     }
 
     if (value is num) {

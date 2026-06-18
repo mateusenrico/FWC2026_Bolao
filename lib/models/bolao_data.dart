@@ -23,6 +23,10 @@ class BolaoData {
     return {for (final jogo in jogos) jogo.jogoId: jogo};
   }
 
+  Map<int, Jogo> get jogosPorMatchNumber {
+    return {for (final jogo in jogos) jogo.matchNumber: jogo};
+  }
+
   Map<String, HistoricoPartida> get historicoPorJogoId {
     return {for (final partida in historicoPartidas) partida.jogoId: partida};
   }
@@ -36,6 +40,12 @@ class BolaoData {
 
   Map<String, TimeParticipante> get timesPorId {
     return {for (final time in timesParticipantes) time.timeId: time};
+  }
+
+  List<Jogo> get jogosOrdenados {
+    final result = [...jogos];
+    result.sort((a, b) => a.ordem.compareTo(b.ordem));
+    return result;
   }
 
   List<Palpite> palpitesDoParticipante(String participanteId) {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'screens/jogos_screen.dart';
 
 void main() {

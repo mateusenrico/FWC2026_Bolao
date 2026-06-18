@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../core/team_normalizer.dart';
 import '../models/bolao_data.dart';
-import '../models/historico_partida.dart';
 import '../models/jogo.dart';
+import '../plugins/jogos_table.dart';
 import '../services/asset_loader.dart';
 import '../services/sportsdb_api_service.dart';
 
@@ -35,29 +35,38 @@ class _JogosScreenState extends State<JogosScreen> {
 
     try {
       const service = SportsDbApiService();
+      final events = await service.fetchRefreshEvents();
 
-      final events = await service.fetchAllCoreEvents();
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         _liveEvents = events;
         _refreshMessage =
-            'API atualizada em memória: ${events.length} eventos recebidos.';
+            'SportsDB consultada: ${events.length} eventos recebidos.';
       });
     } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
       setState(() {
-        _refreshMessage = 'Erro ao atualizar API: $error';
+        _refreshMessage = 'Erro ao atualizar pela API: $error';
       });
     } finally {
-      setState(() {
-        _isRefreshing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
     }
   }
 
   Future<void> _reloadAssets() async {
     setState(() {
       _dataFuture = AssetLoader.carregarBolaoData();
-      _refreshMessage = 'Assets recarregados.';
+      _refreshMessage = 'Assets locais recarregados.';
     });
   }
 
@@ -66,8 +75,6 @@ class _JogosScreenState extends State<JogosScreen> {
     return FutureBuilder<BolaoData>(
       future: _dataFuture,
       builder: (context, snapshot) {
-        final theme = Theme.of(context);
-
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
@@ -80,7 +87,7 @@ class _JogosScreenState extends State<JogosScreen> {
             body: Padding(
               padding: const EdgeInsets.all(16),
               child: SelectableText(
-                'Erro ao carregar dados:\n\n${snapshot.error}',
+                'Erro ao carregar os dados:\n\n${snapshot.error}',
                 style: const TextStyle(color: Colors.red),
               ),
             ),
@@ -88,11 +95,11 @@ class _JogosScreenState extends State<JogosScreen> {
         }
 
         final data = snapshot.data!;
-        final rows = _buildRows(data);
+        final itens = _buildItens(data);
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Jogos'),
+            title: Text('Jogos (${itens.length})'),
             actions: [
               IconButton(
                 tooltip: 'Recarregar assets',
@@ -100,7 +107,7 @@ class _JogosScreenState extends State<JogosScreen> {
                 icon: const Icon(Icons.cached),
               ),
               IconButton(
-                tooltip: 'Atualizar pela API',
+                tooltip: 'Consultar SportsDB',
                 onPressed: _isRefreshing ? null : _refreshFromApi,
                 icon: _isRefreshing
                     ? const SizedBox(
@@ -117,48 +124,10 @@ class _JogosScreenState extends State<JogosScreen> {
             children: [
               if (_refreshMessage != null)
                 Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    _refreshMessage!,
-                    style: theme.textTheme.bodyMedium,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Text(_refreshMessage!),
                 ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(12),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text('Dia')),
-                        DataColumn(label: Text('Horário')),
-                        DataColumn(label: Text('Local')),
-                        DataColumn(label: Text('Casa')),
-                        DataColumn(label: Text('Placar')),
-                        DataColumn(label: Text('Visitante')),
-                        DataColumn(label: Text('Placar')),
-                        DataColumn(label: Text('Status')),
-                      ],
-                      rows: rows
-                          .map((row) {
-                            return DataRow(
-                              cells: [
-                                DataCell(Text(row.dia)),
-                                DataCell(Text(row.horario)),
-                                DataCell(Text(row.local)),
-                                DataCell(Text(row.timeCasa)),
-                                DataCell(Text(row.placarCasa)),
-                                DataCell(Text(row.timeVisitante)),
-                                DataCell(Text(row.placarVisitante)),
-                                DataCell(Text(row.status)),
-                              ],
-                            );
-                          })
-                          .toList(growable: false),
-                    ),
-                  ),
-                ),
-              ),
+              Expanded(child: JogosTable(itens: itens)),
             ],
           ),
         );
@@ -166,39 +135,31 @@ class _JogosScreenState extends State<JogosScreen> {
     );
   }
 
-  List<JogoTabelaRow> _buildRows(BolaoData data) {
-    final historicoPorJogoId = data.historicoPorJogoId;
-
-    final liveEventsByIdEvent = <String, SportsDbEvent>{
+  List<JogoTabelaItem> _buildItens(BolaoData data) {
+    final eventsById = <String, SportsDbEvent>{
       for (final event in _liveEvents) event.idEvent: event,
     };
 
-    final rows = data.jogos
+    final itens = data.jogos
         .map((jogo) {
-          final historico = historicoPorJogoId[jogo.jogoId];
-
-          SportsDbEvent? liveEvent;
+          SportsDbEvent? event;
 
           if (jogo.idEventAtual != null) {
-            liveEvent = liveEventsByIdEvent[jogo.idEventAtual!];
+            event = eventsById[jogo.idEventAtual!];
           }
 
-          liveEvent ??= _findLiveEventForJogo(jogo: jogo, events: _liveEvents);
+          event ??= _findEventForJogo(jogo: jogo, events: _liveEvents);
 
-          return JogoTabelaRow.fromData(
-            jogo: jogo,
-            historico: historico,
-            liveEvent: liveEvent,
-          );
+          return _toTabelaItem(jogo: jogo, event: event);
         })
         .toList(growable: false);
 
-    rows.sort((a, b) => a.ordem.compareTo(b.ordem));
+    itens.sort((a, b) => a.ordem.compareTo(b.ordem));
 
-    return rows;
+    return itens;
   }
 
-  SportsDbEvent? _findLiveEventForJogo({
+  SportsDbEvent? _findEventForJogo({
     required Jogo jogo,
     required List<SportsDbEvent> events,
   }) {
@@ -209,10 +170,8 @@ class _JogosScreenState extends State<JogosScreen> {
       return null;
     }
 
-    final jogoUtc = jogo.dataUtc?.toUtc() ?? jogo.dataLocal?.toUtc();
-
     SportsDbEvent? bestMatch;
-    int bestDiffMinutes = 999999;
+    var bestDifferenceMinutes = 999999;
 
     for (final event in events) {
       final homeKey = TeamNormalizer.key(event.strHomeTeam ?? '');
@@ -225,13 +184,15 @@ class _JogosScreenState extends State<JogosScreen> {
         continue;
       }
 
-      final eventUtc = event.strTimestampUtc;
+      if (jogo.dataUtc != null && event.strTimestampUtc != null) {
+        final difference = jogo.dataUtc!
+            .toUtc()
+            .difference(event.strTimestampUtc!)
+            .inMinutes
+            .abs();
 
-      if (jogoUtc != null && eventUtc != null) {
-        final diff = jogoUtc.difference(eventUtc).inMinutes.abs();
-
-        if (diff < bestDiffMinutes) {
-          bestDiffMinutes = diff;
+        if (difference < bestDifferenceMinutes) {
+          bestDifferenceMinutes = difference;
           bestMatch = event;
         }
       } else {
@@ -239,85 +200,63 @@ class _JogosScreenState extends State<JogosScreen> {
       }
     }
 
-    if (bestMatch != null && bestDiffMinutes <= 30 * 60) {
+    if (bestMatch == null) {
+      return null;
+    }
+
+    if (bestDifferenceMinutes == 999999 || bestDifferenceMinutes <= 36 * 60) {
       return bestMatch;
     }
 
-    return bestMatch;
+    return null;
   }
-}
 
-class JogoTabelaRow {
-  final int ordem;
-  final String dia;
-  final String horario;
-  final String local;
-  final String timeCasa;
-  final String placarCasa;
-  final String timeVisitante;
-  final String placarVisitante;
-  final String status;
-
-  const JogoTabelaRow({
-    required this.ordem,
-    required this.dia,
-    required this.horario,
-    required this.local,
-    required this.timeCasa,
-    required this.placarCasa,
-    required this.timeVisitante,
-    required this.placarVisitante,
-    required this.status,
-  });
-
-  factory JogoTabelaRow.fromData({
+  JogoTabelaItem _toTabelaItem({
     required Jogo jogo,
-    required HistoricoPartida? historico,
-    required SportsDbEvent? liveEvent,
+    required SportsDbEvent? event,
   }) {
-    final homeScore = liveEvent?.intHomeScore ?? historico?.intHomeScore;
-    final awayScore = liveEvent?.intAwayScore ?? historico?.intAwayScore;
+    var golsMandante = jogo.golsMandante;
+    var golsVisitante = jogo.golsVisitante;
+    var status = jogo.statusTexto;
 
-    final local =
-        liveEvent?.strVenue ?? historico?.raw['strVenue']?.toString() ?? '-';
+    final eventTemPlacarUtil =
+        event != null &&
+        event.temPlacar &&
+        (event.isFinal || event.statusCanonico == 'em_andamento');
 
-    final status =
-        liveEvent?.statusCanonico ??
-        historico?.statusJogoCanonico ??
-        jogo.statusJogo;
+    if (eventTemPlacarUtil) {
+      golsMandante = event.intHomeScore;
+      golsVisitante = event.intAwayScore;
+    }
 
-    return JogoTabelaRow(
+    if (event != null &&
+        (event.isFinal || event.statusCanonico == 'em_andamento')) {
+      status = _statusTexto(event.statusCanonico);
+    }
+
+    return JogoTabelaItem(
       ordem: jogo.ordem,
-      dia: _formatDate(jogo.dataLocal ?? jogo.dataUtc),
-      horario: jogo.horaLocal ?? _formatTime(jogo.dataLocal ?? jogo.dataUtc),
-      local: local,
+      dia: jogo.diaLocalTexto,
+      horario: jogo.horaLocal,
+      local: event?.strVenue ?? jogo.estadio,
       timeCasa: jogo.mandantePrevisto,
-      placarCasa: homeScore?.toString() ?? '-',
+      placarCasa: golsMandante?.toString() ?? '-',
       timeVisitante: jogo.visitantePrevisto,
-      placarVisitante: awayScore?.toString() ?? '-',
+      placarVisitante: golsVisitante?.toString() ?? '-',
       status: status,
     );
   }
 
-  static String _formatDate(DateTime? date) {
-    if (date == null) {
-      return '-';
+  String _statusTexto(String status) {
+    switch (status) {
+      case 'encerrado':
+        return 'Encerrado';
+      case 'em_andamento':
+        return 'Em andamento';
+      case 'agendado':
+        return 'Agendado';
+      default:
+        return status;
     }
-
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-
-    return '$day/$month';
-  }
-
-  static String _formatTime(DateTime? date) {
-    if (date == null) {
-      return '-';
-    }
-
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-
-    return '$hour:$minute';
   }
 }
