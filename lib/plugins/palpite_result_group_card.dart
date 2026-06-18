@@ -138,21 +138,37 @@ class _GroupSummary extends StatelessWidget {
           suffix: 'palpites',
           color: colors.surfaceContainerHighest,
         ),
-        if (active)
+        if (group.pontuandoAgora > 0)
           _TinyPill(
-            label: '+${group.totalPontos}',
-            suffix: 'agora',
-            color: colors.primary,
-            foreground: colors.onPrimary,
-          )
-        else if (group.totalPontos > 0)
-          _TinyPill(
-            label: '+${group.totalPontos}',
-            suffix: '',
-            color: colors.secondaryContainer,
+            label: _breakdownLabel(group),
+            suffix: active ? 'agora' : '',
+            color: active ? colors.primary : colors.secondaryContainer,
+            foreground: active ? colors.onPrimary : null,
           ),
       ],
     );
+  }
+
+  String _breakdownLabel(GrupoPalpitesJogo group) {
+    final exatos = group.placaresExatos;
+    final tresPontos = group.palpites
+        .where((item) => item.pontuacao?.pontos == 3)
+        .length;
+    final doisPontos = group.palpites
+        .where((item) => item.pontuacao?.pontos == 2)
+        .length;
+    final umPonto = group.palpites
+        .where((item) => item.pontuacao?.pontos == 1)
+        .length;
+
+    final partes = [
+      if (exatos > 0) '$exatos placar exato',
+      if (tresPontos > 0) '$tresPontos resultado + gols',
+      if (doisPontos > 0) '$doisPontos resultado',
+      if (umPonto > 0) '$umPonto gol certo',
+    ];
+
+    return partes.join(' · ');
   }
 }
 
@@ -194,6 +210,7 @@ class _PalpiteChip extends StatelessWidget {
                       child: ParticipantNameInline(
                         name: item.linha.nome,
                         color: accent,
+                        participantId: item.linha.participanteId,
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           color: foreground,
                           fontWeight: FontWeight.w900,

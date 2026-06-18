@@ -59,7 +59,7 @@ class TimeScreen extends StatelessWidget {
                     children: [
                       _TeamHero(
                         time: time,
-                        imageUrl: sportsDb?.melhorImagem,
+                        imageUrl: controller.imagemDoTime(time.nome),
                         badgeUrl: controller.badgeDoTime(time.nome),
                       ),
                       Center(

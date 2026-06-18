@@ -17,6 +17,7 @@ import '../models/time_participante.dart';
 import '../models/time_sportsdb.dart';
 import '../models/venue_sportsdb.dart';
 import 'asset_loader.dart';
+import 'local_media_manifest_service.dart';
 import 'media_catalog_service.dart';
 import 'sportsdb_api_service.dart';
 
@@ -33,12 +34,17 @@ enum PeriodoJogos {
 enum OrdenacaoRanking { consolidado, projetado }
 
 class BolaoController extends ChangeNotifier {
-  BolaoController._({required this._data, required this._apiService}) {
+  BolaoController._({
+    required this._data,
+    required this._apiService,
+    required this._localMediaByRemoteUrl,
+  }) {
     _recalcular();
     _reconstruirMidia();
   }
 
   final SportsDbApiService _apiService;
+  final Map<String, String> _localMediaByRemoteUrl;
 
   BolaoData _data;
   List<LinhaPontuacaoParticipante> _classificacao = const [];
@@ -65,8 +71,16 @@ class BolaoController extends ChangeNotifier {
   static Future<BolaoController> carregar({
     SportsDbApiService apiService = const SportsDbApiService(),
   }) async {
-    final data = await AssetLoader.carregarBolaoData();
-    return BolaoController._(data: data, apiService: apiService);
+    final results = await Future.wait([
+      AssetLoader.carregarBolaoData(),
+      LocalMediaManifestService.carregar(),
+    ]);
+
+    return BolaoController._(
+      data: results[0] as BolaoData,
+      apiService: apiService,
+      localMediaByRemoteUrl: results[1] as Map<String, String>,
+    );
   }
 
   BolaoData get data => _data;
@@ -474,15 +488,19 @@ class BolaoController extends ChangeNotifier {
   }
 
   String? badgeDoTime(String nomeTime) {
-    return _mediaCatalog.badgeForTeam(nomeTime);
+    return _resolveMediaUrl(_mediaCatalog.badgeForTeam(nomeTime));
   }
 
   String? imagemDoEstadio(String jogoId) {
-    return _mediaCatalog.imageForMatch(jogoId);
+    return _resolveMediaUrl(_mediaCatalog.imageForMatch(jogoId));
   }
 
   String? videoDoJogo(String jogoId) {
     return _mediaCatalog.videoForMatch(jogoId);
+  }
+
+  String? imagemDoTime(String nomeTime) {
+    return _resolveMediaUrl(timeSportsDb(nomeTime)?.melhorImagem);
   }
 
   String? tempoAtualDoJogo(Jogo jogo) {
@@ -520,6 +538,15 @@ class BolaoController extends ChangeNotifier {
 
   TimeSportsDb? timeSportsDb(String nomeTime) {
     return _mediaCatalog.teamForName(nomeTime);
+  }
+
+  String? _resolveMediaUrl(String? url) {
+    final value = url?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+
+    return _localMediaByRemoteUrl[value] ?? value;
   }
 
   VenueSportsDb? venueDoJogo(Jogo jogo) {

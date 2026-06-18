@@ -75,6 +75,19 @@ class _ImageBody extends StatelessWidget {
       return SizedBox(width: width, height: height, child: fallback);
     }
 
+    if (value.startsWith('assets/')) {
+      return Image.asset(
+        value,
+        width: width,
+        height: height,
+        fit: fit,
+        gaplessPlayback: true,
+        errorBuilder: (_, _, _) {
+          return SizedBox(width: width, height: height, child: fallback);
+        },
+      );
+    }
+
     return Image.network(
       value,
       width: width,

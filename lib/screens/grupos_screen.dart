@@ -38,8 +38,7 @@ class _GruposScreenState extends State<GruposScreen> {
       builder: (context, _) {
         final grupos = controller.tabelasGrupos.tabelasPorGrupo.keys.toList()
           ..sort();
-        final selected =
-            _grupoSelecionado ?? (grupos.isEmpty ? null : grupos.first);
+        final selected = _grupoSelecionado;
 
         return Scaffold(
           appBar: AppBar(
@@ -58,48 +57,26 @@ class _GruposScreenState extends State<GruposScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const SectionHeader(
-                            title: 'Grupos A-L',
-                            subtitle:
-                                'Tabela completa com jogos, vitórias, empates, derrotas, saldo e gols',
-                          ),
+                          const SectionHeader(title: 'Grupos A-L'),
                           LayoutBuilder(
                             builder: (context, constraints) {
-                              final wide = constraints.maxWidth >= 1040;
-                              final grid = _GroupsGrid(
+                              if (selected != null) {
+                                return _GroupDetail(
+                                  controller: controller,
+                                  group: selected,
+                                  onBack: () {
+                                    setState(() => _grupoSelecionado = null);
+                                  },
+                                );
+                              }
+
+                              return _GroupsGrid(
                                 controller: controller,
                                 grupos: grupos,
                                 selected: selected,
                                 onSelect: (grupo) {
                                   setState(() => _grupoSelecionado = grupo);
                                 },
-                              );
-                              final detail = selected == null
-                                  ? const SizedBox.shrink()
-                                  : _GroupDetail(
-                                      controller: controller,
-                                      group: selected,
-                                    );
-
-                              if (!wide) {
-                                return Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    grid,
-                                    const SizedBox(height: 18),
-                                    detail,
-                                  ],
-                                );
-                              }
-
-                              return Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(flex: 5, child: grid),
-                                  const SizedBox(width: 18),
-                                  Expanded(flex: 4, child: detail),
-                                ],
                               );
                             },
                           ),
@@ -180,8 +157,13 @@ class _GroupsGrid extends StatelessWidget {
 class _GroupDetail extends StatelessWidget {
   final BolaoController controller;
   final String group;
+  final VoidCallback onBack;
 
-  const _GroupDetail({required this.controller, required this.group});
+  const _GroupDetail({
+    required this.controller,
+    required this.group,
+    required this.onBack,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -197,9 +179,11 @@ class _GroupDetail extends StatelessWidget {
       children: [
         SectionHeader(
           title: 'Detalhe do Grupo $group',
-          subtitle: tabela?.grupoCompleto == true
-              ? 'Grupo encerrado'
-              : 'Classificação parcial',
+          trailing: TextButton.icon(
+            onPressed: onBack,
+            icon: const Icon(Icons.arrow_back),
+            label: const Text('Todos os grupos'),
+          ),
         ),
         const SectionHeader(title: 'Partidas do grupo'),
         for (final jogo in jogos)
@@ -215,11 +199,7 @@ class _GroupDetail extends StatelessWidget {
           ),
         if (provaveis.isNotEmpty) ...[
           const SizedBox(height: 16),
-          const SectionHeader(
-            title: 'Cruzamentos prováveis',
-            subtitle:
-                'Jogos do mata-mata que citam posições deste grupo no fixture',
-          ),
+          const SectionHeader(title: 'Cruzamentos prováveis'),
           for (final jogo in provaveis)
             _ProjectedReferenceCard(
               controller: controller,

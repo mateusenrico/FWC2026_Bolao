@@ -1,6 +1,6 @@
 # Checkup de pedidos e cobertura
 
-Ultima revisao: v2.4.2-dev.
+Ultima revisao: v2.5.0-dev.
 
 Este documento consolida os pedidos feitos durante a evolucao do app e o estado
 de implementacao. Quando algo depende de fonte externa, a implementacao fica
@@ -14,12 +14,15 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Manter organizacao de `lib`: `core`, `core/functions`, `models`, `services`, `plugins`, `screens` e debug separado | Completo | `lib/`, `test/debug/` |
 | Atualizar README/docs quando regras, API, deploy ou UI mudarem | Completo | `README.md`, `docs/` |
 | Criar arquivo de creditos/licencas/powered by | Completo | `THIRD_PARTY_NOTICES.md` |
+| Promover `test` para `main` e `dev` para `test` antes de novos pedidos, salvo ordem contraria | Completo | Regra operacional registrada no fluxo atual |
 | Widget de ao vivo em telas internas, menor que o destaque da home | Completo | `LiveMatchesBanner` |
 | Home mostra ao vivo ou proximo jogo | Completo | `BolaoController.proximosDestaques`, `HomeScreen` |
 | Team badges/bandeiras por URLs da SportsDB/historico | Completo | `MediaCatalogService`, `TeamBadge`, `RemoteImage` |
 | Imagens remotas com cache/fallback web para CORS/flicker | Completo | `RemoteImage`, `TeamBadge` |
 | Badge/banner/liga/venue/video vindos da SportsDB quando houver | Completo | `MediaCatalogService`, telas de jogo/time |
+| Cache local de imagens usadas pelo app em `assets/media/` | Completo | `tools/cache_media_assets.dart`, `LocalMediaManifestService`, `assets/media/media_manifest.json` |
 | Investigar times, venues, liga e endpoints auxiliares da SportsDB | Completo | `tools/update_sportsdb.dart`, `SportsDbApiService`, `assets/data/*_sportsdb.json` |
+| Pesquisar outras APIs publicas/de dados da Copa | Completo | `docs/APIS_DADOS_MIDIA.md` |
 | Refresh inicial ao abrir o app | Completo | `BolaoController.iniciarAtualizacaoAutomatica` |
 | Refresh automatico durante jogos ao vivo | Completo | Timer de 5s em `BolaoController` |
 | Refresh automatico sem apagar a tela ou voltar para a home | Completo | Atualizacao automatica so notifica UI quando dados dinamicos mudam |
@@ -40,8 +43,10 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Cores fixas por participante em `participantes.json` | Completo | `ParticipantColors`, testes |
 | Usar cor da pessoa como acento visual global onde nomes aparecem | Completo | `ParticipantPositionBadge`, `ParticipantNameInline`, ranking e palpites |
 | Aumentar diferenciacao das cores dos participantes | Completo | `assets/data/participantes.json`, `ParticipantColors` |
+| Diferenciar participantes tambem por marcador visual alem da cor | Completo | `ParticipantMarker`, `ParticipantNameInline` |
 | Legenda do grafico ordenada por ranking atual | Completo | `RankingEvolutionChart` |
 | Lista detalhada do ranking sem tabela redundante e com +5/+3/+2/+1/0 | Completo | `RankingScreen` |
+| Lista detalhada do ranking sem colunas redundantes de jogos/grupos/final/max/pontuaveis | Completo | `_RankingPointsGrid` |
 | Tabela de ranking ocupa a largura disponivel sem sobra deslocada | Completo | `_RankingPointsGrid` |
 | Participantes sem nenhum palpite completo nao aparecem nos rankings/palpites | Completo | `BolaoController` |
 | Tela do participante com filtros de palpites (+5, zerados, futuros etc.) | Completo | `ParticipanteDetailScreen` |
@@ -50,12 +55,14 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Chaveamento em formato visual para mata-mata, responsivo | Completo | `MataMataBracketView` |
 | Simulador de cenarios com busca/cards compactos | Completo | `SimuladorScreen` |
 | Tela de grupos clicavel com detalhe, partidas e cruzamentos provaveis | Completo | `GruposScreen`, `GrupoTableCard` |
+| Tela de grupos abre todos e esconde os demais ao clicar em um grupo | Completo | `GruposScreen` |
 | Tabela de grupos com dados completos de futebol | Completo | `FootballGroupRules`, `SistemaPontuacaoTimes`, testes |
 | Encapsular regras classicas de grupos de futebol de forma reutilizavel | Completo | `core/football_group_rules.dart` |
 | Tela de times e detalhe de time com jogos/estatisticas | Completo | `TimesScreen`, `TimeScreen` |
 | Mandante/visitante corretos no detalhe da partida | Completo | `JogoDetailScreen`, `Jogo` |
 | Nomes/local/cidade formatados sem texto bruto | Completo | `PlaceFormatters`, `VenueSportsDb` |
 | Status de jogo com informacoes condicionais e sem `-` cru em futuros | Completo | `PartidaCard`, `PalpiteJogoCard` |
+| Status de jogo com rotulos Finalizado/Ao Vivo/Em breve/Agendado | Completo | `PartidaCard` |
 | Tema visual mais alinhado a FWC 2026 | Completo | `app_theme.dart`, `FwcColors` |
 | Tema seguindo sistema com alternancia claro/escuro | Completo | `BolaoThemeScope`, `ThemeModeAction` |
 | Remover seletor Material/Cupertino/Auto porque nao agregava | Completo | `main.dart`, tema unico Material 3 |
@@ -67,11 +74,12 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Destaque ao vivo ou proximo jogo com grid compacto dos palpites | Completo | `LivePalpiteGrid`, `HomeScreen` |
 | Dois ou mais jogos ao vivo em paralelo no dashboard | Completo | `HomeScreen` empilha no celular e distribui em duas colunas no desktop |
 | Detalhe da partida com palpites agrupados por resultado apostado | Completo | `PalpiteMatchGroups`, `PalpiteResultGroupCard` |
+| Grupos de palpites mostram resumo qualitativo, nao soma total agregada | Completo | `PalpiteResultGroupCard` |
 | Exibir os palpites logo abaixo dos dados basicos da partida | Completo | `JogoDetailScreen` |
 | Paineis dos times abaixo dos palpites e em tamanho menor | Completo | `TeamMatchPanel(compact: true)` no detalhe de jogo |
 | Player/video menor no desktop e menos central | Completo | `JogoDetailScreen`, `YoutubeEmbedPlayer` limitado |
 | Dashboard: futuros nao repetem jogos de hoje | Completo | `BolaoController.jogosPorPeriodo` |
-| Dashboard: filtros de amanha e rodada | Completo | `HomeScreen`, `PeriodoJogos` |
+| Dashboard: filtros Passados/Hoje/Rodada/Futuros e subfiltros de futuro | Completo | `HomeScreen`, `PeriodoJogos` |
 | Tempo atual/aproximado de jogo ao vivo | Completo | `BolaoController.tempoAtualDoJogo`, `PartidaCard` |
 | Gols/cartoes/estatisticas/escalacao da partida pela API | Parcial por API | `MatchApiDetails`, `SportsDbApiService.fetchEventDetails`; aparece quando a SportsDB retorna dados |
 | Atualizar jogo encerrado que ficou preso como ao vivo | Completo | janela maxima de status ao vivo e encerramento por relogio |

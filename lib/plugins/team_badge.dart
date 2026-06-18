@@ -20,6 +20,15 @@ class TeamBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final code = TeamNormalizer.sigla(teamName);
     final colorScheme = Theme.of(context).colorScheme;
+    final value = imageUrl?.trim();
+    final fallback = Center(
+      child: Text(
+        code,
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w800),
+      ),
+    );
 
     final badge = Container(
       width: size,
@@ -30,30 +39,21 @@ class TeamBadge extends StatelessWidget {
         border: Border.all(color: colorScheme.outlineVariant),
       ),
       clipBehavior: Clip.antiAlias,
-      child: imageUrl == null || imageUrl!.isEmpty
-          ? Center(
-              child: Text(
-                code,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w800),
-              ),
+      child: value == null || value.isEmpty
+          ? fallback
+          : value.startsWith('assets/')
+          ? Image.asset(
+              value,
+              fit: BoxFit.contain,
+              gaplessPlayback: true,
+              errorBuilder: (_, _, _) => fallback,
             )
           : Image.network(
-              imageUrl!,
+              value,
               fit: BoxFit.contain,
               gaplessPlayback: true,
               webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
-              errorBuilder: (_, _, _) {
-                return Center(
-                  child: Text(
-                    code,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                );
-              },
+              errorBuilder: (_, _, _) => fallback,
             ),
     );
 
