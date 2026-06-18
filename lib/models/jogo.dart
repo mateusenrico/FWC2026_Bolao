@@ -1,4 +1,4 @@
-import '../core/json_utils.dart';
+import '../core/functions/json_utils.dart';
 import 'referencia_participante_jogo.dart';
 
 class Jogo {

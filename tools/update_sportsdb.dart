@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
-import 'package:fwc2026_bolao/core/team_normalizer.dart';
+import 'package:fwc2026_bolao/core/functions/team_normalizer.dart';
 
 const String _sportsDbApiKey = '123';
 const String _sportsDbBaseUrl =

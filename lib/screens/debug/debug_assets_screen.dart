@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../services/asset_loader.dart';
+import '../../services/asset_loader.dart';
 
 class DebugAssetsScreen extends StatefulWidget {
   const DebugAssetsScreen({super.key});

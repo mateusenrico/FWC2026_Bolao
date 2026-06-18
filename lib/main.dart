@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/jogos_screen.dart';
+import 'screens/debug/debug_jogos_screen.dart';
 
 void main() {
   runApp(const BolaoApp());

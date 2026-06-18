@@ -2,7 +2,7 @@
 
 Aplicação **Flutter Web** para acompanhar um bolão da Copa do Mundo FIFA 2026.
 
-O projeto é pessoal/privado, pensado para um grupo pequeno de participantes. A prioridade é ter uma interface visual simples para consultar jogos, palpites, classificação e estatísticas, sem transformar o projeto em uma arquitetura enterprise.
+O projeto é pessoal/privado, pensado para um grupo pequeno de participantes. A prioridade é ter uma interface visual simples para consultar jogos, palpites, classificação, grupos e estatísticas, sem transformar o projeto em uma arquitetura enterprise.
 
 ---
 
@@ -12,10 +12,12 @@ O projeto é pessoal/privado, pensado para um grupo pequeno de participantes. A 
 | --- | --- |
 | UI / frontend | Flutter Web |
 | Linguagem | Dart |
-| Dados | JSON estático em `assets/data/` |
+| Dados do app | JSON estático em `assets/data/` |
+| Agenda canônica auxiliar | `tools/data/world_cup_2026_fixtures.json` |
+| Atualização | `tools/update_sportsdb.dart` |
 | Deploy | GitHub Actions |
 | Hospedagem | Cloudflare Pages |
-| Fonte externa | TheSportsDB |
+| Fontes externas | TheSportsDB, FixtureDownload, TheStatsAPI fixture seed |
 | Fluxo Git | `dev` → `test` → `main` |
 
 ---
@@ -25,8 +27,6 @@ O projeto é pessoal/privado, pensado para um grupo pequeno de participantes. A 
 ### `dev`
 
 Branch de desenvolvimento.
-
-Use para codar, organizar commits e testar localmente.
 
 ```bash
 git switch dev
@@ -43,13 +43,9 @@ git commit -m "mensagem clara"
 git push origin dev
 ```
 
----
-
 ### `test`
 
 Branch de teste/staging.
-
-Recebe o que foi consolidado em `dev` e dispara deploy de teste via GitHub Actions.
 
 ```bash
 git switch test
@@ -58,15 +54,9 @@ git merge dev
 git push origin test
 ```
 
-Use essa branch para validar o app publicado antes de mandar para produção.
-
----
-
 ### `main`
 
 Branch de produção.
-
-Recebe o que foi validado em `test` e dispara deploy de produção via GitHub Actions.
 
 ```bash
 git switch main
@@ -75,7 +65,7 @@ git merge test
 git push origin main
 ```
 
-URL de produção:
+Produção:
 
 <https://bolao2026fwc.pages.dev>
 
@@ -93,6 +83,8 @@ push em test ou main
 GitHub Actions
         ↓
 instala Flutter
+        ↓
+roda tools/update_sportsdb.dart
         ↓
 flutter build web --release
         ↓
@@ -125,34 +117,28 @@ feature/*
 
 ## Rodar localmente
 
-Instalar dependências:
-
 ```bash
 flutter pub get
-```
-
-Rodar no Chrome:
-
-```bash
 flutter run -d chrome
 ```
 
-Build local de release:
+Build local:
 
 ```bash
 flutter build web --release
 ```
 
-Análise estática:
+Análise e testes:
 
 ```bash
 flutter analyze
+flutter test
 ```
 
-Testes:
+Atualizar dados localmente:
 
 ```bash
-flutter test
+dart run tools/update_sportsdb.dart
 ```
 
 ---
@@ -160,7 +146,7 @@ flutter test
 ## Estrutura principal
 
 ```text
-bolao_app/
+fwc2026_bolao/
 ├── assets/
 │   └── data/
 │       ├── jogos.json
@@ -169,12 +155,18 @@ bolao_app/
 │       ├── participantes.json
 │       └── palpites.json
 │
+├── tools/
+│   ├── update_sportsdb.dart
+│   └── data/
+│       └── world_cup_2026_fixtures.json
+│
 ├── lib/
 │   ├── main.dart
+│   ├── core/
 │   ├── models/
-│   ├── services/
-│   ├── domain/
-│   └── screens/
+│   ├── plugins/
+│   ├── screens/
+│   └── services/
 │
 ├── test/
 ├── web/
@@ -184,428 +176,221 @@ bolao_app/
 
 ---
 
-## Dados
+## Dados do app
 
-Os dados ficam em:
+Os dados carregados pelo Flutter ficam em:
 
 ```text
 assets/data/
 ```
 
-Esses arquivos são registrados no `pubspec.yaml` e carregados pelo Flutter como assets.
+Esses arquivos são registrados individualmente no `pubspec.yaml`.
 
 ### `jogos.json`
 
-Catálogo canônico dos jogos previstos pelo bolão.
+Fonte canônica do app.
 
-Este arquivo define o `jogoId`, que é a chave interna do projeto.
+Contém exatamente 104 jogos, com `jogoId` estável, `matchNumber`, fase, grupo, horário, estádio, referências de participantes do jogo, placar consolidado e status.
 
-Exemplos de campos:
-
-```text
-jogoId
-data
-fase
-faseTipo
-grupo
-mandante
-visitante
-statusJogo
-temHistoricoApi
-temResultadoApi
-```
-
-O `jogoId` é a referência usada por palpites, histórico e times.
-
----
+A pontuação do bolão deve usar principalmente este arquivo junto com `palpites.json` e `participantes.json`.
 
 ### `historico_partidas.json`
 
-Camada de histórico/API.
+Cache secundário da SportsDB.
 
-Contém partidas vindas da TheSportsDB, normalizadas e vinculadas aos jogos do bolão por `jogoId`.
-
-Regra conceitual:
-
-```text
-jogoId = chave interna do bolão
-idEvent = chave externa da TheSportsDB
-```
-
----
+Serve para auditoria, metadados e informação bruta da API. Não deve ser necessário para calcular a pontuação principal do bolão.
 
 ### `participantes.json`
 
 Lista de participantes do bolão.
 
-Cada participante possui:
-
-```text
-participanteId
-nome
-jogosPalpitados
-jogosSemPalpite
-totalJogosPrevistos
-jogosPalpitadosFaseGrupos
-jogosSemPalpiteFaseGrupos
-totalJogosFaseGrupos
-```
-
-O `participanteId` é alfanumérico e não depende diretamente do nome exibido.
-
----
-
 ### `palpites.json`
 
-Lista normalizada de palpites.
-
-Cada registro representa a relação:
+Lista normalizada de palpites, conectando:
 
 ```text
-participante + jogo → palpite
+participanteId + jogoId → placar apostado
 ```
-
-Campos:
-
-```text
-palpiteId
-participanteId
-jogoId
-golsMandante
-golsVisitante
-```
-
-Quando não há palpite registrado, os gols ficam como `null`.
-
-Exemplo:
-
-```json
-{
-  "palpiteId": "pl94ef65a940a2",
-  "participanteId": "p40a471872e",
-  "jogoId": "gb0850041021b",
-  "golsMandante": 3,
-  "golsVisitante": 0
-}
-```
-
----
 
 ### `times_participantes.json`
 
-Lista de seleções participantes, grupos e estatísticas.
-
-Cada time possui:
-
-```text
-timeId
-nome
-nomeNormalizado
-grupo
-jogosIds
-rankingGrupo
-estatisticasGrupo
-```
-
-As estatísticas de grupo podem ser recalculadas a partir dos jogos com resultados disponíveis.
+Lista de seleções, grupos, jogos do grupo e estatísticas provisórias.
 
 ---
 
-## Modelagem
+## Agenda canônica em `tools/data/`
 
-O projeto segue uma abordagem simples, funcional e data-oriented.
-
-Fonte de verdade:
+O arquivo:
 
 ```text
-jogos.json
-historico_partidas.json
-participantes.json
-palpites.json
-times_participantes.json
+tools/data/world_cup_2026_fixtures.json
 ```
 
-Dados derivados:
+fica em `tools/data/` de propósito.
 
-```text
-classificação do bolão
-pontuação por participante
-evolução do ranking
-tabela de jogos
-estatísticas de grupos
-```
+Ele **não** é asset do app, não deve ser listado no `pubspec.yaml` e não precisa ser baixado pelo navegador. Ele é usado apenas pelo script local/CI `tools/update_sportsdb.dart` para reconstruir e validar o catálogo canônico de 104 jogos.
 
-A pontuação dos participantes não deve ser tratada como dado primário. Ela deve ser calculada a partir de:
-
-```text
-jogos encerrados
-+
-palpites
-+
-regra de pontuação
-```
+A fonte declarada dentro do arquivo é TheStatsAPI, com licença de uso livre mediante atribuição à TheStatsAPI.
 
 ---
 
 ## Organização de `lib/`
 
+### `lib/core/`
+
+Funções e utilitários centrais que não são UI.
+
+Exemplos:
+
+```text
+json_utils.dart
+team_normalizer.dart
+```
+
+Depois, esta pasta também pode receber regras do bolão, como pontuação e critérios de desempate.
+
 ### `lib/models/`
 
-Modelos de dados tipados.
-
-Devem representar os formatos principais usados pelo app.
+Modelos tipados dos dados.
 
 Exemplos:
 
 ```text
 jogo.dart
-participante.dart
 palpite.dart
+participante.dart
 time_participante.dart
 historico_partida.dart
-linha_classificacao.dart
+referencia_participante_jogo.dart
+bolao_data.dart
 ```
-
-Esses arquivos não devem concentrar regra pesada de negócio. Eles servem principalmente para tipar dados e facilitar leitura do JSON.
-
----
 
 ### `lib/services/`
 
-Serviços de infraestrutura.
-
-Devem conter código que carrega, busca ou prepara dados vindos de fora da lógica pura do domínio.
+Camada de carregamento e integração externa.
 
 Exemplos:
 
 ```text
-data_loader.dart
-json_asset_service.dart
-sportsdb_update_service.dart
+asset_loader.dart
+sportsdb_api_service.dart
 ```
 
-No estágio atual, o serviço mais importante é o carregamento dos JSONs em `assets/data/`.
+### `lib/plugins/`
 
----
+Widgets reutilizáveis usados pelas telas.
 
-### `lib/domain/`
-
-Regras de domínio e funções puras.
-
-Aqui entram cálculos e transformações que não dependem diretamente da UI.
-
-Exemplos:
+Exemplo:
 
 ```text
-calcular_classificacao.dart
-calcular_pontuacao.dart
-calcular_grupos.dart
-calcular_evolucao_ranking.dart
-normalizar_times.dart
+jogos_table.dart
 ```
-
-A ideia é que essa camada receba listas de modelos e devolva projeções prontas para a interface.
-
-Exemplo conceitual:
-
-```text
-jogos + participantes + palpites
-        ↓
-calcularClassificacao(...)
-        ↓
-List<LinhaClassificacao>
-```
-
----
 
 ### `lib/screens/`
 
 Telas do app.
 
-Devem conter a composição visual principal.
-
 Exemplos:
 
 ```text
-home_screen.dart
 jogos_screen.dart
-classificacao_screen.dart
-grupos_screen.dart
-ranking_screen.dart
 debug_assets_screen.dart
-```
-
-A tela deve ser relativamente “burra”: ela recebe dados já tratados e renderiza widgets.
-
----
-
-## Pasta `test/`
-
-Pasta de testes automatizados do Flutter.
-
-No começo, ela pode ficar praticamente sem uso. Mais tarde, pode receber testes de funções puras da camada `domain`.
-
-Exemplos úteis de testes futuros:
-
-```text
-calcular pontuação de placar exato
-calcular pontuação de vencedor correto
-ordenar classificação por pontos
-calcular saldo e pontos de grupos
-```
-
----
-
-## Pasta `web/`
-
-Pasta com arquivos específicos do Flutter Web.
-
-Aqui ficam arquivos usados pelo navegador, como:
-
-```text
-index.html
-manifest.json
-icons/
-favicon.png
-```
-
-Coisas que podem ser ajustadas nessa pasta:
-
-- título que aparece no navegador;
-- favicon;
-- ícones usados quando o app é salvo na tela inicial;
-- cor/tema do manifesto web;
-- metadados básicos do app.
-
-Para alterar o nome exibido no navegador, verifique:
-
-```text
-web/index.html
-web/manifest.json
 ```
 
 ---
 
 ## Atualização dos dados
 
-A atualização futura deve ser feita por script separado, não pela interface Flutter.
-
-Fluxo previsto:
+Fluxo da tool:
 
 ```text
-TheSportsDB API
+fixture canônica em tools/data
         ↓
-script local de atualização
+TheSportsDB
         ↓
-atualiza historico_partidas.json
+FixtureDownload fallback
         ↓
-atualiza status em jogos.json
+reconstrói jogos.json
         ↓
-recalcula times_participantes.json, se necessário
+reconstrói historico_partidas.json
         ↓
-commit
+recalcula times_participantes.json
         ↓
-push
-        ↓
-deploy
+valida IDs, palpites, histórico e times
 ```
 
-Endpoints relevantes da TheSportsDB:
+Rodar:
 
-```text
-eventsseason.php
-eventsnextleague.php
-eventspastleague.php
-eventsday.php
+```bash
+dart run tools/update_sportsdb.dart
 ```
 
-Base pública:
+A tool:
 
-<https://www.thesportsdb.com/api/v1/json/123>
+1. cria backup em `assets/data/backups/<timestamp>/`;
+2. consulta endpoints externos com timeout;
+3. preserva dados antigos se a API falhar;
+4. mantém exatamente 104 jogos;
+5. valida se todos os palpites apontam para `jogoId` existentes;
+6. gera logs em `logs/update_sportsdb/`.
+
+Esses diretórios não devem entrar no Git:
+
+```gitignore
+assets/data/backups/
+logs/
+```
 
 ---
 
 ## Versionamento
 
-O projeto usa versionamento simples inspirado em SemVer:
-
-```text
-MAJOR.MINOR.PATCH
-```
-
-Exemplos:
+O projeto usa tags Git no padrão:
 
 ```text
 v0.1.0
 v0.2.0
-v1.0.0
+v0.3.0
 ```
 
-Sugestão de uso:
-
-- `PATCH`: correção pequena ou ajuste visual simples.
-- `MINOR`: nova tela, novo gráfico, nova regra, nova carga de dados.
-- `MAJOR`: mudança estrutural relevante ou primeira versão considerada estável.
-
-Durante desenvolvimento inicial, usar versões `0.x.y`.
-
-Sugestão de sequência:
-
-```text
-v0.1.0 = setup, deploy e dados estáticos
-v0.2.0 = app lê JSONs e mostra diagnóstico
-v0.3.0 = classificação do bolão
-v0.4.0 = tabela de jogos
-v0.5.0 = grupos e seleções
-v0.6.0 = gráfico de evolução
-v1.0.0 = versão usável pelo grupo
-```
-
-Criar tag local:
+Criar tag:
 
 ```bash
-git tag -a v0.1.0 -m "v0.1.0 - setup inicial com Flutter Web, JSONs e deploy"
-```
-
-Enviar tag para o GitHub:
-
-```bash
-git push origin v0.1.0
-```
-
-Listar tags:
-
-```bash
-git tag
-```
-
-Ver uma tag:
-
-```bash
-git show v0.1.0
-```
-
-Apagar tag local:
-
-```bash
-git tag -d v0.1.0
-```
-
-Apagar tag remota:
-
-```bash
-git push origin --delete v0.1.0
+git tag -a v0.2.0 -m "v0.2.0 - dados canônicos, SportsDB e tela de jogos"
+git push origin v0.2.0
 ```
 
 ---
 
-## Próximos passos
+## Estado atual
 
-1. Criar modelos Dart para os JSONs.
-2. Criar loader de assets.
-3. Validar contagem de registros carregados.
-4. Implementar tela inicial.
-5. Implementar tabela de classificação.
-6. Implementar tabela de jogos.
-7. Implementar tela de grupos.
-8. Implementar gráfico de evolução do ranking.
+Finalizado ou praticamente fechado:
+
+- [x] Flutter Web e deploy
+- [x] branches `dev`, `test`, `main`
+- [x] deploy via GitHub Actions + Cloudflare Pages
+- [x] participantes e palpites
+- [x] catálogo canônico dos 104 jogos
+- [x] IDs estáveis dos jogos
+- [x] vínculo entre jogos e histórico SportsDB
+- [x] fallback de resultados
+- [x] atualização automática antes do build
+- [x] models principais
+- [x] asset loader
+- [x] serviço SportsDB resiliente
+- [x] tela provisória de jogos
+- [x] widgets em `plugins/`
+
+Ainda falta:
+
+- [ ] definir regra de pontuação do bolão
+- [ ] calcular pontos por palpite
+- [ ] calcular classificação geral
+- [ ] critérios de desempate do bolão
+- [ ] tela de classificação
+- [ ] tela de detalhe de participante
+- [ ] tela de grupos
+- [ ] gráfico de evolução do ranking
+- [ ] tema visual definitivo
+- [ ] layout responsivo mais bonito
+- [ ] testes das regras de pontuação
