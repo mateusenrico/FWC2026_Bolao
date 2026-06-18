@@ -11,6 +11,7 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - cards de partidas com siglas oficiais, badges/bandeiras, placar e status;
 - detalhe da partida;
 - detalhe da partida com palpites agrupados por resultado apostado e dados de timeline/escalação/estatísticas quando a SportsDB disponibilizar;
+- tela de partida com ordem: dados básicos, palpites, resumo compacto dos times, dados externos e vídeo;
 - detalhe do participante com placar principal alternando entre palpite futuro e resultado/parcial real;
 - ranking detalhado com pódio, grade de pontos e evolução por pontos ou posição;
 - filtro de evolução por participantes e por faixa de partidas ou dias;
@@ -61,6 +62,7 @@ lib/
 │   ├── chaveamento_participante_card.dart
 │   ├── grupo_table_card.dart
 │   ├── live_palpite_grid.dart
+│   ├── match_api_details.dart
 │   ├── palpite_result_group_card.dart
 │   ├── palpite_jogo_card.dart
 │   ├── palpite_participante_card.dart

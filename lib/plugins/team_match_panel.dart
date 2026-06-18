@@ -10,6 +10,7 @@ class TeamMatchPanel extends StatelessWidget {
   final int? goals;
   final LinhaTabelaTime? tableLine;
   final bool homeSide;
+  final bool compact;
   final VoidCallback? onTap;
 
   const TeamMatchPanel({
@@ -19,6 +20,7 @@ class TeamMatchPanel extends StatelessWidget {
     required this.goals,
     required this.tableLine,
     required this.homeSide,
+    this.compact = false,
     this.onTap,
   });
 
@@ -27,67 +29,54 @@ class TeamMatchPanel extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
 
     final content = Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(compact ? 12 : 16),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              TeamBadge(teamName: teamName, imageUrl: badgeUrl, size: 54),
-              const SizedBox(width: 12),
+              TeamBadge(
+                teamName: teamName,
+                imageUrl: badgeUrl,
+                size: compact ? 38 : 54,
+              ),
+              SizedBox(width: compact ? 10 : 12),
               Flexible(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       TeamNormalizer.sigla(teamName),
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w900),
+                      style:
+                          (compact
+                                  ? Theme.of(context).textTheme.titleMedium
+                                  : Theme.of(context).textTheme.headlineSmall)
+                              ?.copyWith(fontWeight: FontWeight.w900),
                     ),
                     Text(
                       teamName,
-                      maxLines: 2,
+                      maxLines: compact ? 1 : 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      style: compact
+                          ? Theme.of(context).textTheme.bodySmall
+                          : Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              color: colors.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  goals?.toString() ?? 'A definir',
-                  style:
-                      (goals == null
-                              ? Theme.of(context).textTheme.titleMedium
-                              : Theme.of(context).textTheme.displaySmall)
-                          ?.copyWith(
-                            fontWeight: FontWeight.w900,
-                            color: goals == null
-                                ? colors.onSurfaceVariant
-                                : null,
-                          ),
+          SizedBox(height: compact ? 10 : 16),
+          compact
+              ? _CompactScore(
+                  goals: goals,
+                  label: homeSide ? 'mandante' : 'visitante',
+                )
+              : _FullScore(
+                  goals: goals,
+                  label: homeSide ? 'gols do mandante' : 'gols do visitante',
                 ),
-                Text(
-                  homeSide ? 'gols do mandante' : 'gols do visitante',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
+          SizedBox(height: compact ? 10 : 14),
           if (tableLine == null)
             Text(
               'Sem tabela de grupo para esta fase.',
@@ -99,14 +88,16 @@ class TeamMatchPanel extends StatelessWidget {
           else
             Wrap(
               alignment: WrapAlignment.center,
-              spacing: 10,
-              runSpacing: 10,
+              spacing: compact ? 6 : 10,
+              runSpacing: compact ? 6 : 10,
               children: [
                 _Stat(label: 'POS', value: '${tableLine!.posicao}º'),
                 _Stat(label: 'PTS', value: '${tableLine!.pontos}'),
                 _Stat(label: 'SG', value: '${tableLine!.saldoGols}'),
-                _Stat(label: 'GP', value: '${tableLine!.golsPro}'),
-                _Stat(label: 'GC', value: '${tableLine!.golsContra}'),
+                if (!compact) ...[
+                  _Stat(label: 'GP', value: '${tableLine!.golsPro}'),
+                  _Stat(label: 'GC', value: '${tableLine!.golsContra}'),
+                ],
               ],
             ),
         ],
@@ -116,6 +107,92 @@ class TeamMatchPanel extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: onTap == null ? content : InkWell(onTap: onTap, child: content),
+    );
+  }
+}
+
+class _FullScore extends StatelessWidget {
+  final int? goals;
+  final String label;
+
+  const _FullScore({required this.goals, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text(
+            goals?.toString() ?? 'A definir',
+            style:
+                (goals == null
+                        ? Theme.of(context).textTheme.titleMedium
+                        : Theme.of(context).textTheme.displaySmall)
+                    ?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: goals == null ? colors.onSurfaceVariant : null,
+                    ),
+          ),
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactScore extends StatelessWidget {
+  final int? goals;
+  final String label;
+
+  const _CompactScore({required this.goals, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            goals?.toString() ?? '-',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: colors.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
