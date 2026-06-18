@@ -40,71 +40,89 @@ class PalpiteJogoCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Jogo ${jogo.matchNumber} · ${AppDateTime.dataCurta(date)} ${AppDateTime.horario(date)}',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final title = Text(
+                    'Jogo ${jogo.matchNumber} · ${AppDateTime.dataCurta(date)} ${AppDateTime.horario(date)}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: colors.onSurfaceVariant,
                     ),
-                  ),
-                  if (pontuacao?.pontuavel == true)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: pontuacao?.placarExato == true
-                            ? colors.primaryContainer
-                            : colors.secondaryContainer,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        '${pontuacao!.pontos} pts',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(fontWeight: FontWeight.w900),
-                      ),
-                    ),
-                ],
+                  );
+                  final points = pontuacao?.pontuavel == true
+                      ? _PointsChip(pontuacao: pontuacao!)
+                      : null;
+
+                  if (points == null) {
+                    return title;
+                  }
+
+                  if (constraints.maxWidth < 350) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [title, const SizedBox(height: 6), points],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(child: title),
+                      const SizedBox(width: 8),
+                      points,
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final compact = constraints.maxWidth < 560;
+                  final veryCompact = constraints.maxWidth < 340;
 
                   if (compact) {
+                    final teams = Row(
+                      children: [
+                        Expanded(
+                          child: _TeamLabel(
+                            teamName: jogo.mandantePrevisto,
+                            badgeUrl: badgeMandante,
+                            alignEnd: true,
+                          ),
+                        ),
+                        if (!veryCompact) ...[
+                          const SizedBox(width: 10),
+                          _ScoreLabel(
+                            title: 'Palpite',
+                            value: palpite?.placarTexto ?? '-',
+                          ),
+                          const SizedBox(width: 10),
+                        ],
+                        Expanded(
+                          child: _TeamLabel(
+                            teamName: jogo.visitantePrevisto,
+                            badgeUrl: badgeVisitante,
+                            alignEnd: false,
+                          ),
+                        ),
+                      ],
+                    );
+
                     return Column(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _TeamLabel(
-                                teamName: jogo.mandantePrevisto,
-                                badgeUrl: badgeMandante,
-                                alignEnd: true,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            _ScoreLabel(
-                              title: 'Palpite',
-                              value: palpite?.placarTexto ?? '-',
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _TeamLabel(
-                                teamName: jogo.visitantePrevisto,
-                                badgeUrl: badgeVisitante,
-                                alignEnd: false,
-                              ),
-                            ),
-                          ],
-                        ),
+                        teams,
+                        if (veryCompact) ...[
+                          const SizedBox(height: 10),
+                          _ScoreLabel(
+                            title: 'Palpite',
+                            value: palpite?.placarTexto ?? '-',
+                          ),
+                        ],
                         const SizedBox(height: 10),
                         Text(
                           'Resultado: ${jogo.temResultado ? jogo.placarTexto : 'a definir'}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: colors.onSurfaceVariant),
                         ),
@@ -153,6 +171,8 @@ class PalpiteJogoCard extends StatelessWidget {
                 Text(
                   pontuacao!.motivo,
                   textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
@@ -161,6 +181,33 @@ class PalpiteJogoCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PointsChip extends StatelessWidget {
+  final PontuacaoPalpite pontuacao;
+
+  const _PointsChip({required this.pontuacao});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: pontuacao.placarExato
+            ? colors.primaryContainer
+            : colors.secondaryContainer,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '${pontuacao.pontos} pts',
+        style: Theme.of(
+          context,
+        ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w900),
       ),
     );
   }

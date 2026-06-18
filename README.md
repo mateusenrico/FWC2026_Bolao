@@ -383,6 +383,7 @@ partida_card.dart
 live_matches_banner.dart
 refresh_countdown_indicator.dart
 remote_media.dart
+theme_mode_action.dart
 ranking_podium.dart
 ranking_evolution_chart.dart
 mata_mata_bracket_view.dart
@@ -508,14 +509,14 @@ Finalizado ou praticamente fechado:
 - [x] tela de lista de times
 - [x] tela de detalhe de time com jogos e estatísticas
 - [x] dashboard inicial com cards de navegação
-- [x] tema global único em Material 3 escuro
+- [x] tema Material 3 seguindo sistema por padrão, com alternância claro/escuro no AppBar
 - [x] paleta visual inspirada na identidade FWC 2026
 - [x] widget de jogos ao vivo em telas internas
 - [x] indicador visual de próxima atualização automática
 - [x] atualização inicial automática e refresh de minuto quando houver jogo ao vivo
 - [x] metadados visuais de times, venues e liga
 - [x] widgets de imagem remota para badges, banners, venues e liga
-- [x] imagens remotas com cache do Flutter/browser e `gaplessPlayback`
+- [x] imagens remotas com cache do Flutter/browser, `gaplessPlayback` e fallback HTML no Web para CORS
 - [x] badges no chaveamento quando a tela possui catálogo de mídia
 - [x] player/embed de YouTube para highlights quando houver `strVideo`
 - [x] widgets em `plugins/`

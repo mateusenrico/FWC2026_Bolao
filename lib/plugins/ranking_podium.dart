@@ -38,9 +38,8 @@ class RankingPodium extends StatelessWidget {
               for (final linha in top)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: _PodiumTile(
+                  child: _CompactPodiumTile(
                     linha: linha,
-                    height: 88,
                     delta: liveDelta(linha.participanteId),
                     onTap: onTapParticipante == null
                         ? null
@@ -75,6 +74,127 @@ class RankingPodium extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class _CompactPodiumTile extends StatelessWidget {
+  final LinhaPontuacaoParticipante linha;
+  final int delta;
+  final VoidCallback? onTap;
+
+  const _CompactPodiumTile({
+    required this.linha,
+    required this.delta,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final medal = _medalColor(colors);
+
+    return Card(
+      color: medal.background,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: medal.foreground,
+                ),
+                child: Text(
+                  '${linha.posicao}º',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: medal.onForeground,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      linha.nome,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      '${linha.placaresExatos} exatos',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${linha.pontosTotal}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  if (delta > 0) ...[
+                    const SizedBox(width: 5),
+                    Text(
+                      '+$delta',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: colors.primary,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  _MedalColors _medalColor(ColorScheme colors) {
+    return switch (linha.posicao) {
+      1 => _MedalColors(
+        background: const Color(0xFFFFF4C7),
+        foreground: const Color(0xFFB77900),
+        onForeground: Colors.white,
+      ),
+      2 => _MedalColors(
+        background: colors.surfaceContainerHigh,
+        foreground: const Color(0xFF8A8F98),
+        onForeground: Colors.white,
+      ),
+      3 => _MedalColors(
+        background: const Color(0xFFFFE1CD),
+        foreground: const Color(0xFFB56028),
+        onForeground: Colors.white,
+      ),
+      _ => _MedalColors(
+        background: colors.surfaceContainerLow,
+        foreground: colors.surfaceContainerHighest,
+        onForeground: colors.onSurfaceVariant,
+      ),
+    };
   }
 }
 

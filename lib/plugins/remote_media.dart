@@ -81,6 +81,7 @@ class _ImageBody extends StatelessWidget {
       height: height,
       fit: fit,
       gaplessPlayback: true,
+      webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) {
           return child;

@@ -18,8 +18,8 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - classificação dos grupos;
 - projeção colapsável do mata-mata por participante;
 - chaveamento com badges quando a tela possui catálogo de mídia;
-- tema Material 3 escuro como padrão atual;
-- imagens remotas com cache do Flutter/browser e `gaplessPlayback` para reduzir flicker;
+- tema Material 3 seguindo o sistema por padrão, com botão claro/escuro no AppBar;
+- imagens remotas com cache do Flutter/browser, `gaplessPlayback` e fallback HTML no Web para reduzir flicker e contornar CORS;
 - simulador com busca, cards compactos e limpeza rápida de placares digitados;
 - atualização da SportsDB em memória, preservando os assets locais se a API falhar;
 - mesma regra 5/3/2/1/0 para jogos de grupos e mata-mata;
@@ -65,6 +65,7 @@ lib/
 │   ├── ranking_participante_card.dart
 │   ├── section_header.dart
 │   ├── team_badge.dart
+│   ├── theme_mode_action.dart
 │   └── team_match_panel.dart
 ├── screens/
 │   ├── grupos_screen.dart
