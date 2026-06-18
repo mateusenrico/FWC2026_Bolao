@@ -8,4 +8,6 @@ class AppRoutes {
   static const ranking = '/ranking';
   static const jogos = '/jogos';
   static const simulador = '/simulador';
+  static const times = '/times';
+  static const time = '/time';
 }

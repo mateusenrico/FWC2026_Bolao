@@ -5,18 +5,21 @@ import 'package:flutter/foundation.dart';
 import '../core/sistema_palpites.dart';
 import '../core/sistema_pontuacao_participantes.dart';
 import '../core/sistema_pontuacao_times.dart';
+import '../core/functions/date_time_utils.dart';
 import '../core/functions/team_normalizer.dart';
 import '../models/bolao_data.dart';
 import '../models/historico_partida.dart';
 import '../models/jogo.dart';
 import '../models/palpite.dart';
 import '../models/participante.dart';
+import '../models/time_participante.dart';
 import '../models/time_sportsdb.dart';
 import '../models/venue_sportsdb.dart';
 import 'asset_loader.dart';
+import 'media_catalog_service.dart';
 import 'sportsdb_api_service.dart';
 
-enum PeriodoJogos { passados, emAndamento, futuros }
+enum PeriodoJogos { hoje, passados, emAndamento, futuros, todos }
 
 enum OrdenacaoRanking { consolidado, projetado }
 
@@ -35,12 +38,7 @@ class BolaoController extends ChangeNotifier {
   late ConjuntoTabelasGrupo _tabelasGrupos;
 
   final Map<String, SportsDbEvent> _eventoPorJogoId = {};
-  final Map<String, String> _badgePorTimeKey = {};
-  final Map<String, String> _imagemEstadioPorJogoId = {};
-  final Map<String, TimeSportsDb> _timeSportsDbPorKey = {};
-  final Map<String, VenueSportsDb> _venueSportsDbPorKey = {};
-  final Map<String, VenueSportsDb> _venueSportsDbPorId = {};
-  final Map<String, String> _videoPorJogoId = {};
+  BolaoMediaCatalog _mediaCatalog = const BolaoMediaCatalog.empty();
 
   bool _atualizandoApi = false;
   bool _autoRefreshIniciado = false;
@@ -96,6 +94,19 @@ class BolaoController extends ChangeNotifier {
   }
 
   bool get temJogosAoVivo => jogosAoVivo.isNotEmpty;
+
+  List<TimeParticipante> get timesOrdenados {
+    final result = [..._data.timesParticipantes];
+    result.sort((a, b) {
+      final group = a.grupo.compareTo(b.grupo);
+      if (group != 0) {
+        return group;
+      }
+
+      return a.nome.compareTo(b.nome);
+    });
+    return result;
+  }
 
   Future<void> iniciarAtualizacaoAutomatica() async {
     if (_autoRefreshIniciado) {
@@ -245,12 +256,23 @@ class BolaoController extends ChangeNotifier {
 
   List<Jogo> jogosPorPeriodo(PeriodoJogos periodo) {
     final nowUtc = DateTime.now().toUtc();
+    final hojeBrasilia = AppDateTime.agoraBrasilia();
 
     final result =
         _data.jogos
             .where((jogo) {
+              if (periodo == PeriodoJogos.todos) {
+                return true;
+              }
+
               if (jogo.isEmAndamento) {
-                return periodo == PeriodoJogos.emAndamento;
+                return periodo == PeriodoJogos.emAndamento ||
+                    periodo == PeriodoJogos.hoje;
+              }
+
+              if (periodo == PeriodoJogos.hoje) {
+                final date = AppDateTime.horarioBrasilia(jogo);
+                return date != null && AppDateTime.mesmoDia(date, hojeBrasilia);
               }
 
               final date = jogo.dataUtc?.toUtc();
@@ -259,16 +281,47 @@ class BolaoController extends ChangeNotifier {
               }
 
               switch (periodo) {
+                case PeriodoJogos.hoje:
+                  return false;
                 case PeriodoJogos.passados:
                   return jogo.isEncerrado || date.isBefore(nowUtc);
                 case PeriodoJogos.emAndamento:
                   return jogo.isEmAndamento;
                 case PeriodoJogos.futuros:
                   return jogo.isAgendado && date.isAfter(nowUtc);
+                case PeriodoJogos.todos:
+                  return true;
               }
             })
             .toList(growable: false)
           ..sort((a, b) => a.ordem.compareTo(b.ordem));
+
+    return result;
+  }
+
+  TimeParticipante? timeParticipantePorNome(String nomeTime) {
+    final key = TeamNormalizer.key(nomeTime);
+
+    for (final time in _data.timesParticipantes) {
+      if (TeamNormalizer.key(time.nome) == key ||
+          TeamNormalizer.key(time.timeId) == key ||
+          TeamNormalizer.key(time.nomeNormalizado) == key) {
+        return time;
+      }
+    }
+
+    return null;
+  }
+
+  List<Jogo> jogosDoTime(String nomeTime) {
+    final key = TeamNormalizer.key(nomeTime);
+
+    final result = _data.jogosOrdenados
+        .where((jogo) {
+          return TeamNormalizer.key(jogo.mandantePrevisto) == key ||
+              TeamNormalizer.key(jogo.visitantePrevisto) == key;
+        })
+        .toList(growable: false);
 
     return result;
   }
@@ -317,33 +370,23 @@ class BolaoController extends ChangeNotifier {
   }
 
   String? badgeDoTime(String nomeTime) {
-    return _badgePorTimeKey[TeamNormalizer.key(nomeTime)];
+    return _mediaCatalog.badgeForTeam(nomeTime);
   }
 
   String? imagemDoEstadio(String jogoId) {
-    return _imagemEstadioPorJogoId[jogoId];
+    return _mediaCatalog.imageForMatch(jogoId);
   }
 
   String? videoDoJogo(String jogoId) {
-    return _videoPorJogoId[jogoId];
+    return _mediaCatalog.videoForMatch(jogoId);
   }
 
   TimeSportsDb? timeSportsDb(String nomeTime) {
-    return _timeSportsDbPorKey[TeamNormalizer.key(nomeTime)];
+    return _mediaCatalog.teamForName(nomeTime);
   }
 
   VenueSportsDb? venueDoJogo(Jogo jogo) {
-    final historico = historicoDoJogo(jogo.jogoId);
-    final idVenue = historico?.raw['idVenue']?.toString();
-
-    if (idVenue != null && idVenue.isNotEmpty) {
-      final byId = _venueSportsDbPorId[idVenue];
-      if (byId != null) {
-        return byId;
-      }
-    }
-
-    return _venueSportsDbPorKey[_venueKey(jogo.estadio)];
+    return _mediaCatalog.venueForMatch(_data, jogo);
   }
 
   int pontosAoVivo(String participanteId) {
@@ -405,6 +448,9 @@ class BolaoController extends ChangeNotifier {
         SistemaPontuacaoParticipantes.calcularClassificacao(
           _dataSemJogosAoVivo(),
         );
+    if (!temJogosAoVivo) {
+      _ordenacaoRanking = OrdenacaoRanking.consolidado;
+    }
     _atualizarClassificacaoExibida();
   }
 
@@ -495,12 +541,13 @@ class BolaoController extends ChangeNotifier {
       return jogo;
     }
 
+    final eventStatus = event.statusCanonico;
+    final finalInferredByClock = event.isEncerradoInferidoPorRelogio;
+    final finalResult =
+        jogo.resultadoFinal || event.isFinal || finalInferredByClock;
     final scoreUsable =
-        event.temPlacar &&
-        (event.isFinal || event.statusCanonico == 'em_andamento');
-    final liveWithoutScore =
-        !event.temPlacar && event.statusCanonico == 'em_andamento';
-    final finalResult = jogo.resultadoFinal || event.isFinal;
+        event.temPlacar && (finalResult || eventStatus == 'em_andamento');
+    final liveWithoutScore = !event.temPlacar && eventStatus == 'em_andamento';
     final hasResult = jogo.temResultado || scoreUsable || liveWithoutScore;
     final homeScore = scoreUsable
         ? event.intHomeScore
@@ -515,9 +562,9 @@ class BolaoController extends ChangeNotifier {
 
     final status = finalResult
         ? 'encerrado'
-        : event.statusCanonico == 'encerrado' && !scoreUsable
-        ? jogo.statusJogo
-        : event.statusCanonico;
+        : eventStatus == 'encerrado'
+        ? 'encerrado'
+        : eventStatus;
 
     return jogo.copyWith(
       idEventAtual: event.idEvent,
@@ -535,7 +582,9 @@ class BolaoController extends ChangeNotifier {
       temResultado: hasResult,
       resultadoFinal: finalResult,
       fonteResultado: scoreUsable
-          ? 'sportsdb_refresh'
+          ? finalInferredByClock
+                ? 'sportsdb_encerrado_por_relogio'
+                : 'sportsdb_refresh'
           : liveWithoutScore
           ? 'sportsdb_ao_vivo_zerado'
           : jogo.fonteResultado,
@@ -564,94 +613,10 @@ class BolaoController extends ChangeNotifier {
   }
 
   void _reconstruirMidia() {
-    _badgePorTimeKey.clear();
-    _imagemEstadioPorJogoId.clear();
-    _timeSportsDbPorKey
-      ..clear()
-      ..addAll(_data.timesSportsDbPorKey);
-    _venueSportsDbPorKey
-      ..clear()
-      ..addAll(_data.venuesSportsDbPorKey);
-    _venueSportsDbPorId
-      ..clear()
-      ..addAll(_data.venuesSportsDbPorId);
-    _videoPorJogoId.clear();
-
-    for (final time in _data.timesSportsDb) {
-      _adicionarBadge(time.nomeBolao, time.badgeUrl);
-      if (time.nomeApi != null) {
-        _adicionarBadge(time.nomeApi, time.badgeUrl);
-      }
-    }
-
-    for (final historico in _data.historicoPartidas) {
-      _adicionarBadge(
-        historico.strHomeTeam,
-        historico.raw['strHomeTeamBadge']?.toString(),
-      );
-      _adicionarBadge(
-        historico.strAwayTeam,
-        historico.raw['strAwayTeamBadge']?.toString(),
-      );
-
-      final image = _primeiraUrl([
-        historico.raw['strThumb']?.toString(),
-        historico.raw['strPoster']?.toString(),
-        historico.raw['strFanart']?.toString(),
-        historico.raw['strBanner']?.toString(),
-      ]);
-
-      if (image != null) {
-        _imagemEstadioPorJogoId[historico.jogoId] = image;
-      }
-
-      final video = _primeiraUrl([historico.raw['strVideo']?.toString()]);
-      if (video != null) {
-        _videoPorJogoId[historico.jogoId] = video;
-      }
-    }
-
-    for (final jogo in _data.jogos) {
-      final venue = venueDoJogo(jogo);
-      final image = venue?.melhorImagem;
-      if (image != null && !_imagemEstadioPorJogoId.containsKey(jogo.jogoId)) {
-        _imagemEstadioPorJogoId[jogo.jogoId] = image;
-      }
-    }
-
-    for (final entry in _eventoPorJogoId.entries) {
-      final event = entry.value;
-      _adicionarBadge(event.strHomeTeam, event.strHomeTeamBadge);
-      _adicionarBadge(event.strAwayTeam, event.strAwayTeamBadge);
-
-      final image = event.stadiumImage;
-      if (image != null && image.isNotEmpty) {
-        _imagemEstadioPorJogoId[entry.key] = image;
-      }
-
-      final video = event.strVideo;
-      if (video != null && video.isNotEmpty) {
-        _videoPorJogoId[entry.key] = video;
-      }
-    }
-  }
-
-  void _adicionarBadge(String? teamName, String? url) {
-    if (teamName == null || url == null || url.isEmpty) {
-      return;
-    }
-
-    _badgePorTimeKey[TeamNormalizer.key(teamName)] = url;
-  }
-
-  String? _primeiraUrl(List<String?> values) {
-    for (final value in values) {
-      if (value != null && value.trim().isNotEmpty) {
-        return value;
-      }
-    }
-
-    return null;
+    _mediaCatalog = MediaCatalogService.build(
+      data: _data,
+      eventosPorJogoId: _eventoPorJogoId,
+    );
   }
 
   BolaoData _dataSemJogosAoVivo() {
@@ -691,9 +656,30 @@ class BolaoController extends ChangeNotifier {
           }
 
           final elapsed = nowUtc.difference(kickoff).inMinutes;
-          final deveEstarAoVivo = elapsed >= 0 && elapsed <= 180;
+          final deveEstarAoVivo =
+              elapsed >= 0 &&
+              elapsed <= SportsDbEvent.maxLiveDuration.inMinutes;
 
           if (!deveEstarAoVivo) {
+            if (jogo.isEmAndamento &&
+                elapsed > SportsDbEvent.maxLiveDuration.inMinutes) {
+              mudou = true;
+
+              return Jogo.fromJson({
+                ...jogo.toJson(),
+                'statusJogo': 'encerrado',
+                'golsMandante': jogo.temResultadoApi ? jogo.golsMandante : null,
+                'golsVisitante': jogo.temResultadoApi
+                    ? jogo.golsVisitante
+                    : null,
+                'temResultado': jogo.temResultadoApi,
+                'resultadoFinal': jogo.temResultadoApi,
+                'fonteResultado': jogo.temResultadoApi
+                    ? jogo.fonteResultado ?? 'encerrado_por_relogio'
+                    : null,
+              });
+            }
+
             return jogo;
           }
 
@@ -747,14 +733,6 @@ class BolaoController extends ChangeNotifier {
     }
 
     return null;
-  }
-
-  String _venueKey(String value) {
-    return value
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
-        .trim()
-        .replaceAll(RegExp(r'\s+'), ' ');
   }
 
   @override

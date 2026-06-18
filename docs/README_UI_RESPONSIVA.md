@@ -7,7 +7,7 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - tela inicial responsiva;
 - destaque para partida ao vivo ou próximo horário;
 - ranking parcial colapsável;
-- filtros de partidas: ontem e antes, hoje, próximos sete dias e futuros;
+- filtros de partidas: hoje, passados, futuros e todos;
 - cards de partidas com siglas oficiais, badges/bandeiras, placar e status;
 - detalhe da partida;
 - detalhe do participante;
@@ -30,7 +30,7 @@ flutter pub get
 flutter analyze
 flutter test
 flutter build web --release
-flutter run -d chrome
+make run
 ```
 
 ## Arquitetura adicionada

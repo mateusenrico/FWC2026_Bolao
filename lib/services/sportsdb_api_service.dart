@@ -277,6 +277,8 @@ class _ParsedEvents {
 }
 
 class SportsDbEvent {
+  static const Duration maxLiveDuration = Duration(minutes: 145);
+
   final String idEvent;
   final String? idLeague;
 
@@ -385,17 +387,22 @@ class SportsDbEvent {
   bool get isFinal {
     final status = strStatus?.toUpperCase().trim();
 
-    return temPlacar && {'FT', 'AET', 'PEN', 'FINISHED'}.contains(status);
+    return temPlacar &&
+        {'FT', 'AET', 'PEN', 'FINISHED', 'MATCH FINISHED'}.contains(status);
   }
 
   String get statusCanonico {
     final status = strStatus?.toUpperCase().trim();
 
-    if ({'FT', 'AET', 'PEN', 'FINISHED'}.contains(status)) {
+    if ({'FT', 'AET', 'PEN', 'FINISHED', 'MATCH FINISHED'}.contains(status)) {
       return 'encerrado';
     }
 
     if ({'LIVE', '1H', '2H', 'HT'}.contains(status)) {
+      if (_passouDaJanelaAoVivo) {
+        return 'encerrado';
+      }
+
       return 'em_andamento';
     }
 
@@ -409,11 +416,28 @@ class SportsDbEvent {
       return 'agendado';
     }
 
-    if (nowUtc.difference(strTimestampUtc!).inMinutes <= 180) {
+    if (nowUtc.difference(strTimestampUtc!) <= maxLiveDuration) {
       return 'em_andamento';
     }
 
     return 'encerrado';
+  }
+
+  bool get isEncerradoInferidoPorRelogio {
+    final status = strStatus?.toUpperCase().trim();
+    return temPlacar &&
+        !isFinal &&
+        {'LIVE', '1H', '2H', 'HT'}.contains(status) &&
+        _passouDaJanelaAoVivo;
+  }
+
+  bool get _passouDaJanelaAoVivo {
+    final timestamp = strTimestampUtc;
+    if (timestamp == null) {
+      return false;
+    }
+
+    return DateTime.now().toUtc().difference(timestamp) > maxLiveDuration;
   }
 
   String? get stadiumImage {

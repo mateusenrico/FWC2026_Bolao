@@ -5,6 +5,7 @@ import '../core/functions/date_time_utils.dart';
 import '../core/functions/team_normalizer.dart';
 import '../models/jogo.dart';
 import '../services/bolao_controller.dart';
+import 'refresh_countdown_indicator.dart';
 import 'team_badge.dart';
 
 class LiveMatchesBanner extends StatelessWidget {
@@ -36,8 +37,6 @@ class LiveMatchesBanner extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (controller.atualizandoApi)
-            const LinearProgressIndicator(minHeight: 2),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
             child: Center(
@@ -59,10 +58,9 @@ class LiveMatchesBanner extends StatelessWidget {
                                 ?.copyWith(fontWeight: FontWeight.w900),
                           ),
                         ),
-                        Text(
-                          'atualiza a cada 1 min',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(color: colors.onSurfaceVariant),
+                        RefreshCountdownIndicator(
+                          controller: controller,
+                          compact: true,
                         ),
                       ],
                     ),

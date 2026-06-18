@@ -28,6 +28,7 @@ A atualização usa:
 7. escreve log em `logs/update_sportsdb/<timestamp>.json`;
 8. enriquece times, venues e liga quando a SportsDB retorna metadados visuais;
 9. mantém o build funcionando mesmo se a API estiver parcialmente indisponível.
+10. limita a janela de status ao vivo para evitar que um jogo preso em `LIVE`, `1H`, `2H` ou `HT` continue pontuando indefinidamente.
 
 ## Atribuicoes e licencas
 

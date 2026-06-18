@@ -1,6 +1,7 @@
 import '../models/jogo.dart';
 import '../models/palpite.dart';
 import '../models/referencia_participante_jogo.dart';
+import 'football_group_rules.dart';
 import 'functions/team_normalizer.dart';
 
 class LinhaTabelaTime {
@@ -39,6 +40,26 @@ class LinhaTabelaTime {
     required this.classificouDireto,
     required this.classificouComoTerceiro,
   });
+
+  factory LinhaTabelaTime.fromFootball(FootballStanding standing) {
+    return LinhaTabelaTime(
+      timeKey: standing.teamKey,
+      nome: standing.name,
+      grupo: standing.group,
+      posicao: standing.position,
+      pontos: standing.points,
+      jogos: standing.played,
+      vitorias: standing.wins,
+      empates: standing.draws,
+      derrotas: standing.losses,
+      golsPro: standing.goalsFor,
+      golsContra: standing.goalsAgainst,
+      saldoGols: standing.goalDifference,
+      fairPlayPontos: standing.fairPlayPoints,
+      classificouDireto: standing.qualifiedDirectly,
+      classificouComoTerceiro: standing.qualifiedAsBestThird,
+    );
+  }
 
   LinhaTabelaTime copyWith({
     int? posicao,
@@ -258,6 +279,20 @@ class PartidaGrupoComputada {
 
     return 0;
   }
+
+  FootballGroupMatch toFootballMatch() {
+    return FootballGroupMatch(
+      matchId: jogoId,
+      order: matchNumber,
+      group: grupo,
+      homeKey: mandanteKey,
+      homeName: mandanteNome,
+      awayKey: visitanteKey,
+      awayName: visitanteNome,
+      homeGoals: golsMandante,
+      awayGoals: golsVisitante,
+    );
+  }
 }
 
 class TimeProjetado {
@@ -390,49 +425,6 @@ class ChaveamentoProjetado {
   }
 }
 
-class _AcumuladorTime {
-  final String timeKey;
-  final String nome;
-  final String grupo;
-
-  int pontos = 0;
-  int jogos = 0;
-  int vitorias = 0;
-  int empates = 0;
-  int derrotas = 0;
-  int golsPro = 0;
-  int golsContra = 0;
-  int fairPlayPontos = 0;
-
-  _AcumuladorTime({
-    required this.timeKey,
-    required this.nome,
-    required this.grupo,
-  });
-
-  int get saldoGols => golsPro - golsContra;
-
-  LinhaTabelaTime toLinha({required int posicao}) {
-    return LinhaTabelaTime(
-      timeKey: timeKey,
-      nome: nome,
-      grupo: grupo,
-      posicao: posicao,
-      pontos: pontos,
-      jogos: jogos,
-      vitorias: vitorias,
-      empates: empates,
-      derrotas: derrotas,
-      golsPro: golsPro,
-      golsContra: golsContra,
-      saldoGols: saldoGols,
-      fairPlayPontos: fairPlayPontos,
-      classificouDireto: posicao <= 2,
-      classificouComoTerceiro: false,
-    );
-  }
-}
-
 class SistemaPontuacaoTimes {
   const SistemaPontuacaoTimes._();
 
@@ -501,8 +493,46 @@ class SistemaPontuacaoTimes {
     required List<Jogo> jogos,
     required List<PartidaGrupoComputada> partidas,
   }) {
-    final acumuladoresPorGrupo = <String, Map<String, _AcumuladorTime>>{};
     final partidasPorGrupo = <String, List<PartidaGrupoComputada>>{};
+
+    for (final partida in partidas) {
+      final grupoKey = partida.grupo.toUpperCase();
+      partidasPorGrupo.putIfAbsent(grupoKey, () => []).add(partida);
+    }
+
+    const rules = FootballGroupRules.fifaStyle(
+      directQualifiers: 2,
+      bestThirdQualifiers: 8,
+    );
+    final footballTables = rules.calculateTables(
+      teams: _footballTeamsFromJogos(jogos),
+      matches: partidas.map((partida) => partida.toFootballMatch()),
+    );
+    final tabelas = <String, TabelaGrupo>{};
+
+    for (final entry in footballTables.tablesByGroup.entries) {
+      tabelas[entry.key] = TabelaGrupo(
+        grupo: entry.value.group,
+        linhas: entry.value.standings
+            .map(LinhaTabelaTime.fromFootball)
+            .toList(growable: false),
+        partidasComputadas: partidasPorGrupo[entry.key] ?? const [],
+      );
+    }
+
+    return ConjuntoTabelasGrupo(
+      tabelasPorGrupo: tabelas,
+      terceirosOrdenados: footballTables.orderedThirdPlaces
+          .map(LinhaTabelaTime.fromFootball)
+          .toList(growable: false),
+      melhoresTerceiros: footballTables.bestThirdPlaces
+          .map(LinhaTabelaTime.fromFootball)
+          .toList(growable: false),
+    );
+  }
+
+  static Iterable<FootballGroupTeam> _footballTeamsFromJogos(List<Jogo> jogos) {
+    final teamsByGroupAndKey = <String, FootballGroupTeam>{};
 
     for (final jogo in jogos.where((jogo) => jogo.isFaseDeGrupos)) {
       final grupo = jogo.grupo;
@@ -511,120 +541,29 @@ class SistemaPontuacaoTimes {
         continue;
       }
 
-      final grupoKey = grupo.toUpperCase();
-      final acumuladores = acumuladoresPorGrupo.putIfAbsent(grupoKey, () => {});
+      final group = grupo.toUpperCase();
+      final homeKey = TeamNormalizer.key(jogo.mandantePrevisto);
+      final awayKey = TeamNormalizer.key(jogo.visitantePrevisto);
 
-      _garantirTime(
-        acumuladores: acumuladores,
-        timeKey: TeamNormalizer.key(jogo.mandantePrevisto),
-        nome: jogo.mandantePrevisto,
-        grupo: grupoKey,
+      teamsByGroupAndKey.putIfAbsent(
+        '$group::$homeKey',
+        () => FootballGroupTeam(
+          teamKey: homeKey,
+          name: jogo.mandantePrevisto,
+          group: group,
+        ),
       );
-
-      _garantirTime(
-        acumuladores: acumuladores,
-        timeKey: TeamNormalizer.key(jogo.visitantePrevisto),
-        nome: jogo.visitantePrevisto,
-        grupo: grupoKey,
-      );
-    }
-
-    for (final partida in partidas) {
-      final grupoKey = partida.grupo.toUpperCase();
-      final acumuladores = acumuladoresPorGrupo.putIfAbsent(grupoKey, () => {});
-
-      final mandante = _garantirTime(
-        acumuladores: acumuladores,
-        timeKey: partida.mandanteKey,
-        nome: partida.mandanteNome,
-        grupo: grupoKey,
-      );
-
-      final visitante = _garantirTime(
-        acumuladores: acumuladores,
-        timeKey: partida.visitanteKey,
-        nome: partida.visitanteNome,
-        grupo: grupoKey,
-      );
-
-      _aplicarResultado(
-        mandante: mandante,
-        visitante: visitante,
-        golsMandante: partida.golsMandante,
-        golsVisitante: partida.golsVisitante,
-      );
-
-      partidasPorGrupo.putIfAbsent(grupoKey, () => []).add(partida);
-    }
-
-    final tabelas = <String, TabelaGrupo>{};
-
-    for (final entry in acumuladoresPorGrupo.entries) {
-      final grupo = entry.key;
-      final acumuladores = entry.value.values.toList();
-      final partidasDoGrupo = partidasPorGrupo[grupo] ?? const [];
-
-      acumuladores.sort(
-        (a, b) => _compararTimes(a: a, b: b, partidasDoGrupo: partidasDoGrupo),
-      );
-
-      final linhas = <LinhaTabelaTime>[];
-
-      for (var index = 0; index < acumuladores.length; index++) {
-        linhas.add(acumuladores[index].toLinha(posicao: index + 1));
-      }
-
-      tabelas[grupo] = TabelaGrupo(
-        grupo: grupo,
-        linhas: linhas,
-        partidasComputadas: partidasDoGrupo,
+      teamsByGroupAndKey.putIfAbsent(
+        '$group::$awayKey',
+        () => FootballGroupTeam(
+          teamKey: awayKey,
+          name: jogo.visitantePrevisto,
+          group: group,
+        ),
       );
     }
 
-    final terceiros = tabelas.values
-        .map((tabela) => tabela.terceiro)
-        .whereType<LinhaTabelaTime>()
-        .toList();
-
-    terceiros.sort(_compararTerceiros);
-
-    final melhoresTerceiros = terceiros
-        .take(8)
-        .map((linha) => linha.copyWith(classificouComoTerceiro: true))
-        .toList(growable: false);
-
-    final gruposMelhoresTerceiros = melhoresTerceiros
-        .map((linha) => linha.grupo.toUpperCase())
-        .toSet();
-
-    final tabelasComClassificacao = <String, TabelaGrupo>{};
-
-    for (final entry in tabelas.entries) {
-      final linhas = entry.value.linhas
-          .map((linha) {
-            final classificouComoTerceiro =
-                linha.posicao == 3 &&
-                gruposMelhoresTerceiros.contains(linha.grupo);
-
-            return linha.copyWith(
-              classificouDireto: linha.posicao <= 2,
-              classificouComoTerceiro: classificouComoTerceiro,
-            );
-          })
-          .toList(growable: false);
-
-      tabelasComClassificacao[entry.key] = TabelaGrupo(
-        grupo: entry.value.grupo,
-        linhas: linhas,
-        partidasComputadas: entry.value.partidasComputadas,
-      );
-    }
-
-    return ConjuntoTabelasGrupo(
-      tabelasPorGrupo: tabelasComClassificacao,
-      terceirosOrdenados: terceiros,
-      melhoresTerceiros: melhoresTerceiros,
-    );
+    return teamsByGroupAndKey.values;
   }
 
   static ChaveamentoProjetado projetarChaveamento({
@@ -746,140 +685,6 @@ class SistemaPontuacaoTimes {
       resultadoFinal: resultadoFinal,
       avisos: avisos,
     );
-  }
-
-  static _AcumuladorTime _garantirTime({
-    required Map<String, _AcumuladorTime> acumuladores,
-    required String timeKey,
-    required String nome,
-    required String grupo,
-  }) {
-    return acumuladores.putIfAbsent(
-      timeKey,
-      () => _AcumuladorTime(timeKey: timeKey, nome: nome, grupo: grupo),
-    );
-  }
-
-  static void _aplicarResultado({
-    required _AcumuladorTime mandante,
-    required _AcumuladorTime visitante,
-    required int golsMandante,
-    required int golsVisitante,
-  }) {
-    mandante.jogos++;
-    visitante.jogos++;
-
-    mandante.golsPro += golsMandante;
-    mandante.golsContra += golsVisitante;
-
-    visitante.golsPro += golsVisitante;
-    visitante.golsContra += golsMandante;
-
-    if (golsMandante > golsVisitante) {
-      mandante.vitorias++;
-      visitante.derrotas++;
-      mandante.pontos += 3;
-    } else if (golsVisitante > golsMandante) {
-      visitante.vitorias++;
-      mandante.derrotas++;
-      visitante.pontos += 3;
-    } else {
-      mandante.empates++;
-      visitante.empates++;
-      mandante.pontos += 1;
-      visitante.pontos += 1;
-    }
-  }
-
-  static int _compararTimes({
-    required _AcumuladorTime a,
-    required _AcumuladorTime b,
-    required List<PartidaGrupoComputada> partidasDoGrupo,
-  }) {
-    // FIFA World Cup 2026, art. 13:
-    // pontos gerais; entre os empatados, confronto direto (pontos, saldo e
-    // gols); depois saldo geral, gols gerais e fair play.
-    final pontosGerais = b.pontos.compareTo(a.pontos);
-    if (pontosGerais != 0) {
-      return pontosGerais;
-    }
-
-    final confrontoDireto = _compararHeadToHead(a, b, partidasDoGrupo);
-    if (confrontoDireto != 0) {
-      return confrontoDireto;
-    }
-
-    final saldoGeral = b.saldoGols.compareTo(a.saldoGols);
-    if (saldoGeral != 0) {
-      return saldoGeral;
-    }
-
-    final golsGerais = b.golsPro.compareTo(a.golsPro);
-    if (golsGerais != 0) {
-      return golsGerais;
-    }
-
-    final fairPlay = b.fairPlayPontos.compareTo(a.fairPlayPontos);
-    if (fairPlay != 0) {
-      return fairPlay;
-    }
-
-    // A base ainda não armazena o histórico do ranking FIFA. O nome é usado
-    // somente como fallback determinístico caso todos os dados disponíveis
-    // permaneçam empatados.
-    return a.nome.compareTo(b.nome);
-  }
-
-  static int _compararHeadToHead(
-    _AcumuladorTime a,
-    _AcumuladorTime b,
-    List<PartidaGrupoComputada> partidasDoGrupo,
-  ) {
-    final confrontos = partidasDoGrupo.where((partida) {
-      return partida.envolve(a.timeKey) && partida.envolve(b.timeKey);
-    }).toList();
-
-    if (confrontos.isEmpty) {
-      return 0;
-    }
-
-    var pontosA = 0;
-    var pontosB = 0;
-    var golsA = 0;
-    var golsB = 0;
-
-    for (final partida in confrontos) {
-      pontosA += partida.pontos(a.timeKey);
-      pontosB += partida.pontos(b.timeKey);
-      golsA += partida.golsPro(a.timeKey);
-      golsB += partida.golsPro(b.timeKey);
-    }
-
-    final pontos = pontosB.compareTo(pontosA);
-    if (pontos != 0) return pontos;
-
-    final saldoA = golsA - golsB;
-    final saldoB = golsB - golsA;
-    final saldo = saldoB.compareTo(saldoA);
-    if (saldo != 0) return saldo;
-
-    return golsB.compareTo(golsA);
-  }
-
-  static int _compararTerceiros(LinhaTabelaTime a, LinhaTabelaTime b) {
-    final pontos = b.pontos.compareTo(a.pontos);
-    if (pontos != 0) return pontos;
-
-    final saldo = b.saldoGols.compareTo(a.saldoGols);
-    if (saldo != 0) return saldo;
-
-    final golsPro = b.golsPro.compareTo(a.golsPro);
-    if (golsPro != 0) return golsPro;
-
-    final fairPlay = b.fairPlayPontos.compareTo(a.fairPlayPontos);
-    if (fairPlay != 0) return fairPlay;
-
-    return a.nome.compareTo(b.nome);
   }
 
   static TimeProjetado? _resolverReferencia({

@@ -7,9 +7,11 @@ import '../models/jogo.dart';
 import '../plugins/api_refresh_action.dart';
 import '../plugins/live_matches_banner.dart';
 import '../plugins/palpite_participante_card.dart';
+import '../plugins/remote_media.dart';
 import '../plugins/section_header.dart';
 import '../plugins/team_badge.dart';
 import '../plugins/team_match_panel.dart';
+import '../plugins/youtube_embed_player.dart';
 import '../services/bolao_controller.dart';
 
 class JogoDetailScreen extends StatefulWidget {
@@ -80,8 +82,9 @@ class _JogoDetailScreenState extends State<JogoDetailScreen> {
                                 if (controller.videoDoJogo(jogo.jogoId) !=
                                     null) ...[
                                   const SizedBox(height: 12),
-                                  _HighlightsLink(
+                                  YoutubeEmbedPlayer(
                                     url: controller.videoDoJogo(jogo.jogoId)!,
+                                    title: 'Highlights da partida',
                                   ),
                                 ],
                                 const SizedBox(height: 20),
@@ -175,10 +178,10 @@ class _MatchHero extends StatelessWidget {
         children: [
           if (backgroundUrl != null)
             Positioned.fill(
-              child: Image.network(
-                backgroundUrl,
+              child: RemoteImage(
+                url: backgroundUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                borderRadius: BorderRadius.zero,
               ),
             ),
           Positioned.fill(
@@ -248,6 +251,8 @@ class _MatchHero extends StatelessWidget {
               ),
             ),
           ),
+          if (backgroundUrl != null)
+            const Positioned(right: 16, bottom: 10, child: MediaCredit()),
         ],
       ),
     );
@@ -424,45 +429,6 @@ class _MatchMetadata extends StatelessWidget {
   }
 }
 
-class _HighlightsLink extends StatelessWidget {
-  final String url;
-
-  const _HighlightsLink({required this.url});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            Icon(Icons.play_circle_outline, color: colors.primary),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Highlights disponíveis',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
-              ),
-            ),
-            Text(
-              url,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _Info extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -523,6 +489,11 @@ class _TeamPanels extends StatelessWidget {
         grupo: jogo.grupo,
       ),
       homeSide: true,
+      onTap: () => Navigator.pushNamed(
+        context,
+        AppRoutes.time,
+        arguments: jogo.mandantePrevisto,
+      ),
     );
 
     final visitante = TeamMatchPanel(
@@ -534,6 +505,11 @@ class _TeamPanels extends StatelessWidget {
         grupo: jogo.grupo,
       ),
       homeSide: false,
+      onTap: () => Navigator.pushNamed(
+        context,
+        AppRoutes.time,
+        arguments: jogo.visitantePrevisto,
+      ),
     );
 
     return LayoutBuilder(

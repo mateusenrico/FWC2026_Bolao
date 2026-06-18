@@ -148,20 +148,22 @@ git push origin test
 - [x] atualização automática no build
 - [x] modelos e carregamento dos assets
 - [x] tabela provisória de jogos
+- [x] regra de pontuação por palpite
+- [x] classificação geral do bolão
+- [x] critérios de desempate do bolão
+- [x] motor reutilizável de regras de grupos de futebol
+- [x] evolução do ranking
+- [x] tela principal
+- [x] tela de classificação/ranking
+- [x] tela de jogos
+- [x] tela de grupos
+- [x] gráfico de evolução
+- [x] adaptação inicial para celular, tablet e desktop
+- [x] testes das regras de pontuação principais
 
-### Ainda faltam
+### Ainda faltam / em refinamento
 
-- [ ] definir formalmente a regra de pontuação
-- [ ] calcular pontos por palpite
-- [ ] calcular classificação geral
-- [ ] definir critérios de desempate do bolão
-- [ ] calcular evolução do ranking
-- [ ] criar a tela principal
-- [ ] criar a tela de classificação
-- [ ] melhorar a lista/tabela de jogos
-- [ ] criar a tela de grupos
-- [ ] criar o gráfico de evolução
-- [ ] adaptar visual para celular, tablet e desktop
-- [ ] criar testes das regras de pontuação
 - [ ] revisar acessibilidade e estados de erro
 - [ ] validar a versão final no ambiente `test`
+- [ ] consolidar a próxima rodada visual com badges/imagens em todos os cards de jogo
+- [ ] refinar o tema visual final do app
