@@ -31,6 +31,8 @@ class RankingEvolutionChart extends StatelessWidget {
   final Map<String, int> podiumPositions;
   final List<String> legendOrder;
   final RankingEvolutionMetric metric;
+  final double height;
+  final bool showLegend;
 
   const RankingEvolutionChart({
     super.key,
@@ -40,6 +42,8 @@ class RankingEvolutionChart extends StatelessWidget {
     this.podiumPositions = const {},
     this.legendOrder = const [],
     required this.metric,
+    this.height = 280,
+    this.showLegend = true,
   });
 
   @override
@@ -79,7 +83,7 @@ class RankingEvolutionChart extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(
-              height: 280,
+              height: height,
               child: CustomPaint(
                 painter: _RankingEvolutionPainter(
                   points: visible,
@@ -91,19 +95,21 @@ class RankingEvolutionChart extends StatelessWidget {
                 child: const SizedBox.expand(),
               ),
             ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 8,
-              children: [
-                for (final participanteId in orderedLegendIds)
-                  _LegendItem(
-                    color: _colorFor(participanteId),
-                    name: participants[participanteId]!,
-                    podiumPosition: podiumPositions[participanteId],
-                  ),
-              ],
-            ),
+            if (showLegend) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  for (final participanteId in orderedLegendIds)
+                    _LegendItem(
+                      color: _colorFor(participanteId),
+                      name: participants[participanteId]!,
+                      podiumPosition: podiumPositions[participanteId],
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -159,9 +165,22 @@ class _RankingEvolutionPainter extends CustomPainter {
     final maxPoints = points.fold<int>(1, (max, point) {
       return math.max(max, point.pontos);
     });
+    final minPosition = points.fold<int>(points.first.posicao, (min, point) {
+      return math.min(min, point.posicao);
+    });
     final maxPosition = points.fold<int>(1, (max, point) {
       return math.max(max, point.posicao);
     });
+
+    _drawGrid(
+      canvas: canvas,
+      chart: chart,
+      minStep: minStep,
+      maxStep: maxStep,
+      maxPoints: maxPoints,
+      minPosition: minPosition,
+      maxPosition: maxPosition,
+    );
 
     final byParticipant = <String, List<RankingEvolutionPoint>>{};
     for (final point in points) {
@@ -184,6 +203,7 @@ class _RankingEvolutionPainter extends CustomPainter {
           chart: chart,
           point: point,
           maxPoints: maxPoints,
+          minPosition: minPosition,
           maxPosition: maxPosition,
         );
 
@@ -231,6 +251,7 @@ class _RankingEvolutionPainter extends CustomPainter {
           chart: chart,
           point: point,
           maxPoints: maxPoints,
+          minPosition: minPosition,
           maxPosition: maxPosition,
         );
         if (podiumPosition != null && i == participantPoints.length - 1) {
@@ -249,7 +270,7 @@ class _RankingEvolutionPainter extends CustomPainter {
     );
     _drawLabel(
       canvas,
-      metric == RankingEvolutionMetric.pontos ? '$maxPoints pts' : '1º',
+      metric == RankingEvolutionMetric.pontos ? '$maxPoints' : '$minPositionº',
       Offset(0, chart.top - 4),
     );
     if (metric == RankingEvolutionMetric.posicao) {
@@ -257,22 +278,97 @@ class _RankingEvolutionPainter extends CustomPainter {
     }
   }
 
+  void _drawGrid({
+    required Canvas canvas,
+    required Rect chart,
+    required int minStep,
+    required int maxStep,
+    required int maxPoints,
+    required int minPosition,
+    required int maxPosition,
+  }) {
+    final gridPaint = Paint()
+      ..color = colors.outlineVariant.withValues(alpha: 0.42)
+      ..strokeWidth = 0.8;
+    final labelStyle = TextStyle(
+      color: colors.onSurfaceVariant.withValues(alpha: 0.7),
+      fontSize: 10,
+      fontWeight: FontWeight.w700,
+    );
+
+    final stepInterval = _niceStepInterval(maxStep - minStep);
+    final firstGridStep = (minStep / stepInterval).ceil() * stepInterval;
+    for (var step = firstGridStep; step <= maxStep; step += stepInterval) {
+      if (step < minStep) {
+        continue;
+      }
+      final x = maxStep <= minStep
+          ? chart.left
+          : chart.left + ((step - minStep) / (maxStep - minStep)) * chart.width;
+      canvas.drawLine(Offset(x, chart.top), Offset(x, chart.bottom), gridPaint);
+      _drawLabelWithStyle(
+        canvas,
+        '$step',
+        Offset(x - 7, chart.bottom + 13),
+        labelStyle,
+      );
+    }
+
+    if (metric == RankingEvolutionMetric.posicao) {
+      for (var position = minPosition; position <= maxPosition; position++) {
+        final y = _yForPosition(
+          chart: chart,
+          position: position,
+          minPosition: minPosition,
+          maxPosition: maxPosition,
+        );
+        canvas.drawLine(
+          Offset(chart.left, y),
+          Offset(chart.right, y),
+          gridPaint,
+        );
+      }
+      return;
+    }
+
+    final pointInterval = _nicePointInterval(maxPoints);
+    for (var value = 0; value <= maxPoints; value += pointInterval) {
+      final y = chart.bottom - (value / maxPoints) * chart.height;
+      canvas.drawLine(Offset(chart.left, y), Offset(chart.right, y), gridPaint);
+    }
+  }
+
   double _yForPoint({
     required Rect chart,
     required RankingEvolutionPoint point,
     required int maxPoints,
+    required int minPosition,
     required int maxPosition,
   }) {
     if (metric == RankingEvolutionMetric.posicao) {
-      if (maxPosition <= 1) {
-        return chart.top;
-      }
-
-      return chart.top +
-          ((point.posicao - 1) / (maxPosition - 1)) * chart.height;
+      return _yForPosition(
+        chart: chart,
+        position: point.posicao,
+        minPosition: minPosition,
+        maxPosition: maxPosition,
+      );
     }
 
     return chart.bottom - (point.pontos / maxPoints) * chart.height;
+  }
+
+  double _yForPosition({
+    required Rect chart,
+    required int position,
+    required int minPosition,
+    required int maxPosition,
+  }) {
+    if (maxPosition <= minPosition) {
+      return chart.top;
+    }
+
+    return chart.top +
+        ((position - minPosition) / (maxPosition - minPosition)) * chart.height;
   }
 
   void _drawLabel(Canvas canvas, String text, Offset offset) {
@@ -289,6 +385,46 @@ class _RankingEvolutionPainter extends CustomPainter {
     )..layout();
 
     painter.paint(canvas, offset);
+  }
+
+  void _drawLabelWithStyle(
+    Canvas canvas,
+    String text,
+    Offset offset,
+    TextStyle style,
+  ) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    painter.paint(canvas, offset);
+  }
+
+  int _niceStepInterval(int span) {
+    if (span <= 8) {
+      return 1;
+    }
+    if (span <= 18) {
+      return 2;
+    }
+    if (span <= 60) {
+      return 5;
+    }
+    return 10;
+  }
+
+  int _nicePointInterval(int maxPoints) {
+    if (maxPoints <= 10) {
+      return 1;
+    }
+    if (maxPoints <= 40) {
+      return 5;
+    }
+    if (maxPoints <= 100) {
+      return 10;
+    }
+    return 25;
   }
 
   @override

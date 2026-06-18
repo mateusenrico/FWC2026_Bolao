@@ -118,7 +118,7 @@ class TeamOverviewCard extends StatelessWidget {
                             ? '-'
                             : '${tableLine!.posicao}º',
                       ),
-                      _Metric(label: 'Pts', value: '${tableLine?.pontos ?? 0}'),
+                      _Metric(label: 'P', value: '${tableLine?.pontos ?? 0}'),
                       _Metric(label: 'J', value: '${tableLine?.jogos ?? 0}'),
                       _Metric(
                         label: 'SG',

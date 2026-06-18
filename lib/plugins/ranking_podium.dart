@@ -51,7 +51,7 @@ class RankingPodium extends StatelessWidget {
         }
 
         return SizedBox(
-          height: 190,
+          height: 168,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -61,7 +61,7 @@ class RankingPodium extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 5),
                     child: _PodiumTile(
                       linha: linha,
-                      height: linha.posicao == 1 ? 178 : 142,
+                      height: linha.posicao == 1 ? 158 : 128,
                       delta: liveDelta(linha.participanteId),
                       onTap: onTapParticipante == null
                           ? null
@@ -129,6 +129,7 @@ class _CompactPodiumTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: medal.onBackground,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -137,7 +138,7 @@ class _CompactPodiumTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: colors.onSurfaceVariant,
+                        color: medal.onBackground.withValues(alpha: 0.72),
                       ),
                     ),
                   ],
@@ -150,6 +151,7 @@ class _CompactPodiumTile extends StatelessWidget {
                   Text(
                     '${linha.pontosTotal}',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: medal.onBackground,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -178,21 +180,25 @@ class _CompactPodiumTile extends StatelessWidget {
         background: const Color(0xFFFFF4C7),
         foreground: const Color(0xFFB77900),
         onForeground: Colors.white,
+        onBackground: const Color(0xFF1B1A12),
       ),
       2 => _MedalColors(
         background: colors.surfaceContainerHigh,
         foreground: const Color(0xFF8A8F98),
         onForeground: Colors.white,
+        onBackground: colors.onSurface,
       ),
       3 => _MedalColors(
         background: const Color(0xFFFFE1CD),
         foreground: const Color(0xFFB56028),
         onForeground: Colors.white,
+        onBackground: const Color(0xFF24140B),
       ),
       _ => _MedalColors(
         background: colors.surfaceContainerLow,
         foreground: colors.surfaceContainerHighest,
         onForeground: colors.onSurfaceVariant,
+        onBackground: colors.onSurface,
       ),
     };
   }
@@ -251,6 +257,7 @@ class _PodiumTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: medal.onBackground,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -259,8 +266,9 @@ class _PodiumTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '${linha.pontosTotal} pts',
+                      '${linha.pontosTotal}',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: medal.onBackground,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -279,7 +287,7 @@ class _PodiumTile extends StatelessWidget {
                 Text(
                   '${linha.placaresExatos} exatos',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colors.onSurfaceVariant,
+                    color: medal.onBackground.withValues(alpha: 0.72),
                   ),
                 ),
               ],
@@ -296,21 +304,25 @@ class _PodiumTile extends StatelessWidget {
         background: const Color(0xFFFFF4C7),
         foreground: const Color(0xFFB77900),
         onForeground: Colors.white,
+        onBackground: const Color(0xFF1B1A12),
       ),
       2 => _MedalColors(
         background: colors.surfaceContainerHigh,
         foreground: const Color(0xFF8A8F98),
         onForeground: Colors.white,
+        onBackground: colors.onSurface,
       ),
       3 => _MedalColors(
         background: const Color(0xFFFFE1CD),
         foreground: const Color(0xFFB56028),
         onForeground: Colors.white,
+        onBackground: const Color(0xFF24140B),
       ),
       _ => _MedalColors(
         background: colors.surfaceContainerLow,
         foreground: colors.surfaceContainerHighest,
         onForeground: colors.onSurfaceVariant,
+        onBackground: colors.onSurface,
       ),
     };
   }
@@ -320,10 +332,12 @@ class _MedalColors {
   final Color background;
   final Color foreground;
   final Color onForeground;
+  final Color onBackground;
 
   const _MedalColors({
     required this.background,
     required this.foreground,
     required this.onForeground,
+    required this.onBackground,
   });
 }

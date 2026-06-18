@@ -148,7 +148,7 @@ class _GroupSummary extends StatelessWidget {
         else if (group.totalPontos > 0)
           _TinyPill(
             label: '+${group.totalPontos}',
-            suffix: 'pts',
+            suffix: '',
             color: colors.secondaryContainer,
           ),
       ],
@@ -310,7 +310,7 @@ class _TinyPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        '$label $suffix',
+        suffix.isEmpty ? label : '$label $suffix',
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: textColor,
           fontWeight: FontWeight.w900,

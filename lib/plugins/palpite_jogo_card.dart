@@ -230,7 +230,7 @@ class _PointsChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        '${pontuacao.pontos} pts',
+        '${pontuacao.pontos}',
         style: Theme.of(
           context,
         ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w900),
