@@ -29,7 +29,7 @@ class SportsDbApiService {
     for (final result in endpointResults) {
       for (final event in result.events) {
         if (event.idLeague == leagueId && event.idEvent.isNotEmpty) {
-          byId[event.idEvent] = event;
+          byId[event.idEvent] = _preferEvent(byId[event.idEvent], event);
         }
       }
     }
@@ -38,6 +38,58 @@ class SportsDbApiService {
       events: byId.values.toList(growable: false),
       endpoints: endpointResults,
     );
+  }
+
+  SportsDbEvent _preferEvent(SportsDbEvent? current, SportsDbEvent incoming) {
+    if (current == null) {
+      return incoming;
+    }
+
+    if (incoming.isFinal && !current.isFinal) {
+      return incoming;
+    }
+
+    if (current.isFinal && !incoming.isFinal) {
+      return current;
+    }
+
+    if (incoming.temPlacar && !current.temPlacar) {
+      return incoming;
+    }
+
+    if (current.temPlacar && !incoming.temPlacar) {
+      return current;
+    }
+
+    if (incoming.temPlacar && current.temPlacar) {
+      final incomingTotal = incoming.intHomeScore! + incoming.intAwayScore!;
+      final currentTotal = current.intHomeScore! + current.intAwayScore!;
+      if (incomingTotal < currentTotal &&
+          incoming.statusCanonico == 'em_andamento') {
+        return current;
+      }
+    }
+
+    final incomingStatusRank = _statusRank(incoming.statusCanonico);
+    final currentStatusRank = _statusRank(current.statusCanonico);
+    if (incomingStatusRank > currentStatusRank) {
+      return incoming;
+    }
+
+    if (currentStatusRank > incomingStatusRank) {
+      return current;
+    }
+
+    return incoming;
+  }
+
+  int _statusRank(String status) {
+    return switch (status) {
+      'encerrado' => 3,
+      'em_andamento' => 2,
+      'agendado' => 1,
+      _ => 0,
+    };
   }
 
   List<SportsDbEndpointRequest> buildRefreshRequests({

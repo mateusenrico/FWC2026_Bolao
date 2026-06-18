@@ -561,7 +561,10 @@ class TournamentDataUpdater {
       final idEvent = record['idEvent']?.toString();
 
       if (idEvent != null && idEvent.isNotEmpty) {
-        byId[idEvent] = Map<String, dynamic>.from(record);
+        byId[idEvent] = _preferSportsDbEvent(
+          byId[idEvent],
+          Map<String, dynamic>.from(record),
+        );
       }
     }
 
@@ -571,7 +574,7 @@ class TournamentDataUpdater {
       final idEvent = event['idEvent']?.toString();
 
       if (idEvent != null && idEvent.isNotEmpty) {
-        byId[idEvent] = event;
+        byId[idEvent] = _preferSportsDbEvent(byId[idEvent], event);
       }
     }
 
@@ -622,7 +625,7 @@ class TournamentDataUpdater {
       final idEvent = event['idEvent']?.toString();
 
       if (idEvent != null && idEvent.isNotEmpty) {
-        byId[idEvent] = event;
+        byId[idEvent] = _preferSportsDbEvent(byId[idEvent], event);
       }
     }
 
@@ -1319,9 +1322,30 @@ class TournamentDataUpdater {
     }
 
     if (sportsDb != null && _hasScore(sportsDb)) {
+      final sportsHomeScore = _asInt(sportsDb['intHomeScore']);
+      final sportsAwayScore = _asInt(sportsDb['intAwayScore']);
+      final sportsStatus = sportsDb['strStatus']?.toString().toUpperCase();
+      final sportsLive =
+          {'LIVE', '1H', '2H', 'HT'}.contains(sportsStatus) ||
+          DateTime.now().toUtc().difference(kickoffUtc).inMinutes <= 180;
+
+      if (oldHomeScore != null &&
+          oldAwayScore != null &&
+          sportsHomeScore != null &&
+          sportsAwayScore != null &&
+          sportsLive &&
+          sportsHomeScore + sportsAwayScore < oldHomeScore + oldAwayScore) {
+        return _ResultData(
+          homeScore: oldHomeScore,
+          awayScore: oldAwayScore,
+          resultFinal: oldFinal,
+          source: oldGame?['fonteResultado']?.toString() ?? 'base_anterior',
+        );
+      }
+
       return _ResultData(
-        homeScore: _asInt(sportsDb['intHomeScore']),
-        awayScore: _asInt(sportsDb['intAwayScore']),
+        homeScore: sportsHomeScore,
+        awayScore: sportsAwayScore,
         resultFinal: false,
         source: 'sportsdb',
       );
@@ -2294,6 +2318,80 @@ class TournamentDataUpdater {
   bool _hasScore(Map<String, dynamic> event) {
     return _asInt(event['intHomeScore']) != null &&
         _asInt(event['intAwayScore']) != null;
+  }
+
+  Map<String, dynamic> _preferSportsDbEvent(
+    Map<String, dynamic>? current,
+    Map<String, dynamic> incoming,
+  ) {
+    if (current == null) {
+      return incoming;
+    }
+
+    final incomingFinal = _sportsDbIsFinal(incoming);
+    final currentFinal = _sportsDbIsFinal(current);
+    if (incomingFinal && !currentFinal) {
+      return incoming;
+    }
+
+    if (currentFinal && !incomingFinal) {
+      return current;
+    }
+
+    final incomingHasScore = _hasScore(incoming);
+    final currentHasScore = _hasScore(current);
+    if (incomingHasScore && !currentHasScore) {
+      return incoming;
+    }
+
+    if (currentHasScore && !incomingHasScore) {
+      return current;
+    }
+
+    if (incomingHasScore && currentHasScore) {
+      final incomingTotal =
+          _asInt(incoming['intHomeScore'])! + _asInt(incoming['intAwayScore'])!;
+      final currentTotal =
+          _asInt(current['intHomeScore'])! + _asInt(current['intAwayScore'])!;
+      if (incomingTotal < currentTotal &&
+          _sportsDbStatusCanonico(incoming) == 'em_andamento') {
+        return current;
+      }
+    }
+
+    final incomingStatusRank = _sportsDbStatusRank(incoming);
+    final currentStatusRank = _sportsDbStatusRank(current);
+    if (incomingStatusRank > currentStatusRank) {
+      return incoming;
+    }
+
+    if (currentStatusRank > incomingStatusRank) {
+      return current;
+    }
+
+    return incoming;
+  }
+
+  int _sportsDbStatusRank(Map<String, dynamic> event) {
+    return switch (_sportsDbStatusCanonico(event)) {
+      'encerrado' => 3,
+      'em_andamento' => 2,
+      'agendado' => 1,
+      _ => 0,
+    };
+  }
+
+  String _sportsDbStatusCanonico(Map<String, dynamic> event) {
+    final status = event['strStatus']?.toString().toUpperCase();
+    if ({'FT', 'AET', 'PEN', 'FINISHED', 'MATCH FINISHED'}.contains(status)) {
+      return 'encerrado';
+    }
+
+    if ({'LIVE', '1H', '2H', 'HT'}.contains(status)) {
+      return 'em_andamento';
+    }
+
+    return 'agendado';
   }
 
   bool _isApiGeneratedGame(Map<String, dynamic> game) {
