@@ -5,6 +5,7 @@ import '../core/functions/date_time_utils.dart';
 import '../core/functions/team_normalizer.dart';
 import '../models/jogo.dart';
 import '../plugins/api_refresh_action.dart';
+import '../plugins/live_matches_banner.dart';
 import '../plugins/palpite_participante_card.dart';
 import '../plugins/section_header.dart';
 import '../plugins/team_badge.dart';
@@ -54,76 +55,94 @@ class _JogoDetailScreenState extends State<JogoDetailScreen> {
             title: Text('Jogo ${jogo.matchNumber}'),
             actions: [ApiRefreshAction(controller: controller)],
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.only(bottom: 36),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _MatchHero(controller: controller, jogo: jogo),
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1180),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _MatchMetadata(jogo: jogo),
-                          const SizedBox(height: 20),
-                          _TeamPanels(controller: controller, jogo: jogo),
-                          const SizedBox(height: 26),
-                          SectionHeader(
-                            title: 'Palpites dos participantes',
-                            subtitle:
-                                'Pontuação parcial calculada com o placar atual',
-                            trailing: ranking.length > 5
-                                ? TextButton.icon(
-                                    onPressed: () {
-                                      setState(() {
-                                        _mostrarTodosPalpites =
-                                            !_mostrarTodosPalpites;
-                                      });
-                                    },
-                                    icon: Icon(
-                                      _mostrarTodosPalpites
-                                          ? Icons.expand_less
-                                          : Icons.expand_more,
-                                    ),
-                                    label: Text(
-                                      _mostrarTodosPalpites
-                                          ? 'Recolher'
-                                          : 'Ver todos',
-                                    ),
-                                  )
-                                : null,
-                          ),
-                          for (final linha in visibleRanking)
-                            PalpiteParticipanteCard(
-                              linha: linha,
-                              palpite: controller.palpiteDoParticipanteNoJogo(
-                                participanteId: linha.participanteId,
-                                jogoId: jogo.jogoId,
-                              ),
-                              pontuacao: controller
-                                  .pontuacaoDoParticipanteNoJogo(
-                                    participanteId: linha.participanteId,
-                                    jogoId: jogo.jogoId,
+          body: Column(
+            children: [
+              LiveMatchesBanner(controller: controller),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 36),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _MatchHero(controller: controller, jogo: jogo),
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1180),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _MatchMetadata(
+                                  controller: controller,
+                                  jogo: jogo,
+                                ),
+                                if (controller.videoDoJogo(jogo.jogoId) !=
+                                    null) ...[
+                                  const SizedBox(height: 12),
+                                  _HighlightsLink(
+                                    url: controller.videoDoJogo(jogo.jogoId)!,
                                   ),
-                              onTap: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.participante,
-                                  arguments: linha.participanteId,
-                                );
-                              },
+                                ],
+                                const SizedBox(height: 20),
+                                _TeamPanels(controller: controller, jogo: jogo),
+                                const SizedBox(height: 26),
+                                SectionHeader(
+                                  title: 'Palpites dos participantes',
+                                  subtitle:
+                                      'Pontuação parcial calculada com o placar atual',
+                                  trailing: ranking.length > 5
+                                      ? TextButton.icon(
+                                          onPressed: () {
+                                            setState(() {
+                                              _mostrarTodosPalpites =
+                                                  !_mostrarTodosPalpites;
+                                            });
+                                          },
+                                          icon: Icon(
+                                            _mostrarTodosPalpites
+                                                ? Icons.expand_less
+                                                : Icons.expand_more,
+                                          ),
+                                          label: Text(
+                                            _mostrarTodosPalpites
+                                                ? 'Recolher'
+                                                : 'Ver todos',
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                for (final linha in visibleRanking)
+                                  PalpiteParticipanteCard(
+                                    linha: linha,
+                                    palpite: controller
+                                        .palpiteDoParticipanteNoJogo(
+                                          participanteId: linha.participanteId,
+                                          jogoId: jogo.jogoId,
+                                        ),
+                                    pontuacao: controller
+                                        .pontuacaoDoParticipanteNoJogo(
+                                          participanteId: linha.participanteId,
+                                          jogoId: jogo.jogoId,
+                                        ),
+                                    onTap: () {
+                                      Navigator.pushNamed(
+                                        context,
+                                        AppRoutes.participante,
+                                        arguments: linha.participanteId,
+                                      );
+                                    },
+                                  ),
+                              ],
                             ),
-                        ],
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
@@ -196,9 +215,9 @@ class _MatchHero extends StatelessWidget {
                       children: [
                         Expanded(
                           child: _HeroTeam(
-                            teamName: jogo.visitantePrevisto,
+                            teamName: jogo.mandantePrevisto,
                             badgeUrl: controller.badgeDoTime(
-                              jogo.visitantePrevisto,
+                              jogo.mandantePrevisto,
                             ),
                           ),
                         ),
@@ -208,9 +227,9 @@ class _MatchHero extends StatelessWidget {
                         ),
                         Expanded(
                           child: _HeroTeam(
-                            teamName: jogo.mandantePrevisto,
+                            teamName: jogo.visitantePrevisto,
                             badgeUrl: controller.badgeDoTime(
-                              jogo.mandantePrevisto,
+                              jogo.visitantePrevisto,
                             ),
                           ),
                         ),
@@ -288,13 +307,35 @@ class _HeroScore extends StatelessWidget {
         jogo.golsMandante != null &&
         jogo.golsVisitante != null;
 
+    if (!hasScore) {
+      return Column(
+        children: [
+          Text(
+            'VS',
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            jogo.statusTexto,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: Colors.white70,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              hasScore ? '${jogo.golsVisitante}' : '-',
+              '${jogo.golsMandante}',
               style: Theme.of(context).textTheme.displaySmall?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
@@ -310,7 +351,7 @@ class _HeroScore extends StatelessWidget {
               ),
             ),
             Text(
-              hasScore ? '${jogo.golsMandante}' : '-',
+              '${jogo.golsVisitante}',
               style: Theme.of(context).textTheme.displaySmall?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
@@ -332,12 +373,15 @@ class _HeroScore extends StatelessWidget {
 }
 
 class _MatchMetadata extends StatelessWidget {
+  final BolaoController controller;
   final Jogo jogo;
 
-  const _MatchMetadata({required this.jogo});
+  const _MatchMetadata({required this.controller, required this.jogo});
 
   @override
   Widget build(BuildContext context) {
+    final venue = controller.venueDoJogo(jogo);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -358,12 +402,59 @@ class _MatchMetadata extends StatelessWidget {
             _Info(
               icon: Icons.location_city_outlined,
               title: 'Cidade',
-              value: jogo.cidadeSede.isEmpty ? 'A definir' : jogo.cidadeSede,
+              value: venue?.localTexto.isNotEmpty == true
+                  ? venue!.localTexto
+                  : jogo.localTexto,
             ),
+            if (venue?.capacidade != null)
+              _Info(
+                icon: Icons.groups_outlined,
+                title: 'Capacidade',
+                value: '${venue!.capacidade} lugares',
+              ),
             _Info(
               icon: Icons.tag,
               title: 'Partida',
               value: '#${jogo.matchNumber}',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HighlightsLink extends StatelessWidget {
+  final String url;
+
+  const _HighlightsLink({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Icon(Icons.play_circle_outline, color: colors.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Highlights disponíveis',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+              ),
+            ),
+            Text(
+              url,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
             ),
           ],
         ),
@@ -423,17 +514,6 @@ class _TeamPanels extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visitante = TeamMatchPanel(
-      teamName: jogo.visitantePrevisto,
-      badgeUrl: controller.badgeDoTime(jogo.visitantePrevisto),
-      goals: jogo.golsVisitante,
-      tableLine: controller.linhaDoTimeNoGrupo(
-        nomeTime: jogo.visitantePrevisto,
-        grupo: jogo.grupo,
-      ),
-      homeSide: false,
-    );
-
     final mandante = TeamMatchPanel(
       teamName: jogo.mandantePrevisto,
       badgeUrl: controller.badgeDoTime(jogo.mandantePrevisto),
@@ -445,21 +525,32 @@ class _TeamPanels extends StatelessWidget {
       homeSide: true,
     );
 
+    final visitante = TeamMatchPanel(
+      teamName: jogo.visitantePrevisto,
+      badgeUrl: controller.badgeDoTime(jogo.visitantePrevisto),
+      goals: jogo.golsVisitante,
+      tableLine: controller.linhaDoTimeNoGrupo(
+        nomeTime: jogo.visitantePrevisto,
+        grupo: jogo.grupo,
+      ),
+      homeSide: false,
+    );
+
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= 760) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: visitante),
-              const SizedBox(width: 16),
               Expanded(child: mandante),
+              const SizedBox(width: 16),
+              Expanded(child: visitante),
             ],
           );
         }
 
         return Column(
-          children: [visitante, const SizedBox(height: 12), mandante],
+          children: [mandante, const SizedBox(height: 12), visitante],
         );
       },
     );

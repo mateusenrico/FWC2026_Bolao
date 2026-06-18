@@ -102,6 +102,12 @@ class TournamentDataUpdater {
 
   File get _teamsFile => File('assets/data/times_participantes.json');
 
+  File get _sportsDbTeamsFile => File('assets/data/times_sportsdb.json');
+
+  File get _sportsDbVenuesFile => File('assets/data/venues_sportsdb.json');
+
+  File get _sportsDbLeagueFile => File('assets/data/liga_sportsdb.json');
+
   File get _guessesFile => File('assets/data/palpites.json');
 
   File get _fixtureSeedFile => File('tools/data/world_cup_2026_fixtures.json');
@@ -121,6 +127,9 @@ class TournamentDataUpdater {
     final oldGames = await _readJsonList(_gamesFile);
     final oldHistory = await _readJsonList(_historyFile);
     final teams = await _readJsonList(_teamsFile);
+    final oldSportsDbTeams = await _readOptionalJsonList(_sportsDbTeamsFile);
+    final oldSportsDbVenues = await _readOptionalJsonList(_sportsDbVenuesFile);
+    final oldLeague = await _readOptionalJsonObject(_sportsDbLeagueFile);
 
     if (fixtures.length != 104) {
       throw StateError(
@@ -170,11 +179,27 @@ class TournamentDataUpdater {
 
     _updateTeams(teams: teams, games: games);
 
+    final enrichedLeague = await _buildSportsDbLeague(oldLeague: oldLeague);
+    final enrichedTeams = await _buildSportsDbTeams(
+      oldTeams: oldSportsDbTeams,
+      teams: teams,
+      history: history,
+    );
+    final enrichedVenues = await _buildSportsDbVenues(
+      oldVenues: oldSportsDbVenues,
+      fixtures: fixtures,
+      history: history,
+      games: games,
+    );
+
     await _validate(games: games, history: history, teams: teams);
 
     await _writeJsonList(_gamesFile, games);
     await _writeJsonList(_historyFile, history);
     await _writeJsonList(_teamsFile, teams);
+    await _writeJsonList(_sportsDbTeamsFile, enrichedTeams);
+    await _writeJsonList(_sportsDbVenuesFile, enrichedVenues);
+    await _writeJsonObject(_sportsDbLeagueFile, enrichedLeague);
 
     _printSummary(
       games: games,
@@ -182,6 +207,8 @@ class TournamentDataUpdater {
       sportsDbEvents: sportsDbEvents,
       sportsDbByMatchNumber: sportsDbByMatchNumber,
       fixtureDownloadByMatchNumber: fixtureDownloadByMatchNumber,
+      enrichedTeams: enrichedTeams,
+      enrichedVenues: enrichedVenues,
     );
 
     await _writeUpdateLog(
@@ -190,6 +217,8 @@ class TournamentDataUpdater {
       sportsDbEvents: sportsDbEvents,
       sportsDbByMatchNumber: sportsDbByMatchNumber,
       fixtureDownloadByMatchNumber: fixtureDownloadByMatchNumber,
+      enrichedTeams: enrichedTeams,
+      enrichedVenues: enrichedVenues,
     );
   }
 
@@ -199,6 +228,8 @@ class TournamentDataUpdater {
     required List<Map<String, dynamic>> sportsDbEvents,
     required Map<int, Map<String, dynamic>> sportsDbByMatchNumber,
     required Map<int, Map<String, dynamic>> fixtureDownloadByMatchNumber,
+    required List<Map<String, dynamic>> enrichedTeams,
+    required List<Map<String, dynamic>> enrichedVenues,
   }) async {
     final now = DateTime.now();
     final timestamp = _timestampForPath(now);
@@ -234,6 +265,8 @@ class TournamentDataUpdater {
         'sportsDbEvents': sportsDbEvents.length,
         'sportsDbMatchedByMatchNumber': sportsDbByMatchNumber.length,
         'fixtureDownloadEntries': fixtureDownloadByMatchNumber.length,
+        'enrichedTeams': enrichedTeams.length,
+        'enrichedVenues': enrichedVenues.length,
         'warnings': _warnings.length,
         'endpointCalls': _apiEndpointResults.length,
         'endpointCallsOk': _apiEndpointResults
@@ -327,10 +360,32 @@ class TournamentDataUpdater {
     return _asMapList(decoded);
   }
 
+  Future<List<Map<String, dynamic>>> _readOptionalJsonList(File file) async {
+    if (!file.existsSync()) {
+      return const [];
+    }
+
+    return _readJsonList(file);
+  }
+
+  Future<Map<String, dynamic>> _readOptionalJsonObject(File file) async {
+    if (!file.existsSync()) {
+      return const {};
+    }
+
+    return _readJsonObject(file);
+  }
+
   Future<void> _writeJsonList(
     File file,
     List<Map<String, dynamic>> data,
   ) async {
+    const encoder = JsonEncoder.withIndent('  ');
+
+    await file.writeAsString('${encoder.convert(data)}\n');
+  }
+
+  Future<void> _writeJsonObject(File file, Map<String, dynamic> data) async {
     const encoder = JsonEncoder.withIndent('  ');
 
     await file.writeAsString('${encoder.convert(data)}\n');
@@ -1281,6 +1336,19 @@ class TournamentDataUpdater {
       );
     }
 
+    final sportsStatus = sportsDb?['strStatus']?.toString().toUpperCase();
+    final elapsed = DateTime.now().toUtc().difference(kickoffUtc).inMinutes;
+
+    if ({'LIVE', '1H', '2H', 'HT'}.contains(sportsStatus) ||
+        (elapsed >= 0 && elapsed <= 180)) {
+      return const _ResultData(
+        homeScore: 0,
+        awayScore: 0,
+        resultFinal: false,
+        source: 'ao_vivo_zerado',
+      );
+    }
+
     return const _ResultData(
       homeScore: null,
       awayScore: null,
@@ -1505,6 +1573,557 @@ class TournamentDataUpdater {
     team['estatisticasGrupo'] = stats;
   }
 
+  Future<Map<String, dynamic>> _buildSportsDbLeague({
+    required Map<String, dynamic> oldLeague,
+  }) async {
+    final uri = Uri.parse(
+      '$_sportsDbBaseUrl/lookupleague.php?id=${config.leagueId}',
+    );
+    final leagues = await _fetchSportsDbList(uri: uri, rootKey: 'leagues');
+    final league = leagues.isNotEmpty ? leagues.first : oldLeague['raw'];
+    final raw = league is Map ? Map<String, dynamic>.from(league) : oldLeague;
+
+    if (raw.isEmpty && oldLeague.isEmpty) {
+      return const {};
+    }
+
+    return {
+      'idLeague':
+          _nullableString(raw['idLeague']) ??
+          _nullableString(oldLeague['idLeague']) ??
+          config.leagueId,
+      'nome':
+          _nullableString(raw['strLeague']) ??
+          _nullableString(oldLeague['nome']) ??
+          'FIFA World Cup',
+      'badgeUrl': _firstString([raw['strBadge'], oldLeague['badgeUrl']]),
+      'logoUrl': _firstString([raw['strLogo'], oldLeague['logoUrl']]),
+      'posterUrl': _firstString([raw['strPoster'], oldLeague['posterUrl']]),
+      'bannerUrl': _firstString([raw['strBanner'], oldLeague['bannerUrl']]),
+      'fanartUrl': _firstString([
+        raw['strFanart1'],
+        raw['strFanart2'],
+        raw['strFanart3'],
+        raw['strFanart4'],
+        oldLeague['fanartUrl'],
+      ]),
+      'youtubeUrl': _firstString([raw['strYoutube'], oldLeague['youtubeUrl']]),
+      'raw': raw,
+    };
+  }
+
+  Future<List<Map<String, dynamic>>> _buildSportsDbTeams({
+    required List<Map<String, dynamic>> oldTeams,
+    required List<Map<String, dynamic>> teams,
+    required List<Map<String, dynamic>> history,
+  }) async {
+    final byKey = <String, Map<String, dynamic>>{};
+
+    for (final oldTeam in oldTeams) {
+      final key = oldTeam['timeKey']?.toString();
+      if (key != null && key.isNotEmpty) {
+        byKey[key] = Map<String, dynamic>.from(oldTeam);
+      }
+    }
+
+    for (final team in teams) {
+      final key = TeamNormalizer.key(team['nome']?.toString() ?? '');
+      byKey[key] = _mergeSportsDbTeam(byKey[key], {
+        'timeKey': key,
+        'nomeBolao': team['nome'],
+        'grupo': team['grupo'],
+        'fonte': 'times_participantes',
+        'raw': <String, dynamic>{},
+      });
+    }
+
+    final lookupTeams = await _fetchSportsDbList(
+      uri: Uri.parse(
+        '$_sportsDbBaseUrl/lookup_all_teams.php?id=${config.leagueId}',
+      ),
+      rootKey: 'teams',
+    );
+
+    final searchTeams = await _fetchSportsDbList(
+      uri: Uri.parse('$_sportsDbBaseUrl/search_all_teams.php?l=FIFA_World_Cup'),
+      rootKey: 'teams',
+    );
+
+    for (final apiTeam in [...lookupTeams, ...searchTeams]) {
+      final key = TeamNormalizer.key(apiTeam['strTeam']?.toString() ?? '');
+      if (key.isEmpty || !byKey.containsKey(key)) {
+        continue;
+      }
+
+      byKey[key] = _mergeSportsDbTeam(
+        byKey[key],
+        _sportsDbTeamFromApi(
+          apiTeam,
+          nomeBolao: byKey[key]?['nomeBolao']?.toString(),
+          grupo: byKey[key]?['grupo']?.toString(),
+          fonte: 'sportsdb_lookup',
+        ),
+      );
+    }
+
+    for (final record in history) {
+      final homeName = record['strHomeTeam']?.toString();
+      final awayName = record['strAwayTeam']?.toString();
+
+      if (homeName != null) {
+        final key = TeamNormalizer.key(homeName);
+        if (byKey.containsKey(key)) {
+          byKey[key] = _mergeSportsDbTeam(
+            byKey[key],
+            _sportsDbTeamFromHistory(
+              record: record,
+              prefix: 'Home',
+              nomeBolao: byKey[key]?['nomeBolao']?.toString(),
+              grupo: byKey[key]?['grupo']?.toString(),
+            ),
+          );
+        }
+      }
+
+      if (awayName != null) {
+        final key = TeamNormalizer.key(awayName);
+        if (byKey.containsKey(key)) {
+          byKey[key] = _mergeSportsDbTeam(
+            byKey[key],
+            _sportsDbTeamFromHistory(
+              record: record,
+              prefix: 'Away',
+              nomeBolao: byKey[key]?['nomeBolao']?.toString(),
+              grupo: byKey[key]?['grupo']?.toString(),
+            ),
+          );
+        }
+      }
+    }
+
+    final result = byKey.values.toList(growable: false)
+      ..sort((a, b) {
+        final group = (a['grupo']?.toString() ?? '').compareTo(
+          b['grupo']?.toString() ?? '',
+        );
+
+        if (group != 0) {
+          return group;
+        }
+
+        return (a['nomeBolao']?.toString() ?? '').compareTo(
+          b['nomeBolao']?.toString() ?? '',
+        );
+      });
+
+    return result;
+  }
+
+  Map<String, dynamic> _sportsDbTeamFromApi(
+    Map<String, dynamic> raw, {
+    required String? nomeBolao,
+    required String? grupo,
+    required String fonte,
+  }) {
+    final nomeApi = _nullableString(raw['strTeam']);
+    final key = TeamNormalizer.key(nomeBolao ?? nomeApi ?? '');
+
+    return {
+      'timeKey': key,
+      'nomeBolao': nomeBolao ?? nomeApi ?? '',
+      'grupo': grupo,
+      'idTeam': _nullableString(raw['idTeam']),
+      'nomeApi': nomeApi,
+      'siglaApi': _nullableString(raw['strTeamShort']),
+      'pais': _nullableString(raw['strCountry']),
+      'badgeUrl': _nullableString(raw['strBadge']),
+      'logoUrl': _nullableString(raw['strLogo']),
+      'bannerUrl': _nullableString(raw['strBanner']),
+      'fanartUrl': _firstString([
+        raw['strFanart1'],
+        raw['strFanart2'],
+        raw['strFanart3'],
+        raw['strFanart4'],
+      ]),
+      'equipamentoUrl': _nullableString(raw['strEquipment']),
+      'corPrimaria': _nullableString(raw['strColour1']),
+      'corSecundaria': _nullableString(raw['strColour2']),
+      'estadio': _nullableString(raw['strStadium']),
+      'idVenue': _nullableString(raw['idVenue']),
+      'descricao':
+          _nullableString(raw['strDescriptionPT']) ??
+          _nullableString(raw['strDescriptionEN']),
+      'fonte': fonte,
+      'raw': raw,
+    };
+  }
+
+  Map<String, dynamic> _sportsDbTeamFromHistory({
+    required Map<String, dynamic> record,
+    required String prefix,
+    required String? nomeBolao,
+    required String? grupo,
+  }) {
+    final apiName = _nullableString(record['str${prefix}Team']);
+    final key = TeamNormalizer.key(nomeBolao ?? apiName ?? '');
+
+    return {
+      'timeKey': key,
+      'nomeBolao': nomeBolao ?? apiName ?? '',
+      'grupo': grupo,
+      'idTeam': _nullableString(record['id${prefix}Team']),
+      'nomeApi': apiName,
+      'badgeUrl': _nullableString(record['str${prefix}TeamBadge']),
+      'fonte': 'historico_partidas',
+      'raw': <String, dynamic>{},
+    };
+  }
+
+  Map<String, dynamic> _mergeSportsDbTeam(
+    Map<String, dynamic>? current,
+    Map<String, dynamic> incoming,
+  ) {
+    final result = <String, dynamic>{...?current};
+
+    for (final entry in incoming.entries) {
+      final value = entry.value;
+
+      if (entry.key == 'raw') {
+        final raw = _asStringMap(value);
+        if (raw.isNotEmpty || result['raw'] == null) {
+          result['raw'] = raw;
+        }
+        continue;
+      }
+
+      if (value == null) {
+        continue;
+      }
+
+      if (value is String && value.trim().isEmpty) {
+        continue;
+      }
+
+      result[entry.key] = value;
+    }
+
+    result['raw'] ??= <String, dynamic>{};
+
+    return result;
+  }
+
+  Future<List<Map<String, dynamic>>> _buildSportsDbVenues({
+    required List<Map<String, dynamic>> oldVenues,
+    required List<Map<String, dynamic>> fixtures,
+    required List<Map<String, dynamic>> history,
+    required List<Map<String, dynamic>> games,
+  }) async {
+    final byKey = <String, Map<String, dynamic>>{};
+
+    for (final oldVenue in oldVenues) {
+      final key = oldVenue['venueKey']?.toString();
+      if (key != null && key.isNotEmpty) {
+        byKey[key] = Map<String, dynamic>.from(oldVenue);
+      }
+    }
+
+    for (final fixture in fixtures) {
+      final name = fixture['stadium']?.toString() ?? '';
+      if (name.trim().isEmpty) {
+        continue;
+      }
+
+      final key = _venueKey(name);
+      byKey[key] = _mergeSportsDbVenue(byKey[key], {
+        'venueKey': key,
+        'nome': name,
+        'cidade': fixture['hostCity'],
+        'fonte': 'fixture',
+        'raw': <String, dynamic>{},
+      });
+    }
+
+    for (final game in games) {
+      final name = game['estadio']?.toString() ?? '';
+      if (name.trim().isEmpty) {
+        continue;
+      }
+
+      final key = _venueKey(name);
+      byKey[key] = _mergeSportsDbVenue(byKey[key], {
+        'venueKey': key,
+        'nome': name,
+        'cidade': game['cidadeSede'],
+        'fonte': 'jogos',
+        'raw': <String, dynamic>{},
+      });
+    }
+
+    for (final record in history) {
+      final name = record['strVenue']?.toString();
+      if (name == null || name.trim().isEmpty) {
+        continue;
+      }
+
+      final key = _venueKey(name);
+      byKey[key] = _mergeSportsDbVenue(byKey[key], {
+        'venueKey': key,
+        'nome': name,
+        'idVenue': _nullableString(record['idVenue']),
+        'cidade': _nullableString(record['strCity']),
+        'pais': _nullableString(record['strCountry']),
+        'thumbUrl': _nullableString(record['strVenueThumb']),
+        'fonte': 'historico_partidas',
+        'raw': <String, dynamic>{},
+      });
+    }
+
+    final ids =
+        byKey.values
+            .map((venue) => _nullableString(venue['idVenue']))
+            .whereType<String>()
+            .toSet()
+            .toList()
+          ..sort();
+
+    for (final id in ids) {
+      final venues = await _fetchSportsDbList(
+        uri: Uri.parse('$_sportsDbBaseUrl/lookupvenue.php?id=$id'),
+        rootKey: 'venues',
+      );
+
+      if (venues.isEmpty) {
+        continue;
+      }
+
+      final raw = venues.first;
+      final name = _nullableString(raw['strVenue']);
+      if (name == null) {
+        continue;
+      }
+
+      final key = _matchingVenueKey(byKey, name) ?? _venueKey(name);
+      byKey[key] = _mergeSportsDbVenue(
+        byKey[key],
+        _sportsDbVenueFromApi(raw, fallbackName: byKey[key]?['nome']),
+      );
+    }
+
+    final namesToSearch =
+        byKey.values
+            .where((venue) => _nullableString(venue['thumbUrl']) == null)
+            .map((venue) => venue['nome']?.toString() ?? '')
+            .where((name) => name.trim().isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+
+    for (final name in namesToSearch) {
+      final uri = Uri.parse(
+        '$_sportsDbBaseUrl/searchvenues.php',
+      ).replace(queryParameters: {'v': name});
+      final venues = await _fetchSportsDbList(uri: uri, rootKey: 'venues');
+
+      if (venues.isEmpty) {
+        continue;
+      }
+
+      final raw = venues.first;
+      final key = _matchingVenueKey(byKey, name) ?? _venueKey(name);
+      byKey[key] = _mergeSportsDbVenue(
+        byKey[key],
+        _sportsDbVenueFromApi(raw, fallbackName: name),
+      );
+    }
+
+    final result = byKey.values.toList(growable: false)
+      ..sort((a, b) {
+        return (a['nome']?.toString() ?? '').compareTo(
+          b['nome']?.toString() ?? '',
+        );
+      });
+
+    return result;
+  }
+
+  Map<String, dynamic> _sportsDbVenueFromApi(
+    Map<String, dynamic> raw, {
+    required String? fallbackName,
+  }) {
+    final name = _nullableString(raw['strVenue']) ?? fallbackName ?? '';
+
+    return {
+      'venueKey': _venueKey(name),
+      'nome': name,
+      'idVenue': _nullableString(raw['idVenue']),
+      'cidade': _nullableString(raw['strLocation']),
+      'pais': _nullableString(raw['strCountry']),
+      'capacidade': _asInt(raw['intCapacity']),
+      'thumbUrl': _nullableString(raw['strThumb']),
+      'fanartUrl': _firstString([
+        raw['strFanart1'],
+        raw['strFanart2'],
+        raw['strFanart3'],
+        raw['strFanart4'],
+      ]),
+      'descricao':
+          _nullableString(raw['strDescriptionPT']) ??
+          _nullableString(raw['strDescriptionEN']),
+      'fonte': 'sportsdb_lookup',
+      'raw': raw,
+    };
+  }
+
+  Map<String, dynamic> _mergeSportsDbVenue(
+    Map<String, dynamic>? current,
+    Map<String, dynamic> incoming,
+  ) {
+    final result = <String, dynamic>{...?current};
+
+    for (final entry in incoming.entries) {
+      final value = entry.value;
+
+      if (entry.key == 'raw') {
+        final raw = _asStringMap(value);
+        if (raw.isNotEmpty || result['raw'] == null) {
+          result['raw'] = raw;
+        }
+        continue;
+      }
+
+      if (value == null) {
+        continue;
+      }
+
+      if (value is String && value.trim().isEmpty) {
+        continue;
+      }
+
+      result[entry.key] = value;
+    }
+
+    result['raw'] ??= <String, dynamic>{};
+
+    return result;
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchSportsDbList({
+    required Uri uri,
+    required String rootKey,
+  }) async {
+    stdout.writeln('GET $uri');
+
+    final stopwatch = Stopwatch()..start();
+
+    try {
+      final response = await http.get(uri).timeout(const Duration(seconds: 25));
+      stopwatch.stop();
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final message = 'SportsDB respondeu ${response.statusCode} para $uri.';
+        stderr.writeln('Aviso: $message');
+        _warnings.add(message);
+        _apiEndpointResults.add(
+          ApiEndpointResult(
+            name: _endpointName(uri),
+            uri: uri.toString(),
+            ok: false,
+            statusCode: response.statusCode,
+            eventCount: 0,
+            durationMs: stopwatch.elapsedMilliseconds,
+            error: message,
+          ),
+        );
+        return const [];
+      }
+
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is! Map) {
+        final message = 'Resposta SportsDB não era objeto JSON em $uri.';
+        stderr.writeln('Aviso: $message');
+        _warnings.add(message);
+        _apiEndpointResults.add(
+          ApiEndpointResult(
+            name: _endpointName(uri),
+            uri: uri.toString(),
+            ok: false,
+            statusCode: response.statusCode,
+            eventCount: 0,
+            durationMs: stopwatch.elapsedMilliseconds,
+            error: message,
+          ),
+        );
+        return const [];
+      }
+
+      final rawItems = decoded[rootKey];
+
+      if (rawItems == null) {
+        _apiEndpointResults.add(
+          ApiEndpointResult(
+            name: _endpointName(uri),
+            uri: uri.toString(),
+            ok: true,
+            statusCode: response.statusCode,
+            eventCount: 0,
+            durationMs: stopwatch.elapsedMilliseconds,
+          ),
+        );
+        return const [];
+      }
+
+      if (rawItems is! List) {
+        final message = 'Campo $rootKey da SportsDB não era lista em $uri.';
+        stderr.writeln('Aviso: $message');
+        _warnings.add(message);
+        _apiEndpointResults.add(
+          ApiEndpointResult(
+            name: _endpointName(uri),
+            uri: uri.toString(),
+            ok: false,
+            statusCode: response.statusCode,
+            eventCount: 0,
+            durationMs: stopwatch.elapsedMilliseconds,
+            error: message,
+          ),
+        );
+        return const [];
+      }
+
+      final items = _asMapList(rawItems);
+      _apiEndpointResults.add(
+        ApiEndpointResult(
+          name: _endpointName(uri),
+          uri: uri.toString(),
+          ok: true,
+          statusCode: response.statusCode,
+          eventCount: items.length,
+          durationMs: stopwatch.elapsedMilliseconds,
+        ),
+      );
+
+      return items;
+    } catch (error) {
+      stopwatch.stop();
+
+      final message = 'não foi possível consultar $uri: $error';
+      stderr.writeln('Aviso: $message');
+      _warnings.add(message);
+      _apiEndpointResults.add(
+        ApiEndpointResult(
+          name: _endpointName(uri),
+          uri: uri.toString(),
+          ok: false,
+          eventCount: 0,
+          durationMs: stopwatch.elapsedMilliseconds,
+          error: message,
+        ),
+      );
+      return const [];
+    }
+  }
+
   Future<void> _validate({
     required List<Map<String, dynamic>> games,
     required List<Map<String, dynamic>> history,
@@ -1584,6 +2203,8 @@ class TournamentDataUpdater {
     required List<Map<String, dynamic>> sportsDbEvents,
     required Map<int, Map<String, dynamic>> sportsDbByMatchNumber,
     required Map<int, Map<String, dynamic>> fixtureDownloadByMatchNumber,
+    required List<Map<String, dynamic>> enrichedTeams,
+    required List<Map<String, dynamic>> enrichedVenues,
   }) {
     final finalResults = games.where((game) => game['resultadoFinal'] == true);
     final fixtureFallbackResults = games.where(
@@ -1614,6 +2235,8 @@ class TournamentDataUpdater {
       '- Resultados usando fallback FixtureDownload: '
       '${fixtureFallbackResults.length}',
     );
+    stdout.writeln('- Times enriquecidos: ${enrichedTeams.length}');
+    stdout.writeln('- Estádios/venues enriquecidos: ${enrichedVenues.length}');
 
     final withoutResult = games.where(
       (game) =>
@@ -1828,6 +2451,45 @@ class TournamentDataUpdater {
     final text = value.toString().trim();
 
     return text.isEmpty ? null : text;
+  }
+
+  String? _firstString(List<dynamic> values) {
+    for (final value in values) {
+      final text = _nullableString(value);
+      if (text != null) {
+        return text;
+      }
+    }
+
+    return null;
+  }
+
+  String _venueKey(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
+        .trim()
+        .replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  String? _matchingVenueKey(
+    Map<String, Map<String, dynamic>> byKey,
+    String name,
+  ) {
+    final incomingKey = _venueKey(name);
+
+    if (byKey.containsKey(incomingKey)) {
+      return incomingKey;
+    }
+
+    for (final entry in byKey.entries) {
+      final currentName = entry.value['nome']?.toString() ?? '';
+      if (_venueKey(currentName) == incomingKey) {
+        return entry.key;
+      }
+    }
+
+    return null;
   }
 
   Map<String, dynamic> _asStringMap(dynamic value) {

@@ -134,7 +134,8 @@ class PartidaCard extends StatelessWidget {
 
   String _faseTexto(Jogo jogo) {
     if (jogo.isFaseDeGrupos && jogo.grupo != null) {
-      return 'Grupo ${jogo.grupo}';
+      final rodada = jogo.rodada == null ? '' : ' · Rodada ${jogo.rodada}';
+      return 'Grupo ${jogo.grupo}$rodada';
     }
 
     if (jogo.fase.isNotEmpty) {
@@ -209,13 +210,32 @@ class _ScoreCenter extends StatelessWidget {
         jogo.golsMandante != null &&
         jogo.golsVisitante != null;
 
+    if (!hasScore) {
+      return Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 10 : 14,
+          vertical: compact ? 7 : 9,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(
+            context,
+          ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.58),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          'VS',
+          style: textTheme.labelLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      );
+    }
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _ScoreBox(
-          value: hasScore ? jogo.golsMandante.toString() : '-',
-          compact: compact,
-        ),
+        _ScoreBox(value: jogo.golsMandante.toString(), compact: compact),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: compact ? 5 : 8),
           child: Text(
@@ -223,10 +243,7 @@ class _ScoreCenter extends StatelessWidget {
             style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w500),
           ),
         ),
-        _ScoreBox(
-          value: hasScore ? jogo.golsVisitante.toString() : '-',
-          compact: compact,
-        ),
+        _ScoreBox(value: jogo.golsVisitante.toString(), compact: compact),
       ],
     );
   }

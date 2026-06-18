@@ -4,6 +4,7 @@ import '../core/app_routes.dart';
 import '../models/jogo.dart';
 import '../plugins/api_refresh_action.dart';
 import '../plugins/partida_card.dart';
+import '../plugins/ranking_mode_selector.dart';
 import '../plugins/ranking_participante_card.dart';
 import '../plugins/section_header.dart';
 import '../services/bolao_controller.dart';
@@ -18,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  PeriodoJogos _periodo = PeriodoJogos.hoje;
+  PeriodoJogos _periodo = PeriodoJogos.futuros;
   bool _rankingExpandido = false;
 
   BolaoController get controller => widget.controller;
@@ -36,6 +37,27 @@ class _HomeScreenState extends State<HomeScreen> {
           appBar: AppBar(
             title: const Text('Bolão FWC 2026'),
             actions: [
+              IconButton(
+                tooltip: 'Ranking detalhado',
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRoutes.ranking);
+                },
+                icon: const Icon(Icons.leaderboard_outlined),
+              ),
+              IconButton(
+                tooltip: 'Partidas',
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRoutes.jogos);
+                },
+                icon: const Icon(Icons.sports_soccer_outlined),
+              ),
+              IconButton(
+                tooltip: 'Simulações',
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRoutes.simulador);
+                },
+                icon: const Icon(Icons.tune_outlined),
+              ),
               IconButton(
                 tooltip: 'Classificação dos grupos',
                 onPressed: () {
@@ -225,17 +247,21 @@ class _RankingSection extends StatelessWidget {
         SectionHeader(
           title: 'Ranking parcial',
           subtitle: 'Desempate por placares exatos',
-          trailing: ranking.length > 5
-              ? TextButton.icon(
-                  onPressed: onToggle,
-                  icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
-                  label: Text(expanded ? 'Recolher' : 'Ver todos'),
-                )
-              : null,
+          trailing: TextButton.icon(
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.ranking),
+            icon: const Icon(Icons.leaderboard_outlined),
+            label: const Text('Detalhes'),
+          ),
         ),
+        RankingModeSelector(
+          value: controller.ordenacaoRanking,
+          onChanged: controller.alterarOrdenacaoRanking,
+        ),
+        const SizedBox(height: 10),
         for (final linha in visible)
           RankingParticipanteCard(
             linha: linha,
+            liveDelta: controller.pontosAoVivo(linha.participanteId),
             onTap: () {
               Navigator.pushNamed(
                 context,
@@ -243,6 +269,15 @@ class _RankingSection extends StatelessWidget {
                 arguments: linha.participanteId,
               );
             },
+          ),
+        if (ranking.length > 5)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: onToggle,
+              icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
+              label: Text(expanded ? 'Recolher' : 'Ver todos'),
+            ),
           ),
       ],
     );
@@ -267,30 +302,29 @@ class _GamesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionHeader(
+        SectionHeader(
           title: 'Partidas',
-          subtitle: 'Ordenadas pela numeração oficial do torneio',
+          subtitle: 'Passados, em andamento e futuros',
+          trailing: TextButton.icon(
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.jogos),
+            icon: const Icon(Icons.sports_soccer_outlined),
+            label: const Text('Ver todas'),
+          ),
         ),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
             _FilterChip(
-              label: 'Ontem e antes',
+              label: 'Passados',
               value: PeriodoJogos.passados,
               selected: periodo == PeriodoJogos.passados,
               onSelected: onPeriodoChanged,
             ),
             _FilterChip(
-              label: 'Hoje',
-              value: PeriodoJogos.hoje,
-              selected: periodo == PeriodoJogos.hoje,
-              onSelected: onPeriodoChanged,
-            ),
-            _FilterChip(
-              label: 'Esta semana',
-              value: PeriodoJogos.semana,
-              selected: periodo == PeriodoJogos.semana,
+              label: 'Em andamento',
+              value: PeriodoJogos.emAndamento,
+              selected: periodo == PeriodoJogos.emAndamento,
               onSelected: onPeriodoChanged,
             ),
             _FilterChip(

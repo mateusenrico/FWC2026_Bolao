@@ -104,7 +104,7 @@ class PalpiteJogoCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'Resultado: ${jogo.temResultado ? jogo.placarTexto : '-'}',
+                          'Resultado: ${jogo.temResultado ? jogo.placarTexto : 'a definir'}',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: colors.onSurfaceVariant),
                         ),
@@ -132,7 +132,9 @@ class PalpiteJogoCard extends StatelessWidget {
                       ),
                       _ScoreLabel(
                         title: 'Resultado',
-                        value: jogo.temResultado ? jogo.placarTexto : '-',
+                        value: jogo.temResultado
+                            ? jogo.placarTexto
+                            : 'A definir',
                       ),
                       const SizedBox(width: 8),
                       Expanded(

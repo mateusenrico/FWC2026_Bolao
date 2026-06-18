@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/sistema_pontuacao_participantes.dart';
 import '../core/sistema_pontuacao_times.dart';
 import '../core/functions/team_normalizer.dart';
+import 'mata_mata_bracket_view.dart';
 
 class ChaveamentoParticipanteCard extends StatelessWidget {
   final ChaveamentoProjetado chaveamento;
@@ -38,7 +39,9 @@ class ChaveamentoParticipanteCard extends StatelessWidget {
         children: [
           _FinalFour(pontuacao: pontuacaoFinal),
           const SizedBox(height: 12),
-          for (final jogo in jogos) _ProjectedMatchRow(jogo: jogo),
+          MataMataBracketView(chaveamento: chaveamento),
+          const SizedBox(height: 12),
+          for (final jogo in jogos.take(6)) _ProjectedMatchRow(jogo: jogo),
           if (chaveamento.avisos.isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(

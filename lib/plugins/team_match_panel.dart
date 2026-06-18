@@ -65,10 +65,17 @@ class TeamMatchPanel extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    goals?.toString() ?? '-',
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+                    goals?.toString() ?? 'A definir',
+                    style:
+                        (goals == null
+                                ? Theme.of(context).textTheme.titleMedium
+                                : Theme.of(context).textTheme.displaySmall)
+                            ?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: goals == null
+                                  ? colors.onSurfaceVariant
+                                  : null,
+                            ),
                   ),
                   Text(
                     homeSide ? 'gols do mandante' : 'gols do visitante',

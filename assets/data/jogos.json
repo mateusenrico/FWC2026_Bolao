@@ -1114,15 +1114,15 @@
       "nomeFonte": "South Africa"
     },
     "idEventAtual": "2461109",
-    "statusJogo": "agendado",
-    "golsMandante": null,
-    "golsVisitante": null,
-    "vencedor": null,
+    "statusJogo": "em_andamento",
+    "golsMandante": 1,
+    "golsVisitante": 1,
+    "vencedor": "empate",
     "temHistoricoApi": true,
-    "temResultadoApi": false,
-    "temResultado": false,
+    "temResultadoApi": true,
+    "temResultado": true,
     "resultadoFinal": false,
-    "fonteResultado": null
+    "fonteResultado": "sportsdb"
   },
   {
     "jogoId": "g828d635409db",
@@ -1158,12 +1158,12 @@
       "timeKey": "bosnia and herzegovina",
       "nomeFonte": "Bosnia and Herzegovina"
     },
-    "idEventAtual": null,
+    "idEventAtual": "2461110",
     "statusJogo": "agendado",
     "golsMandante": null,
     "golsVisitante": null,
     "vencedor": null,
-    "temHistoricoApi": false,
+    "temHistoricoApi": true,
     "temResultadoApi": false,
     "temResultado": false,
     "resultadoFinal": false,

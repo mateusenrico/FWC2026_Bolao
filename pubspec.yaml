@@ -96,4 +96,6 @@ flutter:
     - assets/data/times_participantes.json
     - assets/data/participantes.json
     - assets/data/palpites.json
-    
+    - assets/data/times_sportsdb.json
+    - assets/data/venues_sportsdb.json
+    - assets/data/liga_sportsdb.json

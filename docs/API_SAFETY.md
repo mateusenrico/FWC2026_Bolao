@@ -10,6 +10,9 @@ A atualização usa:
 - `eventsnextleague.php?id=4429`
 - `eventspastleague.php?id=4429`
 - `eventsday.php?d=YYYY-MM-DD&s=Soccer`, filtrando `idLeague == 4429`
+- `search_all_teams.php?l=FIFA World Cup`
+- `lookupleague.php?id=4429`
+- `lookupvenue.php?id=<idVenue>`
 - fallback: `https://fixturedownload.com/feed/json/fifa-world-cup-2026`
 
 ## Garantias da tool local
@@ -23,7 +26,18 @@ A atualização usa:
 5. preserva dados antigos se a API não trouxer determinado jogo;
 6. usa a fixture canônica para manter os 104 jogos;
 7. escreve log em `logs/update_sportsdb/<timestamp>.json`;
-8. mantém o build funcionando mesmo se a API estiver parcialmente indisponível.
+8. enriquece times, venues e liga quando a SportsDB retorna metadados visuais;
+9. mantém o build funcionando mesmo se a API estiver parcialmente indisponível.
+
+## Atribuicoes e licencas
+
+As fontes externas usadas pela atualização ficam registradas em `THIRD_PARTY_NOTICES.md`.
+
+Sempre que um endpoint, feed, pacote de dados ou provedor de midia for adicionado, atualize:
+
+1. este arquivo, com o endpoint e a garantia operacional esperada;
+2. `README.md`, com o resumo global do fluxo;
+3. `THIRD_PARTY_NOTICES.md`, com credito, link e aviso de licenca/termos.
 
 ## Logs em CI
 
