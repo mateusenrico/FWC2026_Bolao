@@ -102,6 +102,76 @@ class SportsDbApiService {
     return fetchRefreshEvents();
   }
 
+  Future<SportsDbEventDetailsResult> fetchEventDetails(String eventId) async {
+    final requests = buildEventDetailRequests(eventId);
+    final endpointResults = await Future.wait(
+      requests.map(_fetchDetailEndpointSafe),
+    );
+
+    final timelines = <SportsDbTimelineItem>[];
+    final lineups = <SportsDbLineupItem>[];
+    final results = <SportsDbPlayerResult>[];
+    final stats = <SportsDbEventStat>[];
+
+    for (final endpoint in endpointResults) {
+      switch (endpoint.kind) {
+        case SportsDbDetailKind.timeline:
+          timelines.addAll(endpoint.rows.map(SportsDbTimelineItem.fromJson));
+        case SportsDbDetailKind.lineup:
+          lineups.addAll(endpoint.rows.map(SportsDbLineupItem.fromJson));
+        case SportsDbDetailKind.results:
+          results.addAll(endpoint.rows.map(SportsDbPlayerResult.fromJson));
+        case SportsDbDetailKind.stats:
+          stats.addAll(endpoint.rows.map(SportsDbEventStat.fromJson));
+      }
+    }
+
+    timelines.sort((a, b) => a.minuteValue.compareTo(b.minuteValue));
+
+    return SportsDbEventDetailsResult(
+      eventId: eventId,
+      timeline: timelines,
+      lineup: lineups,
+      results: results,
+      stats: stats,
+      endpoints: endpointResults,
+    );
+  }
+
+  List<SportsDbDetailEndpointRequest> buildEventDetailRequests(String eventId) {
+    final normalized = eventId.trim();
+    if (normalized.isEmpty) {
+      return const [];
+    }
+
+    return [
+      SportsDbDetailEndpointRequest(
+        name: 'lookuptimeline:$normalized',
+        kind: SportsDbDetailKind.timeline,
+        keys: const ['timeline', 'eventtimeline'],
+        uri: Uri.parse('$baseUrl/lookuptimeline.php?id=$normalized'),
+      ),
+      SportsDbDetailEndpointRequest(
+        name: 'lookuplineup:$normalized',
+        kind: SportsDbDetailKind.lineup,
+        keys: const ['lineup', 'eventlineup'],
+        uri: Uri.parse('$baseUrl/lookuplineup.php?id=$normalized'),
+      ),
+      SportsDbDetailEndpointRequest(
+        name: 'eventresults:$normalized',
+        kind: SportsDbDetailKind.results,
+        keys: const ['results', 'eventresults'],
+        uri: Uri.parse('$baseUrl/eventresults.php?id=$normalized'),
+      ),
+      SportsDbDetailEndpointRequest(
+        name: 'lookupeventstats:$normalized',
+        kind: SportsDbDetailKind.stats,
+        keys: const ['eventstats', 'stats'],
+        uri: Uri.parse('$baseUrl/lookupeventstats.php?id=$normalized'),
+      ),
+    ];
+  }
+
   Future<SportsDbEndpointResult> _fetchEndpointSafe(
     SportsDbEndpointRequest request,
   ) async {
@@ -147,6 +217,61 @@ class SportsDbApiService {
         uri: request.uri.toString(),
         ok: false,
         events: const [],
+        durationMs: stopwatch.elapsedMilliseconds,
+        error: error.toString(),
+      );
+    }
+  }
+
+  Future<SportsDbDetailEndpointResult> _fetchDetailEndpointSafe(
+    SportsDbDetailEndpointRequest request,
+  ) async {
+    final stopwatch = Stopwatch()..start();
+
+    try {
+      final response = await http.get(request.uri).timeout(timeout);
+      stopwatch.stop();
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return SportsDbDetailEndpointResult(
+          name: request.name,
+          kind: request.kind,
+          uri: request.uri.toString(),
+          ok: false,
+          statusCode: response.statusCode,
+          rows: const [],
+          durationMs: stopwatch.elapsedMilliseconds,
+          error: 'HTTP ${response.statusCode} ao consultar ${request.uri}',
+        );
+      }
+
+      final parsed = _parseRows(
+        body: response.body,
+        endpointName: request.name,
+        uri: request.uri,
+        keys: request.keys,
+      );
+
+      return SportsDbDetailEndpointResult(
+        name: request.name,
+        kind: request.kind,
+        uri: request.uri.toString(),
+        ok: parsed.ok,
+        statusCode: response.statusCode,
+        rows: parsed.rows,
+        durationMs: stopwatch.elapsedMilliseconds,
+        error: parsed.error,
+        warning: parsed.warning,
+      );
+    } catch (error) {
+      stopwatch.stop();
+
+      return SportsDbDetailEndpointResult(
+        name: request.name,
+        kind: request.kind,
+        uri: request.uri.toString(),
+        ok: false,
+        rows: const [],
         durationMs: stopwatch.elapsedMilliseconds,
         error: error.toString(),
       );
@@ -211,6 +336,74 @@ class SportsDbApiService {
       return _ParsedEvents(
         ok: false,
         events: const [],
+        error: 'Erro ao decodificar JSON de $endpointName: $error',
+      );
+    }
+  }
+
+  _ParsedRows _parseRows({
+    required String body,
+    required String endpointName,
+    required Uri uri,
+    required List<String> keys,
+  }) {
+    try {
+      final decoded = jsonDecode(body);
+
+      if (decoded is! Map) {
+        return _ParsedRows(
+          ok: false,
+          rows: const [],
+          error: 'Resposta de $endpointName não era objeto JSON.',
+        );
+      }
+
+      Object? rawRows;
+      for (final key in keys) {
+        if (decoded.containsKey(key)) {
+          rawRows = decoded[key];
+          break;
+        }
+      }
+
+      rawRows ??= decoded.values.whereType<List>().firstOrNull;
+
+      if (rawRows == null) {
+        return const _ParsedRows(ok: true, rows: []);
+      }
+
+      if (rawRows is! List) {
+        return _ParsedRows(
+          ok: false,
+          rows: const [],
+          error: 'Campo de dados de $endpointName não era uma lista JSON.',
+        );
+      }
+
+      final rows = <Map<String, dynamic>>[];
+      var malformedItems = 0;
+
+      for (final item in rawRows) {
+        if (item is Map<String, dynamic>) {
+          rows.add(item);
+        } else if (item is Map) {
+          rows.add(Map<String, dynamic>.from(item));
+        } else {
+          malformedItems++;
+        }
+      }
+
+      return _ParsedRows(
+        ok: true,
+        rows: rows,
+        warning: malformedItems > 0
+            ? '$malformedItems item(ns) malformado(s) ignorado(s) em $uri.'
+            : null,
+      );
+    } catch (error) {
+      return _ParsedRows(
+        ok: false,
+        rows: const [],
         error: 'Erro ao decodificar JSON de $endpointName: $error',
       );
     }
@@ -290,6 +483,254 @@ class SportsDbEndpointResult {
   int get eventCount => events.length;
 }
 
+enum SportsDbDetailKind { timeline, lineup, results, stats }
+
+class SportsDbDetailEndpointRequest {
+  final String name;
+  final SportsDbDetailKind kind;
+  final Uri uri;
+  final List<String> keys;
+
+  const SportsDbDetailEndpointRequest({
+    required this.name,
+    required this.kind,
+    required this.uri,
+    required this.keys,
+  });
+}
+
+class SportsDbDetailEndpointResult {
+  final String name;
+  final SportsDbDetailKind kind;
+  final String uri;
+  final bool ok;
+  final int? statusCode;
+  final List<Map<String, dynamic>> rows;
+  final int durationMs;
+  final String? error;
+  final String? warning;
+
+  const SportsDbDetailEndpointResult({
+    required this.name,
+    required this.kind,
+    required this.uri,
+    required this.ok,
+    this.statusCode,
+    required this.rows,
+    required this.durationMs,
+    this.error,
+    this.warning,
+  });
+
+  int get rowCount => rows.length;
+}
+
+class SportsDbEventDetailsResult {
+  final String eventId;
+  final List<SportsDbTimelineItem> timeline;
+  final List<SportsDbLineupItem> lineup;
+  final List<SportsDbPlayerResult> results;
+  final List<SportsDbEventStat> stats;
+  final List<SportsDbDetailEndpointResult> endpoints;
+
+  const SportsDbEventDetailsResult({
+    required this.eventId,
+    required this.timeline,
+    required this.lineup,
+    required this.results,
+    required this.stats,
+    required this.endpoints,
+  });
+
+  bool get hasAnySuccessfulEndpoint {
+    return endpoints.any((endpoint) => endpoint.ok);
+  }
+
+  bool get hasAnyData {
+    return timeline.isNotEmpty ||
+        lineup.isNotEmpty ||
+        results.isNotEmpty ||
+        stats.isNotEmpty;
+  }
+
+  bool get hasAnyFailedEndpoint {
+    return endpoints.any((endpoint) => !endpoint.ok);
+  }
+}
+
+class SportsDbTimelineItem {
+  final String? minute;
+  final String? type;
+  final String? team;
+  final String? player;
+  final String? detail;
+  final Map<String, dynamic> raw;
+
+  const SportsDbTimelineItem({
+    required this.minute,
+    required this.type,
+    required this.team,
+    required this.player,
+    required this.detail,
+    required this.raw,
+  });
+
+  factory SportsDbTimelineItem.fromJson(Map<String, dynamic> json) {
+    return SportsDbTimelineItem(
+      minute: _firstString(json, const [
+        'intTime',
+        'intMinute',
+        'strTime',
+        'strMinute',
+      ]),
+      type: _firstString(json, const [
+        'strTimeline',
+        'strTimelineDetail',
+        'strType',
+        'strEvent',
+      ]),
+      team: _firstString(json, const ['strTeam', 'strHome', 'strAway']),
+      player: _firstString(json, const [
+        'strPlayer',
+        'strPlayer1',
+        'strEventPlayer',
+      ]),
+      detail: _firstString(json, const [
+        'strTimelineDetail',
+        'strDetail',
+        'strAssist',
+        'strComment',
+      ]),
+      raw: Map<String, dynamic>.from(json),
+    );
+  }
+
+  int get minuteValue {
+    final text = minute;
+    if (text == null) {
+      return 999;
+    }
+
+    return int.tryParse(RegExp(r'\d+').firstMatch(text)?.group(0) ?? '') ?? 999;
+  }
+
+  bool get isGoal {
+    return _containsAny(type, const ['goal', 'gol']);
+  }
+
+  bool get isYellowCard {
+    return _containsAny(type, const ['yellow', 'amarelo']);
+  }
+
+  bool get isRedCard {
+    return _containsAny(type, const ['red card', 'vermelho']);
+  }
+
+  bool get isCard => isYellowCard || isRedCard;
+
+  String get displayType {
+    if (isGoal) {
+      return 'Gol';
+    }
+
+    if (isYellowCard) {
+      return 'Cartão amarelo';
+    }
+
+    if (isRedCard) {
+      return 'Cartão vermelho';
+    }
+
+    return type ?? 'Evento';
+  }
+}
+
+class SportsDbLineupItem {
+  final String? team;
+  final String? player;
+  final String? position;
+  final String? number;
+  final String? substitute;
+  final Map<String, dynamic> raw;
+
+  const SportsDbLineupItem({
+    required this.team,
+    required this.player,
+    required this.position,
+    required this.number,
+    required this.substitute,
+    required this.raw,
+  });
+
+  factory SportsDbLineupItem.fromJson(Map<String, dynamic> json) {
+    return SportsDbLineupItem(
+      team: _firstString(json, const ['strTeam', 'strHome', 'strAway']),
+      player: _firstString(json, const ['strPlayer', 'strPlayerName']),
+      position: _firstString(json, const ['strPosition', 'strRole']),
+      number: _firstString(json, const ['intSquadNumber', 'strNumber']),
+      substitute: _firstString(json, const ['strSubstitute', 'strLineup']),
+      raw: Map<String, dynamic>.from(json),
+    );
+  }
+
+  bool get isSubstitute {
+    final value = substitute?.toLowerCase().trim();
+    return value == 'yes' ||
+        value == 'true' ||
+        value == 'substitute' ||
+        value == 'bench';
+  }
+}
+
+class SportsDbPlayerResult {
+  final String? team;
+  final String? player;
+  final String? position;
+  final String? rating;
+  final Map<String, dynamic> raw;
+
+  const SportsDbPlayerResult({
+    required this.team,
+    required this.player,
+    required this.position,
+    required this.rating,
+    required this.raw,
+  });
+
+  factory SportsDbPlayerResult.fromJson(Map<String, dynamic> json) {
+    return SportsDbPlayerResult(
+      team: _firstString(json, const ['strTeam', 'strHome', 'strAway']),
+      player: _firstString(json, const ['strPlayer', 'strPlayerName']),
+      position: _firstString(json, const ['strPosition']),
+      rating: _firstString(json, const ['strRating', 'intRating']),
+      raw: Map<String, dynamic>.from(json),
+    );
+  }
+}
+
+class SportsDbEventStat {
+  final String? name;
+  final String? home;
+  final String? away;
+  final Map<String, dynamic> raw;
+
+  const SportsDbEventStat({
+    required this.name,
+    required this.home,
+    required this.away,
+    required this.raw,
+  });
+
+  factory SportsDbEventStat.fromJson(Map<String, dynamic> json) {
+    return SportsDbEventStat(
+      name: _firstString(json, const ['strStat', 'strStatistic']),
+      home: _firstString(json, const ['intHome', 'strHome']),
+      away: _firstString(json, const ['intAway', 'strAway']),
+      raw: Map<String, dynamic>.from(json),
+    );
+  }
+}
+
 class _ParsedEvents {
   final bool ok;
   final List<SportsDbEvent> events;
@@ -302,6 +743,45 @@ class _ParsedEvents {
     this.error,
     this.warning,
   });
+}
+
+class _ParsedRows {
+  final bool ok;
+  final List<Map<String, dynamic>> rows;
+  final String? error;
+  final String? warning;
+
+  const _ParsedRows({
+    required this.ok,
+    required this.rows,
+    this.error,
+    this.warning,
+  });
+}
+
+String? _firstString(Map<String, dynamic> json, List<String> keys) {
+  for (final key in keys) {
+    final value = json[key];
+    if (value == null) {
+      continue;
+    }
+
+    final text = value.toString().trim();
+    if (text.isNotEmpty) {
+      return text;
+    }
+  }
+
+  return null;
+}
+
+bool _containsAny(String? value, List<String> needles) {
+  final text = value?.toLowerCase();
+  if (text == null) {
+    return false;
+  }
+
+  return needles.any((needle) => text.contains(needle));
 }
 
 class SportsDbEvent {

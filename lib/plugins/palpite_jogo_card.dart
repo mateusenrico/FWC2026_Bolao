@@ -29,9 +29,23 @@ class PalpiteJogoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final date = AppDateTime.horarioBrasilia(jogo);
+    final scoreIsResult = jogo.temResultado || jogo.isEmAndamento;
+    final primaryScore = scoreIsResult
+        ? jogo.placarTexto
+        : palpite?.placarTexto ?? '-';
+    final primaryLabel = scoreIsResult
+        ? jogo.resultadoFinal
+              ? 'Resultado'
+              : 'Parcial'
+        : 'Palpite';
+    final comparisonText = scoreIsResult
+        ? 'Palpite: ${palpite?.placarTexto ?? '-'}'
+        : 'Jogo ainda não começou';
+    final cardColor = _statusColor(colors);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
+      color: cardColor,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -92,10 +106,7 @@ class PalpiteJogoCard extends StatelessWidget {
                         ),
                         if (!veryCompact) ...[
                           const SizedBox(width: 10),
-                          _ScoreLabel(
-                            title: 'Palpite',
-                            value: palpite?.placarTexto ?? '-',
-                          ),
+                          _ScoreLabel(title: primaryLabel, value: primaryScore),
                           const SizedBox(width: 10),
                         ],
                         Expanded(
@@ -113,14 +124,11 @@ class PalpiteJogoCard extends StatelessWidget {
                         teams,
                         if (veryCompact) ...[
                           const SizedBox(height: 10),
-                          _ScoreLabel(
-                            title: 'Palpite',
-                            value: palpite?.placarTexto ?? '-',
-                          ),
+                          _ScoreLabel(title: primaryLabel, value: primaryScore),
                         ],
                         const SizedBox(height: 10),
                         Text(
-                          'Resultado: ${jogo.temResultado ? jogo.placarTexto : 'a definir'}',
+                          comparisonText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall
@@ -140,19 +148,16 @@ class PalpiteJogoCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      _ScoreLabel(
-                        title: 'Palpite',
-                        value: palpite?.placarTexto ?? '-',
-                      ),
+                      _ScoreLabel(title: primaryLabel, value: primaryScore),
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 8),
                         child: Icon(Icons.arrow_forward, size: 18),
                       ),
                       _ScoreLabel(
-                        title: 'Resultado',
-                        value: jogo.temResultado
-                            ? jogo.placarTexto
-                            : 'A definir',
+                        title: scoreIsResult ? 'Palpite' : 'Status',
+                        value: scoreIsResult
+                            ? palpite?.placarTexto ?? '-'
+                            : 'Não iniciado',
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -183,6 +188,27 @@ class PalpiteJogoCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color? _statusColor(ColorScheme colors) {
+    final score = pontuacao;
+    if (score?.placarExato == true) {
+      return colors.primaryContainer.withValues(alpha: 0.45);
+    }
+
+    if (score?.resultadoCorreto == true) {
+      return colors.secondaryContainer.withValues(alpha: 0.45);
+    }
+
+    if (score?.acertouUmDosGols == true) {
+      return colors.tertiaryContainer.withValues(alpha: 0.45);
+    }
+
+    if (score?.zerou == true) {
+      return colors.errorContainer.withValues(alpha: 0.28);
+    }
+
+    return null;
   }
 }
 

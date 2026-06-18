@@ -11,10 +11,17 @@ A atualização usa:
 - `eventspastleague.php?id=4429`
 - `eventsday.php?d=YYYY-MM-DD&s=Soccer`, filtrando `idLeague == 4429`
 - `lookupevent.php?id=<idEvent>`, no refresh em memória, limitado a eventos próximos/relevantes
+- `lookuptimeline.php?id=<idEvent>`, sob demanda na tela de partida
+- `lookuplineup.php?id=<idEvent>`, sob demanda na tela de partida
+- `eventresults.php?id=<idEvent>`, sob demanda na tela de partida
+- `lookupeventstats.php?id=<idEvent>`, sob demanda na tela de partida
 - `search_all_teams.php?l=FIFA World Cup`
 - `lookupleague.php?id=4429`
 - `lookupvenue.php?id=<idVenue>`
 - fallback: `https://fixturedownload.com/feed/json/fifa-world-cup-2026`
+
+Referencia oficial dos endpoints TheSportsDB:
+<https://www.thesportsdb.com/docs_api_guide>
 
 ## Garantias da tool local
 
@@ -34,7 +41,13 @@ A atualização usa:
 No app, `BolaoController.atualizarApi()` também passa alguns `idEvent` relevantes
 para `SportsDbApiService`, que consulta `lookupevent.php`. Essa consulta é
 deduplicada e limitada para complementar a janela de `eventsday` sem fazer uma
-chamada individual para todos os 104 jogos a cada minuto.
+chamada individual para todos os 104 jogos a cada ciclo de 5 segundos.
+
+Detalhes mais pesados de uma partida, como timeline, estatísticas, resultados
+individuais e escalações, são carregados apenas ao abrir a tela daquele jogo.
+Quando a partida está ao vivo, o cache local desses detalhes é invalidado pelo
+refresh para que a tela possa buscar dados novos sem colocar esses endpoints no
+loop global do dashboard.
 
 ## Atribuicoes e licencas
 

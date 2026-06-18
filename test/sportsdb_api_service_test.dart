@@ -49,5 +49,27 @@ void main() {
         );
       },
     );
+
+    test('buildEventDetailRequests inclui timeline lineup resultados e stats', () {
+      const service = SportsDbApiService();
+
+      final requests = service.buildEventDetailRequests('2391728');
+
+      expect(requests.map((request) => request.name), [
+        'lookuptimeline:2391728',
+        'lookuplineup:2391728',
+        'eventresults:2391728',
+        'lookupeventstats:2391728',
+      ]);
+      expect(
+        requests.map((request) => request.uri.toString()),
+        containsAll([
+          'https://www.thesportsdb.com/api/v1/json/123/lookuptimeline.php?id=2391728',
+          'https://www.thesportsdb.com/api/v1/json/123/lookuplineup.php?id=2391728',
+          'https://www.thesportsdb.com/api/v1/json/123/eventresults.php?id=2391728',
+          'https://www.thesportsdb.com/api/v1/json/123/lookupeventstats.php?id=2391728',
+        ]),
+      );
+    });
   });
 }

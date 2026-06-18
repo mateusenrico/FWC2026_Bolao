@@ -11,6 +11,7 @@ class PartidaCard extends StatelessWidget {
   final String? badgeMandante;
   final String? badgeVisitante;
   final String? imageUrl;
+  final String? liveClock;
   final VoidCallback? onTap;
   final bool destaque;
 
@@ -20,6 +21,7 @@ class PartidaCard extends StatelessWidget {
     this.badgeMandante,
     this.badgeVisitante,
     this.imageUrl,
+    this.liveClock,
     this.onTap,
     this.destaque = false,
   });
@@ -35,6 +37,7 @@ class PartidaCard extends StatelessWidget {
       date: date,
       badgeMandante: badgeMandante,
       badgeVisitante: badgeVisitante,
+      liveClock: liveClock,
       onTap: onTap,
     );
 
@@ -100,6 +103,7 @@ class _PartidaCardContent extends StatelessWidget {
   final DateTime? date;
   final String? badgeMandante;
   final String? badgeVisitante;
+  final String? liveClock;
   final VoidCallback? onTap;
 
   const _PartidaCardContent({
@@ -107,6 +111,7 @@ class _PartidaCardContent extends StatelessWidget {
     required this.date,
     required this.badgeMandante,
     required this.badgeVisitante,
+    required this.liveClock,
     required this.onTap,
   });
 
@@ -136,7 +141,7 @@ class _PartidaCardContent extends StatelessWidget {
                 children: [
                   headerText,
                   const SizedBox(height: 6),
-                  _StatusChip(status: jogo.statusJogo),
+                  _StatusChip(status: jogo.statusJogo, liveClock: liveClock),
                 ],
               );
             }
@@ -145,7 +150,7 @@ class _PartidaCardContent extends StatelessWidget {
               children: [
                 Expanded(child: headerText),
                 const SizedBox(width: 8),
-                _StatusChip(status: jogo.statusJogo),
+                _StatusChip(status: jogo.statusJogo, liveClock: liveClock),
               ],
             );
           },
@@ -404,14 +409,19 @@ class _ScoreBox extends StatelessWidget {
 
 class _StatusChip extends StatelessWidget {
   final String status;
+  final String? liveClock;
 
-  const _StatusChip({required this.status});
+  const _StatusChip({required this.status, required this.liveClock});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final (label, background, foreground) = switch (status) {
-      'em_andamento' => ('AO VIVO', colorScheme.error, colorScheme.onError),
+      'em_andamento' => (
+        liveClock == null ? 'AO VIVO' : 'AO VIVO · $liveClock',
+        colorScheme.error,
+        colorScheme.onError,
+      ),
       'encerrado' => (
         'FINAL',
         colorScheme.secondaryContainer,
