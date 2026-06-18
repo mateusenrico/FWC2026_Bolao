@@ -382,6 +382,7 @@ Exemplo:
 partida_card.dart
 live_matches_banner.dart
 refresh_countdown_indicator.dart
+live_palpite_grid.dart
 remote_media.dart
 theme_mode_action.dart
 ranking_podium.dart
@@ -446,7 +447,9 @@ A tool:
 6. gera logs em `logs/update_sportsdb/`.
 7. tenta enriquecer times, venues e liga com metadados visuais da TheSportsDB.
 
-No app em execução, o controller também faz uma atualização inicial ao carregar e mantém um timer de 1 minuto. A consulta automática de minuto só aplica refresh quando há jogo ao vivo; fora disso, o relógio local apenas evita que jogos recém-iniciados ou já estourados fiquem com status incoerente.
+No app em execução, o controller também faz uma atualização inicial ao carregar e mantém um timer de 5 segundos. A consulta automática desse timer aplica refresh completo quando há jogo ao vivo; fora disso, o relógio local apenas evita que jogos recém-iniciados ou já estourados fiquem com status incoerente.
+
+Na tela de detalhe da partida, o app consulta sob demanda os endpoints `lookuptimeline.php`, `lookuplineup.php`, `eventresults.php` e `lookupeventstats.php` por `idEvent`. Esses dados são cacheados por partida e invalidados quando o jogo está ao vivo, para permitir que gols/cartões/estatísticas acompanhem o refresh sem pesar a tela inicial.
 
 Jogos ao vivo sem placar começam provisoriamente em 0x0 para ranking projetado. Se a janela máxima de jogo ao vivo expira e a API ainda não confirmou `FT`/final, o app deixa de exibir a partida como ao vivo; quando há placar da SportsDB nessa situação, ele pode ser tratado como encerrado por relógio para evitar que a tela fique presa no estado `2H`/`LIVE`.
 
@@ -495,6 +498,7 @@ Finalizado ou praticamente fechado:
 - [x] asset loader
 - [x] serviço SportsDB resiliente
 - [x] refresh em memória com `lookupevent` para eventos próximos/relevantes
+- [x] detalhe de partida com timeline, estatísticas e escalação quando a SportsDB disponibilizar
 - [x] tela de jogos
 - [x] tela de ranking com pódio, evolução e pontos projetados
 - [x] ranking com evolução por partida ou por dia brasileiro
@@ -509,16 +513,19 @@ Finalizado ou praticamente fechado:
 - [x] tela de lista de times
 - [x] tela de detalhe de time com jogos e estatísticas
 - [x] dashboard inicial com cards de navegação
+- [x] dashboard mobile com atalhos compactos por ícone
+- [x] destaque ao vivo com grid compacto dos palpites e pontos parciais
 - [x] tema Material 3 seguindo sistema por padrão, com alternância claro/escuro no AppBar
 - [x] paleta visual inspirada na identidade FWC 2026
 - [x] widget de jogos ao vivo em telas internas
 - [x] indicador visual de próxima atualização automática
-- [x] atualização inicial automática e refresh de minuto quando houver jogo ao vivo
+- [x] atualização inicial automática e refresh de 5 segundos quando houver jogo ao vivo
 - [x] metadados visuais de times, venues e liga
 - [x] widgets de imagem remota para badges, banners, venues e liga
 - [x] imagens remotas com cache do Flutter/browser, `gaplessPlayback` e fallback HTML no Web para CORS
 - [x] badges no chaveamento quando a tela possui catálogo de mídia
 - [x] player/embed de YouTube para highlights quando houver `strVideo`
+- [x] palpites da partida agrupados por vitória do mandante, empate, vitória do visitante e sem palpite completo
 - [x] widgets em `plugins/`
 - [x] arquivo de créditos/licenças de terceiros
 

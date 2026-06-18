@@ -64,9 +64,10 @@ class _RefreshCountdownIndicatorState extends State<RefreshCountdownIndicator> {
       );
     }
 
+    final intervalSeconds = BolaoController.autoRefreshInterval.inSeconds;
     final remaining = next.difference(_now);
-    final remainingSeconds = remaining.inSeconds.clamp(0, 60);
-    final value = 1 - (remainingSeconds / 60);
+    final remainingSeconds = remaining.inSeconds.clamp(0, intervalSeconds);
+    final value = 1 - (remainingSeconds / intervalSeconds);
 
     return _Shell(
       compact: widget.compact,

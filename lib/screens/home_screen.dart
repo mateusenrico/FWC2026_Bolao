@@ -4,6 +4,7 @@ import '../core/app_theme.dart';
 import '../core/app_routes.dart';
 import '../models/jogo.dart';
 import '../plugins/api_refresh_action.dart';
+import '../plugins/live_palpite_grid.dart';
 import '../plugins/partida_card.dart';
 import '../plugins/ranking_mode_selector.dart';
 import '../plugins/ranking_participante_card.dart';
@@ -37,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Bolão FWC 2026'),
+            title: const SizedBox.shrink(),
             actions: [ApiRefreshAction(controller: controller)],
           ),
           body: RefreshIndicator(
@@ -185,15 +186,37 @@ class _NextGamesSection extends StatelessWidget {
   }
 
   Widget _partida(BuildContext context, Jogo jogo) {
-    return PartidaCard(
-      jogo: jogo,
-      badgeMandante: controller.badgeDoTime(jogo.mandantePrevisto),
-      badgeVisitante: controller.badgeDoTime(jogo.visitantePrevisto),
-      imageUrl: controller.imagemDoEstadio(jogo.jogoId),
-      destaque: true,
-      onTap: () {
-        Navigator.pushNamed(context, AppRoutes.jogo, arguments: jogo.jogoId);
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PartidaCard(
+          jogo: jogo,
+          badgeMandante: controller.badgeDoTime(jogo.mandantePrevisto),
+          badgeVisitante: controller.badgeDoTime(jogo.visitantePrevisto),
+          imageUrl: controller.imagemDoEstadio(jogo.jogoId),
+          liveClock: controller.tempoAtualDoJogo(jogo),
+          destaque: true,
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              AppRoutes.jogo,
+              arguments: jogo.jogoId,
+            );
+          },
+        ),
+        if (jogo.isEmAndamento)
+          LivePalpiteGrid(
+            jogo: jogo,
+            groups: controller.gruposDePalpitesDoJogo(jogo.jogoId),
+            onTapParticipante: (id) => () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.participante,
+                arguments: id,
+              );
+            },
+          ),
+      ],
     );
   }
 }
@@ -302,6 +325,18 @@ class _GamesSection extends StatelessWidget {
               onSelected: onPeriodoChanged,
             ),
             _FilterChip(
+              label: 'Amanhã',
+              value: PeriodoJogos.amanha,
+              selected: periodo == PeriodoJogos.amanha,
+              onSelected: onPeriodoChanged,
+            ),
+            _FilterChip(
+              label: 'Rodada',
+              value: PeriodoJogos.rodadaAtual,
+              selected: periodo == PeriodoJogos.rodadaAtual,
+              onSelected: onPeriodoChanged,
+            ),
+            _FilterChip(
               label: 'Passados',
               value: PeriodoJogos.passados,
               selected: periodo == PeriodoJogos.passados,
@@ -329,6 +364,7 @@ class _GamesSection extends StatelessWidget {
               jogo: jogo,
               badgeMandante: controller.badgeDoTime(jogo.mandantePrevisto),
               badgeVisitante: controller.badgeDoTime(jogo.visitantePrevisto),
+              liveClock: controller.tempoAtualDoJogo(jogo),
               onTap: () {
                 Navigator.pushNamed(
                   context,
@@ -464,7 +500,12 @@ class _DashboardHero extends StatelessWidget {
         const SizedBox(height: 12),
         LayoutBuilder(
           builder: (context, constraints) {
-            final columns = constraints.maxWidth >= 980
+            final compact = constraints.maxWidth < 560;
+            final columns = compact
+                ? constraints.maxWidth < 360
+                      ? 3
+                      : 5
+                : constraints.maxWidth >= 980
                 ? 5
                 : constraints.maxWidth >= 680
                 ? 3
@@ -484,6 +525,7 @@ class _DashboardHero extends StatelessWidget {
                   title: 'Partidas',
                   subtitle: '$hoje hoje',
                   color: FwcColors.red,
+                  compact: compact,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.jogos),
                 ),
                 _DashboardTile(
@@ -492,6 +534,7 @@ class _DashboardHero extends StatelessWidget {
                   title: 'Ranking',
                   subtitle: lider?.nome ?? 'ver lista',
                   color: FwcColors.purple,
+                  compact: compact,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.ranking),
                 ),
                 _DashboardTile(
@@ -500,6 +543,7 @@ class _DashboardHero extends StatelessWidget {
                   title: 'Grupos',
                   subtitle: 'A-L',
                   color: FwcColors.green,
+                  compact: compact,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.grupos),
                 ),
                 _DashboardTile(
@@ -508,6 +552,7 @@ class _DashboardHero extends StatelessWidget {
                   title: 'Times',
                   subtitle: '${controller.data.totalTimes}',
                   color: FwcColors.blue,
+                  compact: compact,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.times),
                 ),
                 _DashboardTile(
@@ -516,6 +561,7 @@ class _DashboardHero extends StatelessWidget {
                   title: 'Simular',
                   subtitle: 'cenários',
                   color: FwcColors.teal,
+                  compact: compact,
                   onTap: () =>
                       Navigator.pushNamed(context, AppRoutes.simulador),
                 ),
@@ -574,6 +620,7 @@ class _DashboardTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final Color color;
+  final bool compact;
   final VoidCallback onTap;
 
   const _DashboardTile({
@@ -582,6 +629,7 @@ class _DashboardTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.color,
+    required this.compact,
     required this.onTap,
   });
 
@@ -594,36 +642,40 @@ class _DashboardTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: EdgeInsets.all(compact ? 8 : 14),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: compact
+                  ? CrossAxisAlignment.center
+                  : CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: compact ? 30 : 38,
+                  height: compact ? 30 : 38,
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, color: color),
+                  child: Icon(icon, color: color, size: compact ? 18 : 24),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: compact ? 6 : 12),
                 Text(
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  textAlign: compact ? TextAlign.center : TextAlign.left,
                   style: Theme.of(
                     context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                  ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w900),
                 ),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                if (!compact)
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

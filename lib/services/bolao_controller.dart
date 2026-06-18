@@ -6,6 +6,7 @@ import '../core/sistema_palpites.dart';
 import '../core/sistema_pontuacao_participantes.dart';
 import '../core/sistema_pontuacao_times.dart';
 import '../core/functions/date_time_utils.dart';
+import '../core/functions/palpite_match_groups.dart';
 import '../core/functions/team_normalizer.dart';
 import '../models/bolao_data.dart';
 import '../models/historico_partida.dart';
@@ -19,7 +20,15 @@ import 'asset_loader.dart';
 import 'media_catalog_service.dart';
 import 'sportsdb_api_service.dart';
 
-enum PeriodoJogos { hoje, passados, emAndamento, futuros, todos }
+enum PeriodoJogos {
+  hoje,
+  amanha,
+  rodadaAtual,
+  passados,
+  emAndamento,
+  futuros,
+  todos,
+}
 
 enum OrdenacaoRanking { consolidado, projetado }
 
@@ -38,6 +47,8 @@ class BolaoController extends ChangeNotifier {
   late ConjuntoTabelasGrupo _tabelasGrupos;
 
   final Map<String, SportsDbEvent> _eventoPorJogoId = {};
+  final Map<String, SportsDbEventDetailsResult> _detalhesPorJogoId = {};
+  final Set<String> _detalhesCarregando = {};
   BolaoMediaCatalog _mediaCatalog = const BolaoMediaCatalog.empty();
 
   bool _atualizandoApi = false;
@@ -48,6 +59,8 @@ class BolaoController extends ChangeNotifier {
   SportsDbApiResult? _ultimoResultadoApi;
   OrdenacaoRanking _ordenacaoRanking = OrdenacaoRanking.consolidado;
   Timer? _refreshTimer;
+
+  static const Duration autoRefreshInterval = Duration(seconds: 5);
 
   static Future<BolaoController> carregar({
     SportsDbApiService apiService = const SportsDbApiService(),
@@ -120,7 +133,7 @@ class BolaoController extends ChangeNotifier {
 
     unawaited(atualizarApi(automatico: true));
 
-    _refreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+    _refreshTimer = Timer.periodic(autoRefreshInterval, (_) {
       _aplicarRelogioLocal();
 
       if (temJogosAoVivo) {
@@ -180,6 +193,9 @@ class BolaoController extends ChangeNotifier {
         ..addAll(eventosPorJogo);
 
       _data = _data.copyWith(jogos: jogosAtualizados);
+      for (final jogo in jogosAtualizados.where((jogo) => jogo.isEmAndamento)) {
+        _detalhesPorJogoId.remove(jogo.jogoId);
+      }
       _ultimaAtualizacao = DateTime.now();
       _mensagemAtualizacao = result.hasAnyFailedEndpoint
           ? '${result.summaryText} Dados válidos foram aplicados; a base local foi mantida nos endpoints com falha.'
@@ -212,6 +228,47 @@ class BolaoController extends ChangeNotifier {
 
   SportsDbEvent? eventoDoJogo(String jogoId) {
     return _eventoPorJogoId[jogoId];
+  }
+
+  SportsDbEventDetailsResult? detalhesEventoDoJogo(String jogoId) {
+    return _detalhesPorJogoId[jogoId];
+  }
+
+  bool carregandoDetalhesEvento(String jogoId) {
+    return _detalhesCarregando.contains(jogoId);
+  }
+
+  Future<void> carregarDetalhesEventoDoJogo(String jogoId) async {
+    if (_detalhesPorJogoId.containsKey(jogoId) ||
+        _detalhesCarregando.contains(jogoId)) {
+      return;
+    }
+
+    final jogo = jogoPorId(jogoId);
+    final eventId = jogo?.idEventAtual ?? historicoDoJogo(jogoId)?.idEvent;
+    if (eventId == null || eventId.trim().isEmpty) {
+      return;
+    }
+
+    _detalhesCarregando.add(jogoId);
+    notifyListeners();
+
+    try {
+      final details = await _apiService.fetchEventDetails(eventId);
+      _detalhesPorJogoId[jogoId] = details;
+    } catch (_) {
+      _detalhesPorJogoId[jogoId] = SportsDbEventDetailsResult(
+        eventId: eventId,
+        timeline: const [],
+        lineup: const [],
+        results: const [],
+        stats: const [],
+        endpoints: const [],
+      );
+    } finally {
+      _detalhesCarregando.remove(jogoId);
+      notifyListeners();
+    }
   }
 
   LinhaPontuacaoParticipante? linhaParticipante(String participanteId) {
@@ -259,6 +316,8 @@ class BolaoController extends ChangeNotifier {
   List<Jogo> jogosPorPeriodo(PeriodoJogos periodo) {
     final nowUtc = DateTime.now().toUtc();
     final hojeBrasilia = AppDateTime.agoraBrasilia();
+    final amanhaBrasilia = hojeBrasilia.add(const Duration(days: 1));
+    final rodadaAtual = _rodadaAtualFaseDeGrupos();
 
     final result =
         _data.jogos
@@ -277,6 +336,18 @@ class BolaoController extends ChangeNotifier {
                 return date != null && AppDateTime.mesmoDia(date, hojeBrasilia);
               }
 
+              if (periodo == PeriodoJogos.amanha) {
+                final date = AppDateTime.horarioBrasilia(jogo);
+                return date != null &&
+                    AppDateTime.mesmoDia(date, amanhaBrasilia);
+              }
+
+              if (periodo == PeriodoJogos.rodadaAtual) {
+                return rodadaAtual != null &&
+                    jogo.isFaseDeGrupos &&
+                    jogo.rodada == rodadaAtual;
+              }
+
               final date = jogo.dataUtc?.toUtc();
               if (date == null) {
                 return periodo == PeriodoJogos.futuros;
@@ -285,12 +356,20 @@ class BolaoController extends ChangeNotifier {
               switch (periodo) {
                 case PeriodoJogos.hoje:
                   return false;
+                case PeriodoJogos.amanha:
+                  return false;
+                case PeriodoJogos.rodadaAtual:
+                  return false;
                 case PeriodoJogos.passados:
                   return jogo.isEncerrado || date.isBefore(nowUtc);
                 case PeriodoJogos.emAndamento:
                   return jogo.isEmAndamento;
                 case PeriodoJogos.futuros:
-                  return jogo.isAgendado && date.isAfter(nowUtc);
+                  final brasiliaDate = AppDateTime.horarioBrasilia(jogo);
+                  return jogo.isAgendado &&
+                      date.isAfter(nowUtc) &&
+                      (brasiliaDate == null ||
+                          !AppDateTime.mesmoDia(brasiliaDate, hojeBrasilia));
                 case PeriodoJogos.todos:
                   return true;
               }
@@ -383,6 +462,39 @@ class BolaoController extends ChangeNotifier {
     return _mediaCatalog.videoForMatch(jogoId);
   }
 
+  String? tempoAtualDoJogo(Jogo jogo) {
+    if (!jogo.isEmAndamento) {
+      return null;
+    }
+
+    final eventStatus = _eventoPorJogoId[jogo.jogoId]?.strStatus?.trim();
+    final statusMinute = _minuteFromStatus(eventStatus);
+    if (statusMinute != null) {
+      return "$statusMinute'";
+    }
+
+    final kickoff = jogo.dataUtc?.toUtc();
+    if (kickoff == null) {
+      return eventStatus == null || eventStatus.isEmpty ? null : eventStatus;
+    }
+
+    final elapsed = DateTime.now().toUtc().difference(kickoff).inMinutes;
+    if (elapsed < 0) {
+      return null;
+    }
+
+    if (elapsed <= 45) {
+      return "${elapsed.clamp(1, 45)}'";
+    }
+
+    if (elapsed <= 60) {
+      return 'Intervalo';
+    }
+
+    final secondHalfMinute = (elapsed - 15).clamp(46, 120);
+    return "aprox. $secondHalfMinute'";
+  }
+
   TimeSportsDb? timeSportsDb(String nomeTime) {
     return _mediaCatalog.teamForName(nomeTime);
   }
@@ -417,6 +529,26 @@ class BolaoController extends ChangeNotifier {
     String participanteId,
   ) {
     return _linhaEm(_classificacaoProjetada, participanteId);
+  }
+
+  List<GrupoPalpitesJogo> gruposDePalpitesDoJogo(String jogoId) {
+    final jogo = jogoPorId(jogoId);
+    if (jogo == null) {
+      return const [];
+    }
+
+    return PalpiteMatchGroups.build(
+      jogo: jogo,
+      ranking: _classificacaoProjetada,
+      palpiteFor: (participanteId) => palpiteDoParticipanteNoJogo(
+        participanteId: participanteId,
+        jogoId: jogoId,
+      ),
+      pontuacaoFor: (participanteId) => pontuacaoDoParticipanteNoJogo(
+        participanteId: participanteId,
+        jogoId: jogoId,
+      ),
+    );
   }
 
   LinhaTabelaTime? linhaDoTimeNoGrupo({
@@ -761,8 +893,63 @@ class BolaoController extends ChangeNotifier {
 
   void _atualizarProximaAtualizacao() {
     _proximaAtualizacao = temJogosAoVivo
-        ? DateTime.now().add(const Duration(minutes: 1))
+        ? DateTime.now().add(autoRefreshInterval)
         : null;
+  }
+
+  int? _rodadaAtualFaseDeGrupos() {
+    final jogosGrupo = _data.jogos
+        .where((jogo) => jogo.isFaseDeGrupos && jogo.rodada != null)
+        .toList(growable: false);
+
+    if (jogosGrupo.isEmpty) {
+      return null;
+    }
+
+    final aoVivo = jogosGrupo.where((jogo) => jogo.isEmAndamento).toList();
+    if (aoVivo.isNotEmpty) {
+      aoVivo.sort((a, b) => a.ordem.compareTo(b.ordem));
+      return aoVivo.first.rodada;
+    }
+
+    final hoje = AppDateTime.agoraBrasilia();
+    final hojeJogos = jogosGrupo.where((jogo) {
+      final date = AppDateTime.horarioBrasilia(jogo);
+      return date != null && AppDateTime.mesmoDia(date, hoje);
+    }).toList();
+    if (hojeJogos.isNotEmpty) {
+      hojeJogos.sort((a, b) => a.ordem.compareTo(b.ordem));
+      return hojeJogos.first.rodada;
+    }
+
+    final nowUtc = DateTime.now().toUtc();
+    final futuros = jogosGrupo.where((jogo) {
+      final date = jogo.dataUtc?.toUtc();
+      return date != null && date.isAfter(nowUtc);
+    }).toList();
+    if (futuros.isNotEmpty) {
+      futuros.sort((a, b) {
+        final dateA = a.dataUtc?.toUtc();
+        final dateB = b.dataUtc?.toUtc();
+        if (dateA == null || dateB == null) {
+          return a.ordem.compareTo(b.ordem);
+        }
+        return dateA.compareTo(dateB);
+      });
+      return futuros.first.rodada;
+    }
+
+    jogosGrupo.sort((a, b) => b.ordem.compareTo(a.ordem));
+    return jogosGrupo.first.rodada;
+  }
+
+  int? _minuteFromStatus(String? value) {
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+
+    final match = RegExp(r'^(\d{1,3})').firstMatch(value);
+    return int.tryParse(match?.group(1) ?? '');
   }
 
   LinhaPontuacaoParticipante? _linhaEm(

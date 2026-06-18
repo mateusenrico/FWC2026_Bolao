@@ -5,12 +5,13 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 ## O que ele implementa
 
 - tela inicial responsiva;
-- destaque para partida ao vivo ou próximo horário;
+- destaque para partida ao vivo ou próximo horário, com grid compacto de palpites quando houver jogo em andamento;
 - ranking parcial colapsável;
-- filtros de partidas: hoje, passados, futuros e todos;
+- filtros de partidas: hoje, amanhã, rodada, passados, futuros e todos;
 - cards de partidas com siglas oficiais, badges/bandeiras, placar e status;
 - detalhe da partida;
-- detalhe do participante;
+- detalhe da partida com palpites agrupados por resultado apostado e dados de timeline/escalação/estatísticas quando a SportsDB disponibilizar;
+- detalhe do participante com placar principal alternando entre palpite futuro e resultado/parcial real;
 - ranking detalhado com pódio, grade de pontos e evolução por pontos ou posição;
 - filtro de evolução por participantes e por faixa de partidas ou dias;
 - cores fixas por participante, vindas de `participantes.json`, usadas no gráfico e na legenda;
@@ -21,7 +22,7 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - tema Material 3 seguindo o sistema por padrão, com botão claro/escuro no AppBar;
 - imagens remotas com cache do Flutter/browser, `gaplessPlayback` e fallback HTML no Web para reduzir flicker e contornar CORS;
 - simulador com busca, cards compactos e limpeza rápida de placares digitados;
-- atualização da SportsDB em memória, preservando os assets locais se a API falhar;
+- atualização da SportsDB em memória a cada 5 segundos durante jogos ao vivo, preservando os assets locais se a API falhar;
 - mesma regra 5/3/2/1/0 para jogos de grupos e mata-mata;
 - testes básicos da regra de pontuação, incluindo placar exato no mata-mata.
 
@@ -59,6 +60,8 @@ lib/
 │   ├── api_refresh_action.dart
 │   ├── chaveamento_participante_card.dart
 │   ├── grupo_table_card.dart
+│   ├── live_palpite_grid.dart
+│   ├── palpite_result_group_card.dart
 │   ├── palpite_jogo_card.dart
 │   ├── palpite_participante_card.dart
 │   ├── partida_card.dart
