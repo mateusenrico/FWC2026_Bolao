@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'core/app_routes.dart';
 import 'screens/grupos_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/jogo_detail_screen.dart';
+import 'screens/jogos_screen.dart';
 import 'screens/participante_detail_screen.dart';
+import 'screens/ranking_screen.dart';
+import 'screens/simulador_screen.dart';
 import 'services/bolao_controller.dart';
 
 void main() {
@@ -65,10 +70,29 @@ class _BolaoAppState extends State<BolaoApp> {
   }
 }
 
-class _BolaoNavigationApp extends StatelessWidget {
+class _BolaoNavigationApp extends StatefulWidget {
   final BolaoController controller;
 
   const _BolaoNavigationApp({required this.controller});
+
+  @override
+  State<_BolaoNavigationApp> createState() => _BolaoNavigationAppState();
+}
+
+class _BolaoNavigationAppState extends State<_BolaoNavigationApp> {
+  BolaoController get controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(controller.iniciarAtualizacaoAutomatica());
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,9 +127,26 @@ class _BolaoNavigationApp extends StatelessWidget {
               ),
             );
           case AppRoutes.grupos:
+            final grupo = settings.arguments as String?;
             return MaterialPageRoute<void>(
               settings: settings,
-              builder: (_) => GruposScreen(controller: controller),
+              builder: (_) =>
+                  GruposScreen(controller: controller, grupoInicial: grupo),
+            );
+          case AppRoutes.ranking:
+            return MaterialPageRoute<void>(
+              settings: settings,
+              builder: (_) => RankingScreen(controller: controller),
+            );
+          case AppRoutes.jogos:
+            return MaterialPageRoute<void>(
+              settings: settings,
+              builder: (_) => JogosScreen(controller: controller),
+            );
+          case AppRoutes.simulador:
+            return MaterialPageRoute<void>(
+              settings: settings,
+              builder: (_) => SimuladorScreen(controller: controller),
             );
           default:
             return MaterialPageRoute<void>(

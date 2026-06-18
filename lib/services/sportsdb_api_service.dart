@@ -283,6 +283,8 @@ class SportsDbEvent {
   final String? strEvent;
   final String? strHomeTeam;
   final String? strAwayTeam;
+  final String? idHomeTeam;
+  final String? idAwayTeam;
 
   final int? intHomeScore;
   final int? intAwayScore;
@@ -296,16 +298,19 @@ class SportsDbEvent {
   final String? strVenue;
   final String? strCity;
   final String? strCountry;
+  final String? idVenue;
   final String? strStatus;
   final String? strGroup;
   final int? intRound;
 
+  final String? strLeagueBadge;
   final String? strHomeTeamBadge;
   final String? strAwayTeamBadge;
   final String? strThumb;
   final String? strPoster;
   final String? strFanart;
   final String? strBanner;
+  final String? strVideo;
 
   const SportsDbEvent({
     required this.idEvent,
@@ -313,6 +318,8 @@ class SportsDbEvent {
     required this.strEvent,
     required this.strHomeTeam,
     required this.strAwayTeam,
+    required this.idHomeTeam,
+    required this.idAwayTeam,
     required this.intHomeScore,
     required this.intAwayScore,
     required this.dateEvent,
@@ -323,15 +330,18 @@ class SportsDbEvent {
     required this.strVenue,
     required this.strCity,
     required this.strCountry,
+    required this.idVenue,
     required this.strStatus,
     required this.strGroup,
     required this.intRound,
+    required this.strLeagueBadge,
     required this.strHomeTeamBadge,
     required this.strAwayTeamBadge,
     required this.strThumb,
     required this.strPoster,
     required this.strFanart,
     required this.strBanner,
+    required this.strVideo,
   });
 
   factory SportsDbEvent.fromJson(Map<String, dynamic> json) {
@@ -341,6 +351,8 @@ class SportsDbEvent {
       strEvent: _nullableString(json['strEvent']),
       strHomeTeam: _nullableString(json['strHomeTeam']),
       strAwayTeam: _nullableString(json['strAwayTeam']),
+      idHomeTeam: _nullableString(json['idHomeTeam']),
+      idAwayTeam: _nullableString(json['idAwayTeam']),
       intHomeScore: _nullableInt(json['intHomeScore']),
       intAwayScore: _nullableInt(json['intAwayScore']),
       dateEvent: _nullableString(json['dateEvent']),
@@ -351,15 +363,18 @@ class SportsDbEvent {
       strVenue: _nullableString(json['strVenue']),
       strCity: _nullableString(json['strCity']),
       strCountry: _nullableString(json['strCountry']),
+      idVenue: _nullableString(json['idVenue']),
       strStatus: _nullableString(json['strStatus']),
       strGroup: _nullableString(json['strGroup']),
       intRound: _nullableInt(json['intRound']),
+      strLeagueBadge: _nullableString(json['strLeagueBadge']),
       strHomeTeamBadge: _nullableString(json['strHomeTeamBadge']),
       strAwayTeamBadge: _nullableString(json['strAwayTeamBadge']),
       strThumb: _nullableString(json['strThumb']),
       strPoster: _nullableString(json['strPoster']),
       strFanart: _nullableString(json['strFanart']),
       strBanner: _nullableString(json['strBanner']),
+      strVideo: _nullableString(json['strVideo']),
     );
   }
 

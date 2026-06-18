@@ -1,4 +1,5 @@
 import '../core/functions/json_utils.dart';
+import '../core/functions/place_formatters.dart';
 import 'referencia_participante_jogo.dart';
 
 class Jogo {
@@ -254,11 +255,7 @@ class Jogo {
   }
 
   String get localTexto {
-    if (cidadeSede.isEmpty) {
-      return estadio;
-    }
-
-    return '$estadio · $cidadeSede';
+    return PlaceFormatters.localPartida(estadio: estadio, cidade: cidadeSede);
   }
 
   String get statusTexto {

@@ -1,6 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
-import '../core/functions/date_time_utils.dart';
 import '../core/sistema_palpites.dart';
 import '../core/sistema_pontuacao_participantes.dart';
 import '../core/sistema_pontuacao_times.dart';
@@ -10,10 +11,14 @@ import '../models/historico_partida.dart';
 import '../models/jogo.dart';
 import '../models/palpite.dart';
 import '../models/participante.dart';
+import '../models/time_sportsdb.dart';
+import '../models/venue_sportsdb.dart';
 import 'asset_loader.dart';
 import 'sportsdb_api_service.dart';
 
-enum PeriodoJogos { passados, hoje, semana, futuros }
+enum PeriodoJogos { passados, emAndamento, futuros }
+
+enum OrdenacaoRanking { consolidado, projetado }
 
 class BolaoController extends ChangeNotifier {
   BolaoController._({required this._data, required this._apiService}) {
@@ -25,16 +30,26 @@ class BolaoController extends ChangeNotifier {
 
   BolaoData _data;
   List<LinhaPontuacaoParticipante> _classificacao = const [];
+  List<LinhaPontuacaoParticipante> _classificacaoConsolidada = const [];
+  List<LinhaPontuacaoParticipante> _classificacaoProjetada = const [];
   late ConjuntoTabelasGrupo _tabelasGrupos;
 
   final Map<String, SportsDbEvent> _eventoPorJogoId = {};
   final Map<String, String> _badgePorTimeKey = {};
   final Map<String, String> _imagemEstadioPorJogoId = {};
+  final Map<String, TimeSportsDb> _timeSportsDbPorKey = {};
+  final Map<String, VenueSportsDb> _venueSportsDbPorKey = {};
+  final Map<String, VenueSportsDb> _venueSportsDbPorId = {};
+  final Map<String, String> _videoPorJogoId = {};
 
   bool _atualizandoApi = false;
+  bool _autoRefreshIniciado = false;
   String? _mensagemAtualizacao;
   DateTime? _ultimaAtualizacao;
+  DateTime? _proximaAtualizacao;
   SportsDbApiResult? _ultimoResultadoApi;
+  OrdenacaoRanking _ordenacaoRanking = OrdenacaoRanking.consolidado;
+  Timer? _refreshTimer;
 
   static Future<BolaoController> carregar({
     SportsDbApiService apiService = const SportsDbApiService(),
@@ -47,6 +62,14 @@ class BolaoController extends ChangeNotifier {
 
   List<LinhaPontuacaoParticipante> get classificacao => _classificacao;
 
+  List<LinhaPontuacaoParticipante> get classificacaoConsolidada {
+    return _classificacaoConsolidada;
+  }
+
+  List<LinhaPontuacaoParticipante> get classificacaoProjetada {
+    return _classificacaoProjetada;
+  }
+
   ConjuntoTabelasGrupo get tabelasGrupos => _tabelasGrupos;
 
   bool get atualizandoApi => _atualizandoApi;
@@ -55,15 +78,68 @@ class BolaoController extends ChangeNotifier {
 
   DateTime? get ultimaAtualizacao => _ultimaAtualizacao;
 
+  DateTime? get proximaAtualizacao => _proximaAtualizacao;
+
   SportsDbApiResult? get ultimoResultadoApi => _ultimoResultadoApi;
 
-  Future<void> atualizarApi() async {
+  OrdenacaoRanking get ordenacaoRanking => _ordenacaoRanking;
+
+  bool get ordenandoPorProjetado {
+    return _ordenacaoRanking == OrdenacaoRanking.projetado;
+  }
+
+  List<Jogo> get jogosAoVivo {
+    return _data.jogos
+        .where((jogo) => jogo.isEmAndamento)
+        .toList(growable: false)
+      ..sort((a, b) => a.ordem.compareTo(b.ordem));
+  }
+
+  bool get temJogosAoVivo => jogosAoVivo.isNotEmpty;
+
+  Future<void> iniciarAtualizacaoAutomatica() async {
+    if (_autoRefreshIniciado) {
+      return;
+    }
+
+    _autoRefreshIniciado = true;
+    _aplicarRelogioLocal();
+    _atualizarProximaAtualizacao();
+    notifyListeners();
+
+    unawaited(atualizarApi(automatico: true));
+
+    _refreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      _aplicarRelogioLocal();
+
+      if (temJogosAoVivo) {
+        unawaited(atualizarApi(automatico: true));
+      } else {
+        _proximaAtualizacao = null;
+        notifyListeners();
+      }
+    });
+  }
+
+  void alterarOrdenacaoRanking(OrdenacaoRanking value) {
+    if (_ordenacaoRanking == value) {
+      return;
+    }
+
+    _ordenacaoRanking = value;
+    _atualizarClassificacaoExibida();
+    notifyListeners();
+  }
+
+  Future<void> atualizarApi({bool automatico = false}) async {
     if (_atualizandoApi) {
       return;
     }
 
     _atualizandoApi = true;
-    _mensagemAtualizacao = 'Consultando a SportsDB...';
+    _mensagemAtualizacao = automatico
+        ? 'Atualizando placares ao vivo...'
+        : 'Consultando a SportsDB...';
     notifyListeners();
 
     try {
@@ -102,6 +178,8 @@ class BolaoController extends ChangeNotifier {
       _mensagemAtualizacao =
           'Não foi possível atualizar a API. A base local continua ativa. $error';
     } finally {
+      _aplicarRelogioLocal(notificar: false);
+      _atualizarProximaAtualizacao();
       _atualizandoApi = false;
       notifyListeners();
     }
@@ -151,7 +229,7 @@ class BolaoController extends ChangeNotifier {
     required String participanteId,
     required String jogoId,
   }) {
-    final linha = linhaParticipante(participanteId);
+    final linha = _linhaEm(_classificacaoProjetada, participanteId);
     if (linha == null) {
       return null;
     }
@@ -166,28 +244,27 @@ class BolaoController extends ChangeNotifier {
   }
 
   List<Jogo> jogosPorPeriodo(PeriodoJogos periodo) {
-    final now = AppDateTime.agoraBrasilia();
-    final today = AppDateTime.inicioDoDia(now);
-    final tomorrow = today.add(const Duration(days: 1));
-    final weekLimit = today.add(const Duration(days: 7));
+    final nowUtc = DateTime.now().toUtc();
 
     final result =
         _data.jogos
             .where((jogo) {
-              final date = AppDateTime.horarioBrasilia(jogo);
+              if (jogo.isEmAndamento) {
+                return periodo == PeriodoJogos.emAndamento;
+              }
+
+              final date = jogo.dataUtc?.toUtc();
               if (date == null) {
                 return periodo == PeriodoJogos.futuros;
               }
 
               switch (periodo) {
                 case PeriodoJogos.passados:
-                  return date.isBefore(today);
-                case PeriodoJogos.hoje:
-                  return !date.isBefore(today) && date.isBefore(tomorrow);
-                case PeriodoJogos.semana:
-                  return !date.isBefore(tomorrow) && date.isBefore(weekLimit);
+                  return jogo.isEncerrado || date.isBefore(nowUtc);
+                case PeriodoJogos.emAndamento:
+                  return jogo.isEmAndamento;
                 case PeriodoJogos.futuros:
-                  return !date.isBefore(weekLimit);
+                  return jogo.isAgendado && date.isAfter(nowUtc);
               }
             })
             .toList(growable: false)
@@ -247,6 +324,56 @@ class BolaoController extends ChangeNotifier {
     return _imagemEstadioPorJogoId[jogoId];
   }
 
+  String? videoDoJogo(String jogoId) {
+    return _videoPorJogoId[jogoId];
+  }
+
+  TimeSportsDb? timeSportsDb(String nomeTime) {
+    return _timeSportsDbPorKey[TeamNormalizer.key(nomeTime)];
+  }
+
+  VenueSportsDb? venueDoJogo(Jogo jogo) {
+    final historico = historicoDoJogo(jogo.jogoId);
+    final idVenue = historico?.raw['idVenue']?.toString();
+
+    if (idVenue != null && idVenue.isNotEmpty) {
+      final byId = _venueSportsDbPorId[idVenue];
+      if (byId != null) {
+        return byId;
+      }
+    }
+
+    return _venueSportsDbPorKey[_venueKey(jogo.estadio)];
+  }
+
+  int pontosAoVivo(String participanteId) {
+    final projetada = _linhaEm(
+      _classificacaoProjetada,
+      participanteId,
+    )?.pontosTotal;
+    final consolidada = _linhaEm(
+      _classificacaoConsolidada,
+      participanteId,
+    )?.pontosTotal;
+
+    if (projetada == null || consolidada == null) {
+      return 0;
+    }
+
+    return projetada - consolidada;
+  }
+
+  int pontosConsolidados(String participanteId) {
+    return _linhaEm(_classificacaoConsolidada, participanteId)?.pontosTotal ??
+        0;
+  }
+
+  LinhaPontuacaoParticipante? linhaProjetadaParticipante(
+    String participanteId,
+  ) {
+    return _linhaEm(_classificacaoProjetada, participanteId);
+  }
+
   LinhaTabelaTime? linhaDoTimeNoGrupo({
     required String nomeTime,
     required String? grupo,
@@ -272,7 +399,19 @@ class BolaoController extends ChangeNotifier {
 
   void _recalcular() {
     _tabelasGrupos = SistemaPontuacaoTimes.calcularTabelasReais(_data.jogos);
-    _classificacao = SistemaPontuacaoParticipantes.calcularClassificacao(_data);
+    _classificacaoProjetada =
+        SistemaPontuacaoParticipantes.calcularClassificacao(_data);
+    _classificacaoConsolidada =
+        SistemaPontuacaoParticipantes.calcularClassificacao(
+          _dataSemJogosAoVivo(),
+        );
+    _atualizarClassificacaoExibida();
+  }
+
+  void _atualizarClassificacaoExibida() {
+    _classificacao = _ordenacaoRanking == OrdenacaoRanking.projetado
+        ? _classificacaoProjetada
+        : _classificacaoConsolidada;
   }
 
   Map<String, SportsDbEvent> _associarEventosAosJogos(
@@ -359,10 +498,20 @@ class BolaoController extends ChangeNotifier {
     final scoreUsable =
         event.temPlacar &&
         (event.isFinal || event.statusCanonico == 'em_andamento');
+    final liveWithoutScore =
+        !event.temPlacar && event.statusCanonico == 'em_andamento';
     final finalResult = jogo.resultadoFinal || event.isFinal;
-    final hasResult = jogo.temResultado || scoreUsable;
-    final homeScore = scoreUsable ? event.intHomeScore : jogo.golsMandante;
-    final awayScore = scoreUsable ? event.intAwayScore : jogo.golsVisitante;
+    final hasResult = jogo.temResultado || scoreUsable || liveWithoutScore;
+    final homeScore = scoreUsable
+        ? event.intHomeScore
+        : liveWithoutScore
+        ? 0
+        : jogo.golsMandante;
+    final awayScore = scoreUsable
+        ? event.intAwayScore
+        : liveWithoutScore
+        ? 0
+        : jogo.golsVisitante;
 
     final status = finalResult
         ? 'encerrado'
@@ -385,7 +534,11 @@ class BolaoController extends ChangeNotifier {
       temResultadoApi: jogo.temResultadoApi || scoreUsable,
       temResultado: hasResult,
       resultadoFinal: finalResult,
-      fonteResultado: scoreUsable ? 'sportsdb_refresh' : jogo.fonteResultado,
+      fonteResultado: scoreUsable
+          ? 'sportsdb_refresh'
+          : liveWithoutScore
+          ? 'sportsdb_ao_vivo_zerado'
+          : jogo.fonteResultado,
     );
   }
 
@@ -413,6 +566,23 @@ class BolaoController extends ChangeNotifier {
   void _reconstruirMidia() {
     _badgePorTimeKey.clear();
     _imagemEstadioPorJogoId.clear();
+    _timeSportsDbPorKey
+      ..clear()
+      ..addAll(_data.timesSportsDbPorKey);
+    _venueSportsDbPorKey
+      ..clear()
+      ..addAll(_data.venuesSportsDbPorKey);
+    _venueSportsDbPorId
+      ..clear()
+      ..addAll(_data.venuesSportsDbPorId);
+    _videoPorJogoId.clear();
+
+    for (final time in _data.timesSportsDb) {
+      _adicionarBadge(time.nomeBolao, time.badgeUrl);
+      if (time.nomeApi != null) {
+        _adicionarBadge(time.nomeApi, time.badgeUrl);
+      }
+    }
 
     for (final historico in _data.historicoPartidas) {
       _adicionarBadge(
@@ -434,6 +604,19 @@ class BolaoController extends ChangeNotifier {
       if (image != null) {
         _imagemEstadioPorJogoId[historico.jogoId] = image;
       }
+
+      final video = _primeiraUrl([historico.raw['strVideo']?.toString()]);
+      if (video != null) {
+        _videoPorJogoId[historico.jogoId] = video;
+      }
+    }
+
+    for (final jogo in _data.jogos) {
+      final venue = venueDoJogo(jogo);
+      final image = venue?.melhorImagem;
+      if (image != null && !_imagemEstadioPorJogoId.containsKey(jogo.jogoId)) {
+        _imagemEstadioPorJogoId[jogo.jogoId] = image;
+      }
     }
 
     for (final entry in _eventoPorJogoId.entries) {
@@ -444,6 +627,11 @@ class BolaoController extends ChangeNotifier {
       final image = event.stadiumImage;
       if (image != null && image.isNotEmpty) {
         _imagemEstadioPorJogoId[entry.key] = image;
+      }
+
+      final video = event.strVideo;
+      if (video != null && video.isNotEmpty) {
+        _videoPorJogoId[entry.key] = video;
       }
     }
   }
@@ -464,5 +652,114 @@ class BolaoController extends ChangeNotifier {
     }
 
     return null;
+  }
+
+  BolaoData _dataSemJogosAoVivo() {
+    final jogos = _data.jogos
+        .map((jogo) {
+          if (!jogo.isEmAndamento || jogo.resultadoFinal) {
+            return jogo;
+          }
+
+          return Jogo.fromJson({
+            ...jogo.toJson(),
+            'golsMandante': null,
+            'golsVisitante': null,
+            'temResultado': false,
+            'resultadoFinal': false,
+            'fonteResultado': null,
+          });
+        })
+        .toList(growable: false);
+
+    return _data.copyWith(jogos: jogos);
+  }
+
+  void _aplicarRelogioLocal({bool notificar = true}) {
+    final nowUtc = DateTime.now().toUtc();
+    var mudou = false;
+
+    final jogos = _data.jogos
+        .map((jogo) {
+          if (jogo.resultadoFinal) {
+            return jogo;
+          }
+
+          final kickoff = jogo.dataUtc?.toUtc();
+          if (kickoff == null) {
+            return jogo;
+          }
+
+          final elapsed = nowUtc.difference(kickoff).inMinutes;
+          final deveEstarAoVivo = elapsed >= 0 && elapsed <= 180;
+
+          if (!deveEstarAoVivo) {
+            return jogo;
+          }
+
+          if (jogo.isEmAndamento &&
+              jogo.golsMandante != null &&
+              jogo.golsVisitante != null &&
+              jogo.temResultado) {
+            return jogo;
+          }
+
+          mudou = true;
+
+          return Jogo.fromJson({
+            ...jogo.toJson(),
+            'statusJogo': 'em_andamento',
+            'golsMandante': jogo.golsMandante ?? 0,
+            'golsVisitante': jogo.golsVisitante ?? 0,
+            'temResultado': true,
+            'resultadoFinal': false,
+            'fonteResultado': jogo.fonteResultado ?? 'relogio_local_ao_vivo',
+          });
+        })
+        .toList(growable: false);
+
+    if (!mudou) {
+      return;
+    }
+
+    _data = _data.copyWith(jogos: jogos);
+    _recalcular();
+
+    if (notificar) {
+      notifyListeners();
+    }
+  }
+
+  void _atualizarProximaAtualizacao() {
+    _proximaAtualizacao = temJogosAoVivo
+        ? DateTime.now().add(const Duration(minutes: 1))
+        : null;
+  }
+
+  LinhaPontuacaoParticipante? _linhaEm(
+    List<LinhaPontuacaoParticipante> linhas,
+    String participanteId,
+  ) {
+    for (final linha in linhas) {
+      if (linha.participanteId == participanteId) {
+        return linha;
+      }
+    }
+
+    return null;
+  }
+
+  String _venueKey(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
+        .trim()
+        .replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 }

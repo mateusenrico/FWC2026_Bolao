@@ -4,9 +4,15 @@ import '../core/sistema_pontuacao_participantes.dart';
 
 class RankingParticipanteCard extends StatelessWidget {
   final LinhaPontuacaoParticipante linha;
+  final int liveDelta;
   final VoidCallback? onTap;
 
-  const RankingParticipanteCard({super.key, required this.linha, this.onTap});
+  const RankingParticipanteCard({
+    super.key,
+    required this.linha,
+    this.liveDelta = 0,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -64,14 +70,30 @@ class RankingParticipanteCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    '${linha.pontosTotal}',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${linha.pontosTotal}',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      if (liveDelta > 0) ...[
+                        const SizedBox(width: 5),
+                        Text(
+                          '+$liveDelta',
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
+                      ],
+                    ],
                   ),
                   Text(
-                    'pontos',
+                    liveDelta > 0 ? 'proj.' : 'pontos',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),

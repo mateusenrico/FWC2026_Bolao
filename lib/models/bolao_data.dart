@@ -1,8 +1,11 @@
 import 'historico_partida.dart';
 import 'jogo.dart';
+import 'liga_sportsdb.dart';
 import 'palpite.dart';
 import 'participante.dart';
 import 'time_participante.dart';
+import 'time_sportsdb.dart';
+import 'venue_sportsdb.dart';
 
 class BolaoData {
   final List<Jogo> jogos;
@@ -10,6 +13,9 @@ class BolaoData {
   final List<Participante> participantes;
   final List<Palpite> palpites;
   final List<TimeParticipante> timesParticipantes;
+  final List<TimeSportsDb> timesSportsDb;
+  final List<VenueSportsDb> venuesSportsDb;
+  final LigaSportsDb? ligaSportsDb;
 
   const BolaoData({
     required this.jogos,
@@ -17,6 +23,9 @@ class BolaoData {
     required this.participantes,
     required this.palpites,
     required this.timesParticipantes,
+    this.timesSportsDb = const [],
+    this.venuesSportsDb = const [],
+    this.ligaSportsDb,
   });
 
   BolaoData copyWith({
@@ -25,6 +34,9 @@ class BolaoData {
     List<Participante>? participantes,
     List<Palpite>? palpites,
     List<TimeParticipante>? timesParticipantes,
+    List<TimeSportsDb>? timesSportsDb,
+    List<VenueSportsDb>? venuesSportsDb,
+    LigaSportsDb? ligaSportsDb,
   }) {
     return BolaoData(
       jogos: jogos ?? this.jogos,
@@ -32,6 +44,9 @@ class BolaoData {
       participantes: participantes ?? this.participantes,
       palpites: palpites ?? this.palpites,
       timesParticipantes: timesParticipantes ?? this.timesParticipantes,
+      timesSportsDb: timesSportsDb ?? this.timesSportsDb,
+      venuesSportsDb: venuesSportsDb ?? this.venuesSportsDb,
+      ligaSportsDb: ligaSportsDb ?? this.ligaSportsDb,
     );
   }
 
@@ -56,6 +71,22 @@ class BolaoData {
 
   Map<String, TimeParticipante> get timesPorId {
     return {for (final time in timesParticipantes) time.timeId: time};
+  }
+
+  Map<String, TimeSportsDb> get timesSportsDbPorKey {
+    return {for (final time in timesSportsDb) time.timeKey: time};
+  }
+
+  Map<String, VenueSportsDb> get venuesSportsDbPorKey {
+    return {for (final venue in venuesSportsDb) venue.venueKey: venue};
+  }
+
+  Map<String, VenueSportsDb> get venuesSportsDbPorId {
+    return {
+      for (final venue in venuesSportsDb)
+        if (venue.idVenue != null && venue.idVenue!.isNotEmpty)
+          venue.idVenue!: venue,
+    };
   }
 
   List<Jogo> get jogosOrdenados {
@@ -85,4 +116,8 @@ class BolaoData {
   int get totalTimes => timesParticipantes.length;
 
   int get totalHistoricoPartidas => historicoPartidas.length;
+
+  int get totalTimesSportsDb => timesSportsDb.length;
+
+  int get totalVenuesSportsDb => venuesSportsDb.length;
 }

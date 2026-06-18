@@ -5,49 +5,56 @@ import '../core/functions/team_normalizer.dart';
 
 class GrupoTableCard extends StatelessWidget {
   final TabelaGrupo tabela;
+  final VoidCallback? onTap;
 
-  const GrupoTableCard({super.key, required this.tabela});
+  const GrupoTableCard({super.key, required this.tabela, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
+    final content = Padding(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Grupo ${tabela.grupo}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Text(
+                tabela.grupoCompleto ? 'Final' : 'Parcial',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          const _HeaderRow(),
+          const Divider(height: 16),
+          for (final linha in tabela.linhas)
+            _TeamRow(
+              linha: linha,
+              qualified: linha.posicao <= 2 || linha.classificouComoTerceiro,
+            ),
+        ],
+      ),
+    );
+
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Grupo ${tabela.grupo}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                Text(
-                  tabela.grupoCompleto ? 'Final' : 'Parcial',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const _HeaderRow(),
-            const Divider(height: 16),
-            for (final linha in tabela.linhas)
-              _TeamRow(
-                linha: linha,
-                qualified: linha.posicao <= 2 || linha.classificouComoTerceiro,
-              ),
-          ],
-        ),
-      ),
+      child: onTap == null ? content : InkWell(onTap: onTap, child: content),
     );
   }
 }
@@ -67,12 +74,32 @@ class _HeaderRow extends StatelessWidget {
         SizedBox(width: 34, child: Text('#', style: style)),
         Expanded(child: Text('TIME', style: style)),
         SizedBox(
+          width: 34,
+          child: Text('J', textAlign: TextAlign.center, style: style),
+        ),
+        SizedBox(
+          width: 34,
+          child: Text('V', textAlign: TextAlign.center, style: style),
+        ),
+        SizedBox(
+          width: 34,
+          child: Text('E', textAlign: TextAlign.center, style: style),
+        ),
+        SizedBox(
+          width: 34,
+          child: Text('D', textAlign: TextAlign.center, style: style),
+        ),
+        SizedBox(
           width: 44,
           child: Text('PTS', textAlign: TextAlign.center, style: style),
         ),
         SizedBox(
           width: 44,
           child: Text('SG', textAlign: TextAlign.center, style: style),
+        ),
+        SizedBox(
+          width: 44,
+          child: Text('GP', textAlign: TextAlign.center, style: style),
         ),
       ],
     );
@@ -118,8 +145,13 @@ class _TeamRow extends StatelessWidget {
               ),
             ),
           ),
+          _Value(value: linha.jogos, width: 34),
+          _Value(value: linha.vitorias, width: 34),
+          _Value(value: linha.empates, width: 34),
+          _Value(value: linha.derrotas, width: 34),
           _Value(value: linha.pontos),
           _Value(value: linha.saldoGols),
+          _Value(value: linha.golsPro),
         ],
       ),
     );
@@ -128,13 +160,14 @@ class _TeamRow extends StatelessWidget {
 
 class _Value extends StatelessWidget {
   final int value;
+  final double width;
 
-  const _Value({required this.value});
+  const _Value({required this.value, this.width = 44});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 44,
+      width: width,
       child: Text(
         '$value',
         textAlign: TextAlign.center,

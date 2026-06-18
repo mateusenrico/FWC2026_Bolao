@@ -5,11 +5,12 @@ import '../core/sistema_pontuacao_participantes.dart';
 import '../models/jogo.dart';
 import '../plugins/api_refresh_action.dart';
 import '../plugins/chaveamento_participante_card.dart';
+import '../plugins/live_matches_banner.dart';
 import '../plugins/palpite_jogo_card.dart';
 import '../plugins/section_header.dart';
 import '../services/bolao_controller.dart';
 
-enum FiltroPalpitesParticipante { pontuando, futuros }
+enum FiltroPalpitesParticipante { pontuando, exatos, zerados, futuros }
 
 class ParticipanteDetailScreen extends StatefulWidget {
   final BolaoController controller;
@@ -55,89 +56,115 @@ class _ParticipanteDetailScreenState extends State<ParticipanteDetailScreen> {
             title: Text(participante.nome),
             actions: [ApiRefreshAction(controller: controller)],
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 36),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 980),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _ParticipantHeader(linha: linha),
-                    const SizedBox(height: 12),
-                    ChaveamentoParticipanteCard(
-                      chaveamento: linha.chaveamentoPrevisto,
-                      pontuacaoFinal: linha.pontuacaoFinal,
+          body: Column(
+            children: [
+              LiveMatchesBanner(controller: controller),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 36),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 980),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _ParticipantHeader(
+                            linha: linha,
+                            liveDelta: controller.pontosAoVivo(
+                              linha.participanteId,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ChaveamentoParticipanteCard(
+                            chaveamento: linha.chaveamentoPrevisto,
+                            pontuacaoFinal: linha.pontuacaoFinal,
+                          ),
+                          const SizedBox(height: 24),
+                          const SectionHeader(
+                            title: 'Palpites',
+                            subtitle:
+                                'Jogos sempre ordenados pela numeração oficial',
+                          ),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _FilterChip(
+                                label: 'Pontuáveis / ao vivo',
+                                value: FiltroPalpitesParticipante.pontuando,
+                                selected:
+                                    _filtro ==
+                                    FiltroPalpitesParticipante.pontuando,
+                                onSelected: _setFiltro,
+                              ),
+                              _FilterChip(
+                                label: '+5 exatos',
+                                value: FiltroPalpitesParticipante.exatos,
+                                selected:
+                                    _filtro ==
+                                    FiltroPalpitesParticipante.exatos,
+                                onSelected: _setFiltro,
+                              ),
+                              _FilterChip(
+                                label: 'Zerados',
+                                value: FiltroPalpitesParticipante.zerados,
+                                selected:
+                                    _filtro ==
+                                    FiltroPalpitesParticipante.zerados,
+                                onSelected: _setFiltro,
+                              ),
+                              _FilterChip(
+                                label: 'Futuros',
+                                value: FiltroPalpitesParticipante.futuros,
+                                selected:
+                                    _filtro ==
+                                    FiltroPalpitesParticipante.futuros,
+                                onSelected: _setFiltro,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          if (jogos.isEmpty)
+                            const Card(
+                              child: Padding(
+                                padding: EdgeInsets.all(20),
+                                child: Text('Nenhum jogo nessa categoria.'),
+                              ),
+                            )
+                          else
+                            for (final jogo in jogos)
+                              PalpiteJogoCard(
+                                jogo: jogo,
+                                palpite: controller.palpiteDoParticipanteNoJogo(
+                                  participanteId: widget.participanteId,
+                                  jogoId: jogo.jogoId,
+                                ),
+                                pontuacao: controller
+                                    .pontuacaoDoParticipanteNoJogo(
+                                      participanteId: widget.participanteId,
+                                      jogoId: jogo.jogoId,
+                                    ),
+                                badgeMandante: controller.badgeDoTime(
+                                  jogo.mandantePrevisto,
+                                ),
+                                badgeVisitante: controller.badgeDoTime(
+                                  jogo.visitantePrevisto,
+                                ),
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    AppRoutes.jogo,
+                                    arguments: jogo.jogoId,
+                                  );
+                                },
+                              ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 24),
-                    const SectionHeader(
-                      title: 'Palpites',
-                      subtitle: 'Jogos sempre ordenados pela numeração oficial',
-                    ),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        ChoiceChip(
-                          label: const Text('Finalizados / ao vivo'),
-                          selected:
-                              _filtro == FiltroPalpitesParticipante.pontuando,
-                          onSelected: (_) {
-                            setState(() {
-                              _filtro = FiltroPalpitesParticipante.pontuando;
-                            });
-                          },
-                        ),
-                        ChoiceChip(
-                          label: const Text('Jogos futuros'),
-                          selected:
-                              _filtro == FiltroPalpitesParticipante.futuros,
-                          onSelected: (_) {
-                            setState(() {
-                              _filtro = FiltroPalpitesParticipante.futuros;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    if (jogos.isEmpty)
-                      const Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Text('Nenhum jogo nessa categoria.'),
-                        ),
-                      )
-                    else
-                      for (final jogo in jogos)
-                        PalpiteJogoCard(
-                          jogo: jogo,
-                          palpite: controller.palpiteDoParticipanteNoJogo(
-                            participanteId: widget.participanteId,
-                            jogoId: jogo.jogoId,
-                          ),
-                          pontuacao: controller.pontuacaoDoParticipanteNoJogo(
-                            participanteId: widget.participanteId,
-                            jogoId: jogo.jogoId,
-                          ),
-                          badgeMandante: controller.badgeDoTime(
-                            jogo.mandantePrevisto,
-                          ),
-                          badgeVisitante: controller.badgeDoTime(
-                            jogo.visitantePrevisto,
-                          ),
-                          onTap: () {
-                            Navigator.pushNamed(
-                              context,
-                              AppRoutes.jogo,
-                              arguments: jogo.jogoId,
-                            );
-                          },
-                        ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         );
       },
@@ -151,6 +178,22 @@ class _ParticipanteDetailScreenState extends State<ParticipanteDetailScreen> {
               switch (_filtro) {
                 case FiltroPalpitesParticipante.pontuando:
                   return jogo.temResultado || jogo.isEmAndamento;
+                case FiltroPalpitesParticipante.exatos:
+                  return controller
+                          .pontuacaoDoParticipanteNoJogo(
+                            participanteId: widget.participanteId,
+                            jogoId: jogo.jogoId,
+                          )
+                          ?.placarExato ==
+                      true;
+                case FiltroPalpitesParticipante.zerados:
+                  return controller
+                          .pontuacaoDoParticipanteNoJogo(
+                            participanteId: widget.participanteId,
+                            jogoId: jogo.jogoId,
+                          )
+                          ?.zerou ==
+                      true;
                 case FiltroPalpitesParticipante.futuros:
                   return !jogo.temResultado && jogo.isAgendado;
               }
@@ -160,12 +203,17 @@ class _ParticipanteDetailScreenState extends State<ParticipanteDetailScreen> {
 
     return result;
   }
+
+  void _setFiltro(FiltroPalpitesParticipante filtro) {
+    setState(() => _filtro = filtro);
+  }
 }
 
 class _ParticipantHeader extends StatelessWidget {
   final LinhaPontuacaoParticipante linha;
+  final int liveDelta;
 
-  const _ParticipantHeader({required this.linha});
+  const _ParticipantHeader({required this.linha, required this.liveDelta});
 
   @override
   Widget build(BuildContext context) {
@@ -202,12 +250,15 @@ class _ParticipantHeader extends StatelessWidget {
                   : CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${linha.pontosTotal}',
+                  liveDelta > 0
+                      ? '${linha.pontosTotal} +$liveDelta'
+                      : '${linha.pontosTotal}',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    color: liveDelta > 0 ? colors.primary : null,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const Text('pontos'),
+                Text(liveDelta > 0 ? 'pontos projetados' : 'pontos'),
               ],
             );
 
@@ -257,6 +308,29 @@ class _ParticipantHeader extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final FiltroPalpitesParticipante value;
+  final bool selected;
+  final ValueChanged<FiltroPalpitesParticipante> onSelected;
+
+  const _FilterChip({
+    required this.label,
+    required this.value,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onSelected(value),
     );
   }
 }

@@ -5,9 +5,12 @@ import 'package:flutter/services.dart' show rootBundle;
 import '../models/bolao_data.dart';
 import '../models/historico_partida.dart';
 import '../models/jogo.dart';
+import '../models/liga_sportsdb.dart';
 import '../models/palpite.dart';
 import '../models/participante.dart';
 import '../models/time_participante.dart';
+import '../models/time_sportsdb.dart';
+import '../models/venue_sportsdb.dart';
 
 class AssetLoader {
   const AssetLoader._();
@@ -19,6 +22,9 @@ class AssetLoader {
       carregarParticipantes(),
       carregarPalpites(),
       carregarTimesParticipantes(),
+      carregarTimesSportsDb(),
+      carregarVenuesSportsDb(),
+      carregarLigaSportsDb(),
     ]);
 
     final data = BolaoData(
@@ -27,6 +33,9 @@ class AssetLoader {
       participantes: results[2] as List<Participante>,
       palpites: results[3] as List<Palpite>,
       timesParticipantes: results[4] as List<TimeParticipante>,
+      timesSportsDb: results[5] as List<TimeSportsDb>,
+      venuesSportsDb: results[6] as List<VenueSportsDb>,
+      ligaSportsDb: results[7] as LigaSportsDb?,
     );
 
     _validarDados(data);
@@ -68,6 +77,28 @@ class AssetLoader {
     return jsonList.map(TimeParticipante.fromJson).toList(growable: false);
   }
 
+  static Future<List<TimeSportsDb>> carregarTimesSportsDb() async {
+    final jsonList = await _loadJsonList('assets/data/times_sportsdb.json');
+
+    return jsonList.map(TimeSportsDb.fromJson).toList(growable: false);
+  }
+
+  static Future<List<VenueSportsDb>> carregarVenuesSportsDb() async {
+    final jsonList = await _loadJsonList('assets/data/venues_sportsdb.json');
+
+    return jsonList.map(VenueSportsDb.fromJson).toList(growable: false);
+  }
+
+  static Future<LigaSportsDb?> carregarLigaSportsDb() async {
+    final json = await _loadJsonObject('assets/data/liga_sportsdb.json');
+
+    if (json.isEmpty) {
+      return null;
+    }
+
+    return LigaSportsDb.fromJson(json);
+  }
+
   static Future<List<Map<String, dynamic>>> _loadJsonList(
     String assetPath,
   ) async {
@@ -96,6 +127,23 @@ class AssetLoader {
           );
         })
         .toList(growable: false);
+  }
+
+  static Future<Map<String, dynamic>> _loadJsonObject(String assetPath) async {
+    final raw = await rootBundle.loadString(assetPath);
+    final decoded = jsonDecode(raw);
+
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+
+    if (decoded is Map) {
+      return Map<String, dynamic>.from(decoded);
+    }
+
+    throw FormatException(
+      'O asset $assetPath deveria conter um objeto JSON na raiz.',
+    );
   }
 
   static void _validarDados(BolaoData data) {
