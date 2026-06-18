@@ -507,11 +507,14 @@ Finalizado ou praticamente fechado:
 - [x] tela de jogos
 - [x] tela de ranking com pódio, evolução e pontos projetados
 - [x] ranking da home simplificado, ordenado por consolidado + ao vivo quando houver jogo em andamento
+- [x] ranking da home com mini gráfico de evolução por posição
 - [x] ranking com evolução por partida ou por dia brasileiro
 - [x] ranking com gráfico por pontos ou posição e recorte por faixa de partidas/dias
 - [x] gráfico do ranking reescala o eixo X conforme o recorte filtrado
+- [x] gráfico do ranking com guias por etapa e por faixa de posições/pontos
 - [x] ranking com cores fixas por participante e destaque ouro/prata/bronze no gráfico
 - [x] ranking com tabela detalhada de pontos, acento visual por participante e contagem de +5/+3/+2/+1/0
+- [x] ranking e palpites ocultam participantes sem nenhum palpite completo
 - [x] ranking da home com setas de subida/queda/empate comparando posição consolidada e posição ao vivo
 - [x] tela de detalhe de participante
 - [x] tela de grupos com detalhe clicável
@@ -522,12 +525,14 @@ Finalizado ou praticamente fechado:
 - [x] tela de detalhe de time com jogos e estatísticas
 - [x] dashboard inicial com cards de navegação
 - [x] dashboard mobile com atalhos compactos por ícone
+- [x] dashboard sem subtítulos redundantes nos atalhos
 - [x] destaque ao vivo ou próximo jogo com grid compacto dos palpites; jogos ao vivo mostram pontos parciais
 - [x] tema Material 3 seguindo sistema por padrão, com alternância claro/escuro no AppBar
 - [x] paleta visual inspirada na identidade FWC 2026
 - [x] widget de jogos ao vivo em telas internas
 - [x] indicador visual de próxima atualização automática
 - [x] atualização inicial automática e refresh incremental de 5 segundos quando houver jogo ao vivo
+- [x] navegação mobile para Grupos e Times validada sem overflow horizontal
 - [x] metadados visuais de times, venues e liga
 - [x] widgets de imagem remota para badges, banners, venues e liga
 - [x] imagens remotas com cache do Flutter/browser, `gaplessPlayback` e fallback HTML no Web para CORS

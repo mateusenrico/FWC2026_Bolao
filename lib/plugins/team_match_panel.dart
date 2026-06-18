@@ -92,7 +92,7 @@ class TeamMatchPanel extends StatelessWidget {
               runSpacing: compact ? 6 : 10,
               children: [
                 _Stat(label: 'POS', value: '${tableLine!.posicao}º'),
-                _Stat(label: 'PTS', value: '${tableLine!.pontos}'),
+                _Stat(label: 'P', value: '${tableLine!.pontos}'),
                 _Stat(label: 'SG', value: '${tableLine!.saldoGols}'),
                 if (!compact) ...[
                   _Stat(label: 'GP', value: '${tableLine!.golsPro}'),

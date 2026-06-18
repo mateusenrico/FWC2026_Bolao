@@ -569,7 +569,7 @@ class _RankingPointsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    const tableWidth = 1080.0;
+    const minTableWidth = 1080.0;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -584,23 +584,31 @@ class _RankingPointsGrid extends StatelessWidget {
             ],
           ),
         ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: tableWidth,
-            child: Column(
-              children: [
-                _RankingGridHeader(colors: colors),
-                for (final linha in ranking)
-                  _RankingGridRow(
-                    linha: linha,
-                    color: participantColors[linha.participanteId],
-                    liveDelta: liveDelta(linha.participanteId),
-                    onTap: () => onTapParticipante(linha.participanteId),
-                  ),
-              ],
-            ),
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final tableWidth = constraints.maxWidth > minTableWidth
+                ? constraints.maxWidth
+                : minTableWidth;
+
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: tableWidth,
+                child: Column(
+                  children: [
+                    _RankingGridHeader(colors: colors),
+                    for (final linha in ranking)
+                      _RankingGridRow(
+                        linha: linha,
+                        color: participantColors[linha.participanteId],
+                        liveDelta: liveDelta(linha.participanteId),
+                        onTap: () => onTapParticipante(linha.participanteId),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

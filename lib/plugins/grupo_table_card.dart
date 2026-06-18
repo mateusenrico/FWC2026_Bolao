@@ -52,33 +52,25 @@ class GrupoTableCard extends StatelessWidget {
           const SizedBox(height: 12),
           LayoutBuilder(
             builder: (context, constraints) {
-              final tableWidth = constraints.maxWidth < 380
-                  ? 380.0
-                  : constraints.maxWidth;
+              final compact = constraints.maxWidth < 420;
 
-              return SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: tableWidth,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const _HeaderRow(),
-                      const Divider(height: 16),
-                      for (final linha in tabela.linhas)
-                        _TeamRow(
-                          linha: linha,
-                          qualified:
-                              linha.posicao <= 2 ||
-                              linha.classificouComoTerceiro,
-                          badgeUrl: badgeForTeam?.call(linha.nome),
-                          onTap: onTeamTap == null
-                              ? null
-                              : () => onTeamTap!(linha.nome),
-                        ),
-                    ],
-                  ),
-                ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _HeaderRow(compact: compact),
+                  const Divider(height: 16),
+                  for (final linha in tabela.linhas)
+                    _TeamRow(
+                      linha: linha,
+                      compact: compact,
+                      qualified:
+                          linha.posicao <= 2 || linha.classificouComoTerceiro,
+                      badgeUrl: badgeForTeam?.call(linha.nome),
+                      onTap: onTeamTap == null
+                          ? null
+                          : () => onTeamTap!(linha.nome),
+                    ),
+                ],
               );
             },
           ),
@@ -94,7 +86,9 @@ class GrupoTableCard extends StatelessWidget {
 }
 
 class _HeaderRow extends StatelessWidget {
-  const _HeaderRow();
+  final bool compact;
+
+  const _HeaderRow({required this.compact});
 
   @override
   Widget build(BuildContext context) {
@@ -125,16 +119,17 @@ class _HeaderRow extends StatelessWidget {
         ),
         SizedBox(
           width: 44,
-          child: Text('PTS', textAlign: TextAlign.center, style: style),
+          child: Text('P', textAlign: TextAlign.center, style: style),
         ),
         SizedBox(
           width: 44,
           child: Text('SG', textAlign: TextAlign.center, style: style),
         ),
-        SizedBox(
-          width: 44,
-          child: Text('GP', textAlign: TextAlign.center, style: style),
-        ),
+        if (!compact)
+          SizedBox(
+            width: 44,
+            child: Text('GP', textAlign: TextAlign.center, style: style),
+          ),
       ],
     );
   }
@@ -142,12 +137,14 @@ class _HeaderRow extends StatelessWidget {
 
 class _TeamRow extends StatelessWidget {
   final LinhaTabelaTime linha;
+  final bool compact;
   final bool qualified;
   final String? badgeUrl;
   final VoidCallback? onTap;
 
   const _TeamRow({
     required this.linha,
+    required this.compact,
     required this.qualified,
     required this.badgeUrl,
     required this.onTap,
@@ -193,7 +190,7 @@ class _TeamRow extends StatelessWidget {
           _Value(value: linha.derrotas, width: 34),
           _Value(value: linha.pontos),
           _Value(value: linha.saldoGols),
-          _Value(value: linha.golsPro),
+          if (!compact) _Value(value: linha.golsPro),
         ],
       ),
     );

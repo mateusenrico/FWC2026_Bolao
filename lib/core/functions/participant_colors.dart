@@ -1,25 +1,24 @@
 import 'package:flutter/material.dart';
 
-import '../app_theme.dart';
 import '../../models/participante.dart';
 
 class ParticipantColors {
   const ParticipantColors._();
 
   static const fallbackPalette = [
-    FwcColors.sky,
-    FwcColors.magenta,
-    FwcColors.teal,
-    FwcColors.coral,
-    FwcColors.lime,
-    Color(0xFF9B5CFF),
-    Color(0xFFFFD166),
-    FwcColors.green,
-    FwcColors.blue,
-    Color(0xFFF72585),
-    Color(0xFF38BDF8),
-    Color(0xFFF97316),
-    Color(0xFFF0ABFC),
+    Color(0xFF0072B2),
+    Color(0xFFD81B60),
+    Color(0xFF00A896),
+    Color(0xFFE85D04),
+    Color(0xFF9ACD00),
+    Color(0xFF6C63FF),
+    Color(0xFF2B2D42),
+    Color(0xFF008000),
+    Color(0xFFE60012),
+    Color(0xFFFDC500),
+    Color(0xFFFB8500),
+    Color(0xFF7209B7),
+    Color(0xFF8A8F98),
   ];
 
   static Color resolve({

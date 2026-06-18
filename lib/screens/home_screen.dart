@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 import '../core/app_routes.dart';
 import '../core/functions/participant_colors.dart';
+import '../core/sistema_pontuacao_participantes.dart';
 import '../models/jogo.dart';
 import '../plugins/api_refresh_action.dart';
 import '../plugins/live_palpite_grid.dart';
 import '../plugins/partida_card.dart';
+import '../plugins/ranking_evolution_chart.dart';
 import '../plugins/ranking_participante_card.dart';
 import '../plugins/refresh_countdown_indicator.dart';
 import '../plugins/section_header.dart';
@@ -299,6 +301,12 @@ class _RankingSection extends StatelessWidget {
             },
           ),
         ],
+        _RankingMiniEvolution(
+          controller: controller,
+          ranking: ranking,
+          visible: visible,
+          participantColors: participantColors,
+        ),
         if (ranking.length > 5)
           Align(
             alignment: Alignment.centerLeft,
@@ -310,6 +318,137 @@ class _RankingSection extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+class _RankingMiniEvolution extends StatelessWidget {
+  final BolaoController controller;
+  final List<LinhaPontuacaoParticipante> ranking;
+  final List<LinhaPontuacaoParticipante> visible;
+  final Map<String, Color> participantColors;
+
+  const _RankingMiniEvolution({
+    required this.controller,
+    required this.ranking,
+    required this.visible,
+    required this.participantColors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final points = _buildEvolutionByMatch();
+    if (points.isEmpty || visible.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      child: RankingEvolutionChart(
+        points: points,
+        selectedParticipantes: {
+          for (final linha in visible) linha.participanteId,
+        },
+        participantColors: participantColors,
+        podiumPositions: {
+          for (final linha in ranking.take(3))
+            linha.participanteId: linha.posicao,
+        },
+        legendOrder: [for (final linha in ranking) linha.participanteId],
+        metric: RankingEvolutionMetric.posicao,
+        height: 150,
+        showLegend: false,
+      ),
+    );
+  }
+
+  List<RankingEvolutionPoint> _buildEvolutionByMatch() {
+    final matchNumbers = <int>{};
+    final pontosPorParticipantePartida = <String, Map<int, int>>{};
+
+    for (final linha in controller.classificacaoProjetada) {
+      final byMatch = <int, int>{};
+
+      for (final pontuacao in linha.pontuacoesPalpites) {
+        if (!pontuacao.pontuavel) {
+          continue;
+        }
+
+        matchNumbers.add(pontuacao.matchNumber);
+        byMatch[pontuacao.matchNumber] =
+            (byMatch[pontuacao.matchNumber] ?? 0) + pontuacao.pontos;
+      }
+
+      pontosPorParticipantePartida[linha.participanteId] = byMatch;
+    }
+
+    final orderedMatches = matchNumbers.toList()..sort();
+    final result = <RankingEvolutionPoint>[];
+
+    for (final linha in controller.classificacaoProjetada) {
+      final byMatch = pontosPorParticipantePartida[linha.participanteId] ?? {};
+      var total = 0;
+
+      for (final matchNumber in orderedMatches) {
+        total += byMatch[matchNumber] ?? 0;
+        result.add(
+          RankingEvolutionPoint(
+            participanteId: linha.participanteId,
+            nome: linha.nome,
+            step: matchNumber,
+            stepLabel: 'J$matchNumber',
+            pontos: total,
+            posicao: 0,
+          ),
+        );
+      }
+    }
+
+    return _withPositions(result);
+  }
+
+  List<RankingEvolutionPoint> _withPositions(
+    List<RankingEvolutionPoint> points,
+  ) {
+    final byStep = <int, List<RankingEvolutionPoint>>{};
+    for (final point in points) {
+      byStep.putIfAbsent(point.step, () => []).add(point);
+    }
+
+    final result = <RankingEvolutionPoint>[];
+    for (final entry in byStep.entries) {
+      final stepPoints = entry.value
+        ..sort((a, b) {
+          final pontos = b.pontos.compareTo(a.pontos);
+          if (pontos != 0) {
+            return pontos;
+          }
+          return a.nome.compareTo(b.nome);
+        });
+
+      for (var index = 0; index < stepPoints.length; index++) {
+        final point = stepPoints[index];
+        result.add(
+          RankingEvolutionPoint(
+            participanteId: point.participanteId,
+            nome: point.nome,
+            step: point.step,
+            stepLabel: point.stepLabel,
+            pontos: point.pontos,
+            posicao: index + 1,
+          ),
+        );
+      }
+    }
+
+    result.sort((a, b) {
+      final participant = a.participanteId.compareTo(b.participanteId);
+      if (participant != 0) {
+        return participant;
+      }
+      return a.step.compareTo(b.step);
+    });
+
+    return result;
   }
 }
 
@@ -413,9 +552,6 @@ class _DashboardHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final hoje = controller.jogosPorPeriodo(PeriodoJogos.hoje).length;
     final aoVivo = controller.jogosAoVivo.length;
-    final lider = controller.classificacaoConsolidada.isEmpty
-        ? null
-        : controller.classificacaoConsolidada.first;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -456,17 +592,6 @@ class _DashboardHero extends StatelessWidget {
                                 fontWeight: FontWeight.w900,
                               ),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          lider == null
-                              ? 'Ranking em formação'
-                              : 'Líder: ${lider.nome} · ${lider.pontosTotal} pts',
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.82),
-                                fontWeight: FontWeight.w800,
-                              ),
-                        ),
                       ],
                     );
 
@@ -478,7 +603,7 @@ class _DashboardHero extends StatelessWidget {
                         _HeroMetric(label: 'Ao vivo', value: '$aoVivo'),
                         _HeroMetric(
                           label: 'Participantes',
-                          value: '${controller.data.totalParticipantes}',
+                          value: '${controller.totalParticipantesComPalpite}',
                         ),
                       ],
                     );
@@ -549,7 +674,6 @@ class _DashboardHero extends StatelessWidget {
                   width: width,
                   icon: Icons.sports_soccer_outlined,
                   title: 'Partidas',
-                  subtitle: '$hoje hoje',
                   color: FwcColors.red,
                   compact: compact,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.jogos),
@@ -558,7 +682,6 @@ class _DashboardHero extends StatelessWidget {
                   width: width,
                   icon: Icons.leaderboard_outlined,
                   title: 'Ranking',
-                  subtitle: lider?.nome ?? 'ver lista',
                   color: FwcColors.purple,
                   compact: compact,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.ranking),
@@ -567,7 +690,6 @@ class _DashboardHero extends StatelessWidget {
                   width: width,
                   icon: Icons.table_chart_outlined,
                   title: 'Grupos',
-                  subtitle: 'A-L',
                   color: FwcColors.green,
                   compact: compact,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.grupos),
@@ -576,7 +698,6 @@ class _DashboardHero extends StatelessWidget {
                   width: width,
                   icon: Icons.shield_outlined,
                   title: 'Times',
-                  subtitle: '${controller.data.totalTimes}',
                   color: FwcColors.blue,
                   compact: compact,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.times),
@@ -585,7 +706,6 @@ class _DashboardHero extends StatelessWidget {
                   width: width,
                   icon: Icons.tune_outlined,
                   title: 'Simular',
-                  subtitle: 'cenários',
                   color: FwcColors.teal,
                   compact: compact,
                   onTap: () =>
@@ -644,7 +764,6 @@ class _DashboardTile extends StatelessWidget {
   final double width;
   final IconData icon;
   final String title;
-  final String subtitle;
   final Color color;
   final bool compact;
   final VoidCallback onTap;
@@ -653,7 +772,6 @@ class _DashboardTile extends StatelessWidget {
     required this.width,
     required this.icon,
     required this.title,
-    required this.subtitle,
     required this.color,
     required this.compact,
     required this.onTap,
@@ -693,15 +811,6 @@ class _DashboardTile extends StatelessWidget {
                     context,
                   ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w900),
                 ),
-                if (!compact)
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
               ],
             ),
           ),

@@ -132,7 +132,7 @@ class _PodiumChip extends StatelessWidget {
           ),
           if (points > 0)
             Text(
-              '+$points pts',
+              '+$points',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w800,

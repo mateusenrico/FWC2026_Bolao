@@ -1,6 +1,6 @@
 # Checkup de pedidos e cobertura
 
-Ultima revisao: v2.4.1-dev.
+Ultima revisao: v2.4.2-dev.
 
 Este documento consolida os pedidos feitos durante a evolucao do app e o estado
 de implementacao. Quando algo depende de fonte externa, a implementacao fica
@@ -30,14 +30,20 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Ranking consolidado vs com ao vivo, com toggle apenas quando houver ao vivo | Completo | `RankingModeSelector`, controller |
 | No ranking consolidado, ordem por pontos consolidados; no projetado, ordem por pontos com ao vivo | Completo | `BolaoController.alterarOrdenacaoRanking` |
 | Ranking da home sem toggle, ordenado por consolidado + ao vivo e mostrando setas de deslocamento | Completo | `_RankingSection`, `RankingParticipanteCard` |
+| Ranking da home com mini grafico de evolucao por posicao | Completo | `_RankingMiniEvolution` |
 | Tela de ranking detalhada com podio | Completo | `RankingScreen`, `RankingPodium` |
+| Podio menor e com contraste explicito no tema escuro | Completo | `RankingPodium` |
 | Grafico de evolucao por pontos ou posicao | Completo | `RankingEvolutionChart`, `RankingScreen` |
 | Evolucao por partida ou por dia brasileiro | Completo | `RankingScreen` |
 | Grafico reescala o eixo X ao filtrar faixa de partidas/dias | Completo | `RankingEvolutionChart` |
+| Grafico com guias por etapa e por posicoes/pontos | Completo | `RankingEvolutionChart` |
 | Cores fixas por participante em `participantes.json` | Completo | `ParticipantColors`, testes |
 | Usar cor da pessoa como acento visual global onde nomes aparecem | Completo | `ParticipantPositionBadge`, `ParticipantNameInline`, ranking e palpites |
+| Aumentar diferenciacao das cores dos participantes | Completo | `assets/data/participantes.json`, `ParticipantColors` |
 | Legenda do grafico ordenada por ranking atual | Completo | `RankingEvolutionChart` |
 | Lista detalhada do ranking sem tabela redundante e com +5/+3/+2/+1/0 | Completo | `RankingScreen` |
+| Tabela de ranking ocupa a largura disponivel sem sobra deslocada | Completo | `_RankingPointsGrid` |
+| Participantes sem nenhum palpite completo nao aparecem nos rankings/palpites | Completo | `BolaoController` |
 | Tela do participante com filtros de palpites (+5, zerados, futuros etc.) | Completo | `ParticipanteDetailScreen` |
 | Tela do participante mostra palpite vs resultado/parcial com cores e pontos | Completo | `PalpiteJogoCard` |
 | Separar grupos e mata-mata nas exibicoes de jogos | Completo | `JogosScreen`, `MataMataBracketView` |
@@ -57,6 +63,7 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Home como dashboard, nao landing page | Completo | `HomeScreen` |
 | Atalhos da home compactos no celular | Completo | `_DashboardTile` |
 | AppBar da home sem titulo duplicado | Completo | `HomeScreen` |
+| Dashboard sem subtitulos redundantes nos atalhos | Completo | `_DashboardHero`, `_DashboardTile` |
 | Destaque ao vivo ou proximo jogo com grid compacto dos palpites | Completo | `LivePalpiteGrid`, `HomeScreen` |
 | Dois ou mais jogos ao vivo em paralelo no dashboard | Completo | `HomeScreen` empilha no celular e distribui em duas colunas no desktop |
 | Detalhe da partida com palpites agrupados por resultado apostado | Completo | `PalpiteMatchGroups`, `PalpiteResultGroupCard` |
@@ -69,6 +76,7 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Gols/cartoes/estatisticas/escalacao da partida pela API | Parcial por API | `MatchApiDetails`, `SportsDbApiService.fetchEventDetails`; aparece quando a SportsDB retorna dados |
 | Atualizar jogo encerrado que ficou preso como ao vivo | Completo | janela maxima de status ao vivo e encerramento por relogio |
 | QA visual no Chrome/mobile | Completo para smoke | Build release + Playwright 390px sem overflow; QA manual fino continua continuo |
+| Navegacao mobile por botoes Grupos e Times | Completo | Smoke Chrome 390px sem erro/overflow |
 | Pipeline GitHub Actions/Cloudflare revisado | Completo | `docs/BUILD_DEPLOY.md`, workflow existente |
 | Profile por padrao em `flutter run`/VS Code | Completo | `Makefile`, `.vscode` quando presente no ambiente |
 | Mover teste placeholder antigo para debug | Completo | `test/debug/widget_test.dart` |

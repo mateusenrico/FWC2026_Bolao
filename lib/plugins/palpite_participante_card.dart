@@ -58,7 +58,7 @@ class PalpiteParticipanteCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Sem este jogo: $basePoints pts',
+                      'Sem este jogo: $basePoints',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: colors.onSurfaceVariant,
                       ),

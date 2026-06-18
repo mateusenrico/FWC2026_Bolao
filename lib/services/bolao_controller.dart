@@ -108,6 +108,14 @@ class BolaoController extends ChangeNotifier {
 
   bool get temJogosAoVivo => jogosAoVivo.isNotEmpty;
 
+  int get totalParticipantesComPalpite {
+    return _participanteIdsComPalpite().length;
+  }
+
+  Set<String> get participanteIdsComPalpite {
+    return Set.unmodifiable(_participanteIdsComPalpite());
+  }
+
   List<TimeParticipante> get timesOrdenados {
     final result = [..._data.timesParticipantes];
     result.sort((a, b) {
@@ -591,16 +599,50 @@ class BolaoController extends ChangeNotifier {
 
   void _recalcular() {
     _tabelasGrupos = SistemaPontuacaoTimes.calcularTabelasReais(_data.jogos);
-    _classificacaoProjetada =
-        SistemaPontuacaoParticipantes.calcularClassificacao(_data);
-    _classificacaoConsolidada =
-        SistemaPontuacaoParticipantes.calcularClassificacao(
-          _dataSemJogosAoVivo(),
-        );
+    _classificacaoProjetada = _filtrarEReordenarParticipantesVisiveis(
+      SistemaPontuacaoParticipantes.calcularClassificacao(_data),
+    );
+    _classificacaoConsolidada = _filtrarEReordenarParticipantesVisiveis(
+      SistemaPontuacaoParticipantes.calcularClassificacao(
+        _dataSemJogosAoVivo(),
+      ),
+    );
     if (!temJogosAoVivo) {
       _ordenacaoRanking = OrdenacaoRanking.consolidado;
     }
     _atualizarClassificacaoExibida();
+  }
+
+  List<LinhaPontuacaoParticipante> _filtrarEReordenarParticipantesVisiveis(
+    List<LinhaPontuacaoParticipante> linhas,
+  ) {
+    final ativos = _participanteIdsComPalpite();
+    final visiveis = linhas
+        .where((linha) => ativos.contains(linha.participanteId))
+        .toList(growable: false);
+
+    return [
+      for (var index = 0; index < visiveis.length; index++)
+        visiveis[index].copyWith(posicao: index + 1),
+    ];
+  }
+
+  Set<String> _participanteIdsComPalpite() {
+    final result = <String>{};
+
+    for (final participante in _data.participantes) {
+      if (participante.jogosPalpitados > 0) {
+        result.add(participante.participanteId);
+      }
+    }
+
+    for (final palpite in _data.palpites) {
+      if (palpite.isCompleto) {
+        result.add(palpite.participanteId);
+      }
+    }
+
+    return result;
   }
 
   List<String> _eventIdsParaLookupIndividual() {

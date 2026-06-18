@@ -7,6 +7,7 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - tela inicial responsiva;
 - destaque para partida ao vivo ou próximo horário, com grid compacto de palpites; jogos ao vivo exibem pontos parciais;
 - ranking parcial colapsável na home, sem toggle, ordenado por consolidado + ao vivo quando houver jogo em andamento;
+- mini gráfico de evolução por posição abaixo do ranking parcial da home;
 - filtros de partidas: hoje, amanhã, rodada, passados, futuros e todos;
 - cards de partidas com siglas oficiais, badges/bandeiras, placar e status;
 - detalhe da partida;
@@ -16,8 +17,10 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - ranking detalhado com pódio, tabela de pontos e evolução por pontos ou posição;
 - filtro de evolução por participantes e por faixa de partidas ou dias;
 - gráfico de evolução com eixo X reescalado conforme a faixa filtrada;
+- gráfico de evolução com guias visuais por etapa e por posição/pontuação;
 - cores fixas por participante, vindas de `participantes.json`, usadas no gráfico, legenda, ranking e chips de palpites;
 - setas de subida, queda ou empate no ranking da home comparando posição consolidada e posição com placar ao vivo;
+- participantes sem nenhum palpite completo ficam ocultos dos rankings e chips de palpites;
 - destaque visual de ouro, prata e bronze para os três primeiros no gráfico;
 - classificação dos grupos;
 - projeção colapsável do mata-mata por participante;
@@ -26,6 +29,7 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - imagens remotas com cache do Flutter/browser, `gaplessPlayback` e fallback HTML no Web para reduzir flicker e contornar CORS;
 - simulador com busca, cards compactos e limpeza rápida de placares digitados;
 - atualização incremental da SportsDB em memória a cada 5 segundos durante jogos ao vivo, preservando os assets locais se a API falhar;
+- tabelas de grupos responsivas no celular, sem largura mínima que cause overflow horizontal;
 - mesma regra 5/3/2/1/0 para jogos de grupos e mata-mata;
 - testes básicos da regra de pontuação, incluindo placar exato no mata-mata.
 

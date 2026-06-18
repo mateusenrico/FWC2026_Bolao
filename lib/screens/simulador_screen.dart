@@ -52,8 +52,8 @@ class _SimuladorScreenState extends State<SimuladorScreen> {
       builder: (context, _) {
         final jogos = _jogosSimulaveis();
         final dataSimulada = _dataSimulada();
-        final ranking = SistemaPontuacaoParticipantes.calcularClassificacao(
-          dataSimulada,
+        final ranking = _rankingVisivel(
+          SistemaPontuacaoParticipantes.calcularClassificacao(dataSimulada),
         );
         final participantColors = ParticipantColors.mapFromParticipantes(
           controller.data.participantes,
@@ -209,6 +209,20 @@ class _SimuladorScreenState extends State<SimuladorScreen> {
         .toList(growable: false);
 
     return jogos;
+  }
+
+  List<LinhaPontuacaoParticipante> _rankingVisivel(
+    List<LinhaPontuacaoParticipante> ranking,
+  ) {
+    final ativos = controller.participanteIdsComPalpite;
+    final visiveis = ranking
+        .where((linha) => ativos.contains(linha.participanteId))
+        .toList(growable: false);
+
+    return [
+      for (var index = 0; index < visiveis.length; index++)
+        visiveis[index].copyWith(posicao: index + 1),
+    ];
   }
 
   BolaoData _dataSimulada() {
