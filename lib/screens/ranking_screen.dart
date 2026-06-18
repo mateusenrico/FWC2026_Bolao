@@ -27,7 +27,7 @@ class RankingScreen extends StatefulWidget {
 class _RankingScreenState extends State<RankingScreen> {
   final Set<String> _selecionados = {};
   RankingEvolutionMode _evolutionMode = RankingEvolutionMode.partidas;
-  RankingEvolutionMetric _evolutionMetric = RankingEvolutionMetric.pontos;
+  RankingEvolutionMetric _evolutionMetric = RankingEvolutionMetric.posicao;
   RangeValues? _evolutionRange;
 
   BolaoController get controller => widget.controller;
@@ -185,6 +185,9 @@ class _RankingScreenState extends State<RankingScreen> {
                             selectedParticipantes: _selecionados,
                             participantColors: participantColors,
                             podiumPositions: podiumPositions,
+                            legendOrder: [
+                              for (final linha in ranking) linha.participanteId,
+                            ],
                             metric: _evolutionMetric,
                           ),
                           const SizedBox(height: 22),

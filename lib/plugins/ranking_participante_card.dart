@@ -59,6 +59,8 @@ class RankingParticipanteCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       '${linha.placaresExatos} exatos · ${linha.resultadosCorretos} resultados',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),

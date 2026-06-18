@@ -43,6 +43,7 @@ class TeamBadge extends StatelessWidget {
               imageUrl!,
               fit: BoxFit.contain,
               gaplessPlayback: true,
+              webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
               errorBuilder: (_, _, _) {
                 return Center(
                   child: Text(

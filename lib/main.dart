@@ -28,55 +28,82 @@ class BolaoApp extends StatefulWidget {
 
 class _BolaoAppState extends State<BolaoApp> {
   late final Future<BolaoController> _controllerFuture;
+  late final BolaoThemeController _themeController;
 
   @override
   void initState() {
     super.initState();
+    _themeController = BolaoThemeController();
     _controllerFuture = BolaoController.carregar();
   }
 
   @override
+  void dispose() {
+    _themeController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<BolaoController>(
-      future: _controllerFuture,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: buildBolaoTheme(),
-            home: Scaffold(
-              appBar: AppBar(title: const Text('Bolão FWC 2026')),
-              body: Padding(
-                padding: const EdgeInsets.all(20),
-                child: SelectableText(
-                  'Erro ao carregar o aplicativo:\n\n${snapshot.error}',
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ),
-            ),
-          );
-        }
+    return BolaoThemeScope(
+      controller: _themeController,
+      child: AnimatedBuilder(
+        animation: _themeController,
+        builder: (context, _) {
+          return FutureBuilder<BolaoController>(
+            future: _controllerFuture,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return MaterialApp(
+                  debugShowCheckedModeBanner: false,
+                  theme: buildBolaoTheme(Brightness.light),
+                  darkTheme: buildBolaoTheme(Brightness.dark),
+                  themeMode: _themeController.mode,
+                  home: Scaffold(
+                    appBar: AppBar(title: const Text('Bolão FWC 2026')),
+                    body: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: SelectableText(
+                        'Erro ao carregar o aplicativo:\n\n${snapshot.error}',
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ),
+                );
+              }
 
-        if (!snapshot.hasData) {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: buildBolaoTheme(),
-            home: const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            ),
-          );
-        }
+              if (!snapshot.hasData) {
+                return MaterialApp(
+                  debugShowCheckedModeBanner: false,
+                  theme: buildBolaoTheme(Brightness.light),
+                  darkTheme: buildBolaoTheme(Brightness.dark),
+                  themeMode: _themeController.mode,
+                  home: const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  ),
+                );
+              }
 
-        return _BolaoNavigationApp(controller: snapshot.data!);
-      },
+              return _BolaoNavigationApp(
+                controller: snapshot.data!,
+                themeController: _themeController,
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
 
 class _BolaoNavigationApp extends StatefulWidget {
   final BolaoController controller;
+  final BolaoThemeController themeController;
 
-  const _BolaoNavigationApp({required this.controller});
+  const _BolaoNavigationApp({
+    required this.controller,
+    required this.themeController,
+  });
 
   @override
   State<_BolaoNavigationApp> createState() => _BolaoNavigationAppState();
@@ -102,7 +129,9 @@ class _BolaoNavigationAppState extends State<_BolaoNavigationApp> {
     return MaterialApp(
       title: 'Bolão FWC 2026',
       debugShowCheckedModeBanner: false,
-      theme: buildBolaoTheme(),
+      theme: buildBolaoTheme(Brightness.light),
+      darkTheme: buildBolaoTheme(Brightness.dark),
+      themeMode: widget.themeController.mode,
       initialRoute: AppRoutes.home,
       onGenerateRoute: (settings) {
         switch (settings.name) {

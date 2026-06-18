@@ -74,9 +74,7 @@ class MediaCatalogService {
     final badges = <String, String>{};
     final matchImages = <String, String>{};
     final matchVideos = <String, String>{};
-    final teamsByKey = <String, TimeSportsDb>{
-      for (final time in data.timesSportsDb) time.timeKey: time,
-    };
+    final teamsByKey = <String, TimeSportsDb>{};
     final venuesByKey = <String, VenueSportsDb>{
       for (final venue in data.venuesSportsDb) venue.venueKey: venue,
     };
@@ -89,9 +87,23 @@ class MediaCatalogService {
 
     for (final time in data.timesSportsDb) {
       final badge = _firstUrl([time.badgeUrl, time.logoUrl]);
+      _addTeam(teamsByKey, time.timeKey, time);
+      _addTeam(teamsByKey, time.nomeBolao, time);
+      _addTeam(teamsByKey, time.nomeApi, time);
+      _addTeam(teamsByKey, time.siglaApi, time);
+      _addTeam(teamsByKey, time.pais, time);
+
       _addBadge(badges, time.nomeBolao, badge);
       _addBadge(badges, time.nomeApi, badge);
       _addBadge(badges, time.timeKey, badge);
+      _addBadge(badges, time.siglaApi, badge);
+      _addBadge(badges, time.pais, badge);
+      _addBadge(badges, time.raw['strTeam']?.toString(), badge);
+      _addBadge(badges, time.raw['strTeamShort']?.toString(), badge);
+      for (final alias in _splitAliases(time.raw['strTeamAlternate'])) {
+        _addBadge(badges, alias, badge);
+        _addTeam(teamsByKey, alias, time);
+      }
     }
 
     for (final historico in data.historicoPartidas) {
@@ -105,6 +117,10 @@ class MediaCatalogService {
       _addBadge(badges, historico.visitantePrevisto, awayBadge);
       _addBadge(badges, jogo?.mandantePrevisto, homeBadge);
       _addBadge(badges, jogo?.visitantePrevisto, awayBadge);
+      _addBadge(badges, jogo?.mandanteReferencia.timeKey, homeBadge);
+      _addBadge(badges, jogo?.visitanteReferencia.timeKey, awayBadge);
+      _addBadge(badges, jogo?.mandanteReferencia.nomeFonte, homeBadge);
+      _addBadge(badges, jogo?.visitanteReferencia.nomeFonte, awayBadge);
 
       final image = _firstUrl([
         historico.raw['strThumb']?.toString(),
@@ -124,6 +140,13 @@ class MediaCatalogService {
     }
 
     for (final jogo in data.jogos) {
+      final homeBadge = _badgeByName(badges, jogo.mandanteReferencia.timeKey);
+      final awayBadge = _badgeByName(badges, jogo.visitanteReferencia.timeKey);
+      _addBadge(badges, jogo.mandantePrevisto, homeBadge);
+      _addBadge(badges, jogo.visitantePrevisto, awayBadge);
+      _addBadge(badges, jogo.mandanteReferencia.nomeFonte, homeBadge);
+      _addBadge(badges, jogo.visitanteReferencia.nomeFonte, awayBadge);
+
       final venue = _venueForMatch(
         data: data,
         jogo: jogo,
@@ -144,6 +167,16 @@ class MediaCatalogService {
       _addBadge(badges, event.strAwayTeam, event.strAwayTeamBadge);
       _addBadge(badges, jogo?.mandantePrevisto, event.strHomeTeamBadge);
       _addBadge(badges, jogo?.visitantePrevisto, event.strAwayTeamBadge);
+      _addBadge(
+        badges,
+        jogo?.mandanteReferencia.timeKey,
+        event.strHomeTeamBadge,
+      );
+      _addBadge(
+        badges,
+        jogo?.visitanteReferencia.timeKey,
+        event.strAwayTeamBadge,
+      );
 
       final image = event.stadiumImage;
       if (image != null && image.isNotEmpty) {
@@ -196,6 +229,39 @@ class MediaCatalogService {
     }
 
     badges[TeamNormalizer.key(teamName)] = url.trim();
+  }
+
+  static String? _badgeByName(Map<String, String> badges, String? teamName) {
+    if (teamName == null || teamName.trim().isEmpty) {
+      return null;
+    }
+
+    return badges[TeamNormalizer.key(teamName)];
+  }
+
+  static void _addTeam(
+    Map<String, TimeSportsDb> teamsByKey,
+    String? teamName,
+    TimeSportsDb team,
+  ) {
+    if (teamName == null || teamName.trim().isEmpty) {
+      return;
+    }
+
+    teamsByKey[TeamNormalizer.key(teamName)] = team;
+  }
+
+  static List<String> _splitAliases(dynamic value) {
+    final text = value?.toString().trim();
+    if (text == null || text.isEmpty) {
+      return const [];
+    }
+
+    return text
+        .split(',')
+        .map((alias) => alias.trim())
+        .where((alias) => alias.isNotEmpty)
+        .toList(growable: false);
   }
 
   static String? _firstUrl(List<String?> values) {

@@ -50,15 +50,38 @@ class GrupoTableCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const _HeaderRow(),
-          const Divider(height: 16),
-          for (final linha in tabela.linhas)
-            _TeamRow(
-              linha: linha,
-              qualified: linha.posicao <= 2 || linha.classificouComoTerceiro,
-              badgeUrl: badgeForTeam?.call(linha.nome),
-              onTap: onTeamTap == null ? null : () => onTeamTap!(linha.nome),
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final tableWidth = constraints.maxWidth < 380
+                  ? 380.0
+                  : constraints.maxWidth;
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: tableWidth,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const _HeaderRow(),
+                      const Divider(height: 16),
+                      for (final linha in tabela.linhas)
+                        _TeamRow(
+                          linha: linha,
+                          qualified:
+                              linha.posicao <= 2 ||
+                              linha.classificouComoTerceiro,
+                          badgeUrl: badgeForTeam?.call(linha.nome),
+                          onTap: onTeamTap == null
+                              ? null
+                              : () => onTeamTap!(linha.nome),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

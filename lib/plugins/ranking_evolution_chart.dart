@@ -29,6 +29,7 @@ class RankingEvolutionChart extends StatelessWidget {
   final Set<String> selectedParticipantes;
   final Map<String, Color> participantColors;
   final Map<String, int> podiumPositions;
+  final List<String> legendOrder;
   final RankingEvolutionMetric metric;
 
   const RankingEvolutionChart({
@@ -37,6 +38,7 @@ class RankingEvolutionChart extends StatelessWidget {
     required this.selectedParticipantes,
     this.participantColors = const {},
     this.podiumPositions = const {},
+    this.legendOrder = const [],
     required this.metric,
   });
 
@@ -59,6 +61,16 @@ class RankingEvolutionChart extends StatelessWidget {
     for (final point in visible) {
       participants.putIfAbsent(point.participanteId, () => point.nome);
     }
+    final remainingLegendIds =
+        participants.keys
+            .where((participanteId) => !legendOrder.contains(participanteId))
+            .toList()
+          ..sort((a, b) => participants[a]!.compareTo(participants[b]!));
+    final orderedLegendIds = [
+      for (final participanteId in legendOrder)
+        if (participants.containsKey(participanteId)) participanteId,
+      ...remainingLegendIds,
+    ];
 
     return Card(
       child: Padding(
@@ -84,11 +96,11 @@ class RankingEvolutionChart extends StatelessWidget {
               spacing: 10,
               runSpacing: 8,
               children: [
-                for (final entry in participants.entries)
+                for (final participanteId in orderedLegendIds)
                   _LegendItem(
-                    color: _colorFor(entry.key),
-                    name: entry.value,
-                    podiumPosition: podiumPositions[entry.key],
+                    color: _colorFor(participanteId),
+                    name: participants[participanteId]!,
+                    podiumPosition: podiumPositions[participanteId],
                   ),
               ],
             ),

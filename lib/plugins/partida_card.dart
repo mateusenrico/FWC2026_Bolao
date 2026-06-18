@@ -114,28 +114,47 @@ class _PartidaCardContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final headerText = Text(
+      'Jogo ${jogo.matchNumber} · ${_faseTexto(jogo)}',
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.labelLarge?.copyWith(
+        color: colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.w800,
+      ),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Jogo ${jogo.matchNumber} · ${_faseTexto(jogo)}',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-            _StatusChip(status: jogo.statusJogo),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 330) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  headerText,
+                  const SizedBox(height: 6),
+                  _StatusChip(status: jogo.statusJogo),
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: headerText),
+                const SizedBox(width: 8),
+                _StatusChip(status: jogo.statusJogo),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 6),
         Text(
           '${AppDateTime.diaSemana(date)} · ${AppDateTime.dataCurta(date)} · ${AppDateTime.horario(date)} (UTC-3)',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
@@ -144,8 +163,9 @@ class _PartidaCardContent extends StatelessWidget {
         LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxWidth < 470;
+            final veryCompact = constraints.maxWidth < 340;
 
-            return Row(
+            final teamsRow = Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
@@ -156,10 +176,12 @@ class _PartidaCardContent extends StatelessWidget {
                     compact: compact,
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 16),
-                  child: _ScoreCenter(jogo: jogo, compact: compact),
-                ),
+                if (!veryCompact) ...[
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 16),
+                    child: _ScoreCenter(jogo: jogo, compact: compact),
+                  ),
+                ],
                 Expanded(
                   child: _TeamSide(
                     teamName: jogo.visitantePrevisto,
@@ -170,6 +192,19 @@ class _PartidaCardContent extends StatelessWidget {
                 ),
               ],
             );
+
+            if (veryCompact) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  teamsRow,
+                  const SizedBox(height: 10),
+                  _ScoreCenter(jogo: jogo, compact: true),
+                ],
+              );
+            }
+
+            return teamsRow;
           },
         ),
         const SizedBox(height: 12),
@@ -184,7 +219,7 @@ class _PartidaCardContent extends StatelessWidget {
             Expanded(
               child: Text(
                 jogo.localTexto.isEmpty ? 'Local a definir' : jogo.localTexto,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,

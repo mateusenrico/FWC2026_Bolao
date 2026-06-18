@@ -468,7 +468,9 @@ class _DashboardHero extends StatelessWidget {
                 ? 5
                 : constraints.maxWidth >= 680
                 ? 3
-                : 2;
+                : constraints.maxWidth >= 390
+                ? 2
+                : 1;
             final width =
                 (constraints.maxWidth - ((columns - 1) * 10)) / columns;
 
