@@ -806,14 +806,21 @@ class BolaoController extends ChangeNotifier {
         jogo.resultadoFinal || event.isFinal || finalInferredByClock;
     final scoreUsable =
         event.temPlacar && (finalResult || eventStatus == 'em_andamento');
-    final liveWithoutScore = !event.temPlacar && eventStatus == 'em_andamento';
-    final hasResult = jogo.temResultado || scoreUsable || liveWithoutScore;
-    final homeScore = scoreUsable
+    final incomingScoreRegresses =
+        scoreUsable &&
+        !finalResult &&
+        _placarAoVivoRegrediu(jogo, event.intHomeScore, event.intAwayScore);
+    final applyIncomingScore = scoreUsable && !incomingScoreRegresses;
+    final liveWithoutScore =
+        !event.temPlacar && eventStatus == 'em_andamento' && !jogo.temResultado;
+    final hasResult =
+        jogo.temResultado || applyIncomingScore || liveWithoutScore;
+    final homeScore = applyIncomingScore
         ? event.intHomeScore
         : liveWithoutScore
         ? 0
         : jogo.golsMandante;
-    final awayScore = scoreUsable
+    final awayScore = applyIncomingScore
         ? event.intAwayScore
         : liveWithoutScore
         ? 0
@@ -823,6 +830,8 @@ class BolaoController extends ChangeNotifier {
         ? 'encerrado'
         : eventStatus == 'encerrado'
         ? 'encerrado'
+        : jogo.isEmAndamento && eventStatus == 'agendado'
+        ? 'em_andamento'
         : eventStatus;
 
     return jogo.copyWith(
@@ -837,10 +846,10 @@ class BolaoController extends ChangeNotifier {
         awayScore,
       ),
       temHistoricoApi: true,
-      temResultadoApi: jogo.temResultadoApi || scoreUsable,
+      temResultadoApi: jogo.temResultadoApi || applyIncomingScore,
       temResultado: hasResult,
       resultadoFinal: finalResult,
-      fonteResultado: scoreUsable
+      fonteResultado: applyIncomingScore
           ? finalInferredByClock
                 ? 'sportsdb_encerrado_por_relogio'
                 : 'sportsdb_refresh'
@@ -848,6 +857,25 @@ class BolaoController extends ChangeNotifier {
           ? 'sportsdb_ao_vivo_zerado'
           : jogo.fonteResultado,
     );
+  }
+
+  bool _placarAoVivoRegrediu(
+    Jogo jogo,
+    int? incomingHomeScore,
+    int? incomingAwayScore,
+  ) {
+    if (!jogo.temResultado ||
+        jogo.golsMandante == null ||
+        jogo.golsVisitante == null ||
+        incomingHomeScore == null ||
+        incomingAwayScore == null) {
+      return false;
+    }
+
+    final currentTotal = jogo.golsMandante! + jogo.golsVisitante!;
+    final incomingTotal = incomingHomeScore + incomingAwayScore;
+
+    return incomingTotal < currentTotal;
   }
 
   String? _vencedor(
@@ -909,7 +937,9 @@ class BolaoController extends ChangeNotifier {
             return jogo;
           }
 
-          final kickoff = jogo.dataUtc?.toUtc();
+          final kickoff =
+              _eventoPorJogoId[jogo.jogoId]?.strTimestampUtc?.toUtc() ??
+              jogo.dataUtc?.toUtc();
           if (kickoff == null) {
             return jogo;
           }

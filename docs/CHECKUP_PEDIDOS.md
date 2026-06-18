@@ -26,6 +26,7 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Refresh inicial ao abrir o app | Completo | `BolaoController.iniciarAtualizacaoAutomatica` |
 | Refresh automatico durante jogos ao vivo | Completo | Timer de 5s em `BolaoController` |
 | Refresh automatico sem apagar a tela ou voltar para a home | Completo | Atualizacao automatica so notifica UI quando dados dinamicos mudam |
+| Refresh ao vivo nao pode regredir placar por resposta atrasada/incompleta da API | Completo | `BolaoController`, `SportsDbApiService`, `tools/update_sportsdb.dart`, teste de regressao |
 | Remover dependencia visual do botao de refresh manual | Completo | `ApiRefreshAction` mostra apenas tema e indicador |
 | Barra/indicador de proxima atualizacao | Completo | `RefreshCountdownIndicator` |
 | Jogos iniciados sem placar contam provisoriamente como 0x0 para ranking projetado | Completo | `BolaoController._aplicarRelogioLocal`, `_mesclarJogoComEvento` |
