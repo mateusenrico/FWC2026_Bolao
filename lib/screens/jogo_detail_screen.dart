@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../core/app_routes.dart';
 import '../core/functions/date_time_utils.dart';
 import '../core/functions/palpite_match_groups.dart';
+import '../core/functions/participant_colors.dart';
 import '../core/functions/team_normalizer.dart';
 import '../models/jogo.dart';
 import '../plugins/api_refresh_action.dart';
@@ -51,6 +52,9 @@ class _JogoDetailScreenState extends State<JogoDetailScreen> {
 
         _solicitarDetalhesSeNecessario(jogo);
         final gruposPalpites = controller.gruposDePalpitesDoJogo(jogo.jogoId);
+        final participantColors = ParticipantColors.mapFromParticipantes(
+          controller.data.participantes,
+        );
         final details = controller.detalhesEventoDoJogo(jogo.jogoId);
         final loadingDetails = controller.carregandoDetalhesEvento(jogo.jogoId);
 
@@ -89,6 +93,7 @@ class _JogoDetailScreenState extends State<JogoDetailScreen> {
                                 _PalpiteGroups(
                                   jogo: jogo,
                                   gruposPalpites: gruposPalpites,
+                                  participantColors: participantColors,
                                 ),
                                 const SizedBox(height: 22),
                                 const SectionHeader(
@@ -158,8 +163,13 @@ class _JogoDetailScreenState extends State<JogoDetailScreen> {
 class _PalpiteGroups extends StatelessWidget {
   final Jogo jogo;
   final List<GrupoPalpitesJogo> gruposPalpites;
+  final Map<String, Color> participantColors;
 
-  const _PalpiteGroups({required this.jogo, required this.gruposPalpites});
+  const _PalpiteGroups({
+    required this.jogo,
+    required this.gruposPalpites,
+    required this.participantColors,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -176,6 +186,7 @@ class _PalpiteGroups extends StatelessWidget {
                   child: PalpiteResultGroupCard(
                     jogo: jogo,
                     group: group,
+                    participantColors: participantColors,
                     onTapParticipante: (id) => () {
                       Navigator.pushNamed(
                         context,
@@ -195,6 +206,7 @@ class _PalpiteGroups extends StatelessWidget {
               PalpiteResultGroupCard(
                 jogo: jogo,
                 group: group,
+                participantColors: participantColors,
                 onTapParticipante: (id) => () {
                   Navigator.pushNamed(
                     context,

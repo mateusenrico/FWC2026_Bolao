@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../core/functions/participant_colors.dart';
 import '../core/functions/palpite_match_groups.dart';
 import '../core/sistema_palpites.dart';
 import '../models/jogo.dart';
+import 'participant_identity.dart';
 
 class PalpiteResultGroupCard extends StatelessWidget {
   final Jogo jogo;
   final GrupoPalpitesJogo group;
+  final Map<String, Color> participantColors;
   final VoidCallback? Function(String participanteId) onTapParticipante;
 
   const PalpiteResultGroupCard({
     super.key,
     required this.jogo,
     required this.group,
+    this.participantColors = const {},
     required this.onTapParticipante,
   });
 
@@ -84,6 +88,8 @@ class PalpiteResultGroupCard extends StatelessWidget {
                   for (final item in group.palpites)
                     _PalpiteChip(
                       item: item,
+                      participantColor:
+                          participantColors[item.linha.participanteId],
                       onTap: onTapParticipante(item.linha.participanteId),
                     ),
                 ],
@@ -152,15 +158,21 @@ class _GroupSummary extends StatelessWidget {
 
 class _PalpiteChip extends StatelessWidget {
   final PalpiteJogoAgrupado item;
+  final Color? participantColor;
   final VoidCallback? onTap;
 
-  const _PalpiteChip({required this.item, required this.onTap});
+  const _PalpiteChip({
+    required this.item,
+    required this.participantColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final pontuacao = item.pontuacao;
     final color = _colorFor(context);
     final foreground = _foregroundFor(context, color);
+    final accent = participantColor ?? Theme.of(context).colorScheme.primary;
 
     return Material(
       color: color,
@@ -179,10 +191,9 @@ class _PalpiteChip extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        item.linha.nome,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: ParticipantNameInline(
+                        name: item.linha.nome,
+                        color: accent,
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           color: foreground,
                           fontWeight: FontWeight.w900,
@@ -236,6 +247,10 @@ class _PalpiteChip extends StatelessWidget {
 
     if (pontuacao?.zerou == true) {
       return colors.errorContainer.withValues(alpha: 0.7);
+    }
+
+    if (participantColor != null) {
+      return ParticipantColors.softBackgroundFor(participantColor!, colors);
     }
 
     return colors.surfaceContainerHighest;

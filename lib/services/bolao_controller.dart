@@ -160,11 +160,15 @@ class BolaoController extends ChangeNotifier {
       return;
     }
 
+    var dadosMudaram = false;
+    var relogioMudou = false;
     _atualizandoApi = true;
     _mensagemAtualizacao = automatico
         ? 'Atualizando placares ao vivo...'
         : 'Consultando a SportsDB...';
-    notifyListeners();
+    if (!automatico) {
+      notifyListeners();
+    }
 
     try {
       final result = await _apiService.fetchRefreshResult(
@@ -188,29 +192,40 @@ class BolaoController extends ChangeNotifier {
               .toList(growable: false)
             ..sort((a, b) => a.ordem.compareTo(b.ordem));
 
-      _eventoPorJogoId
-        ..clear()
-        ..addAll(eventosPorJogo);
+      dadosMudaram =
+          !_jogosDinamicosIguais(_data.jogos, jogosAtualizados) ||
+          !_eventosDinamicosIguais(_eventoPorJogoId, eventosPorJogo);
 
-      _data = _data.copyWith(jogos: jogosAtualizados);
-      for (final jogo in jogosAtualizados.where((jogo) => jogo.isEmAndamento)) {
-        _detalhesPorJogoId.remove(jogo.jogoId);
+      if (dadosMudaram) {
+        _eventoPorJogoId
+          ..clear()
+          ..addAll(eventosPorJogo);
+
+        _data = _data.copyWith(jogos: jogosAtualizados);
+        for (final jogo in jogosAtualizados.where(
+          (jogo) => jogo.isEmAndamento,
+        )) {
+          _detalhesPorJogoId.remove(jogo.jogoId);
+        }
+
+        _recalcular();
+        _reconstruirMidia();
       }
+
       _ultimaAtualizacao = DateTime.now();
       _mensagemAtualizacao = result.hasAnyFailedEndpoint
           ? '${result.summaryText} Dados válidos foram aplicados; a base local foi mantida nos endpoints com falha.'
           : result.summaryText;
-
-      _recalcular();
-      _reconstruirMidia();
     } catch (error) {
       _mensagemAtualizacao =
           'Não foi possível atualizar a API. A base local continua ativa. $error';
     } finally {
-      _aplicarRelogioLocal(notificar: false);
+      relogioMudou = _aplicarRelogioLocal(notificar: false);
       _atualizarProximaAtualizacao();
       _atualizandoApi = false;
-      notifyListeners();
+      if (!automatico || dadosMudaram || relogioMudou) {
+        notifyListeners();
+      }
     }
   }
 
@@ -815,7 +830,7 @@ class BolaoController extends ChangeNotifier {
     return _data.copyWith(jogos: jogos);
   }
 
-  void _aplicarRelogioLocal({bool notificar = true}) {
+  bool _aplicarRelogioLocal({bool notificar = true}) {
     final nowUtc = DateTime.now().toUtc();
     var mudou = false;
 
@@ -880,7 +895,7 @@ class BolaoController extends ChangeNotifier {
         .toList(growable: false);
 
     if (!mudou) {
-      return;
+      return false;
     }
 
     _data = _data.copyWith(jogos: jogos);
@@ -889,6 +904,8 @@ class BolaoController extends ChangeNotifier {
     if (notificar) {
       notifyListeners();
     }
+
+    return true;
   }
 
   void _atualizarProximaAtualizacao() {
@@ -963,6 +980,66 @@ class BolaoController extends ChangeNotifier {
     }
 
     return null;
+  }
+
+  bool _jogosDinamicosIguais(List<Jogo> atuais, List<Jogo> novos) {
+    if (atuais.length != novos.length) {
+      return false;
+    }
+
+    final atuaisPorId = {for (final jogo in atuais) jogo.jogoId: jogo};
+
+    for (final novo in novos) {
+      final atual = atuaisPorId[novo.jogoId];
+      if (atual == null || !_jogoDinamicoIgual(atual, novo)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool _jogoDinamicoIgual(Jogo atual, Jogo novo) {
+    return atual.idEventAtual == novo.idEventAtual &&
+        atual.statusJogo == novo.statusJogo &&
+        atual.golsMandante == novo.golsMandante &&
+        atual.golsVisitante == novo.golsVisitante &&
+        atual.vencedor == novo.vencedor &&
+        atual.temHistoricoApi == novo.temHistoricoApi &&
+        atual.temResultadoApi == novo.temResultadoApi &&
+        atual.temResultado == novo.temResultado &&
+        atual.resultadoFinal == novo.resultadoFinal &&
+        atual.fonteResultado == novo.fonteResultado;
+  }
+
+  bool _eventosDinamicosIguais(
+    Map<String, SportsDbEvent> atuais,
+    Map<String, SportsDbEvent> novos,
+  ) {
+    if (atuais.length != novos.length) {
+      return false;
+    }
+
+    for (final entry in novos.entries) {
+      final atual = atuais[entry.key];
+      if (atual == null || !_eventoDinamicoIgual(atual, entry.value)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool _eventoDinamicoIgual(SportsDbEvent atual, SportsDbEvent novo) {
+    return atual.idEvent == novo.idEvent &&
+        atual.strStatus == novo.strStatus &&
+        atual.intHomeScore == novo.intHomeScore &&
+        atual.intAwayScore == novo.intAwayScore &&
+        atual.strTimestampUtc == novo.strTimestampUtc &&
+        atual.strHomeTeamBadge == novo.strHomeTeamBadge &&
+        atual.strAwayTeamBadge == novo.strAwayTeamBadge &&
+        atual.stadiumImage == novo.stadiumImage &&
+        atual.strVideo == novo.strVideo;
   }
 
   @override
