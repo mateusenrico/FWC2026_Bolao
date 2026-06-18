@@ -66,7 +66,7 @@ Baseado em `pubspec.lock`. As dependencias SDK (`flutter`, `flutter_test` e `sky
 | `typed_data` | 1.4.0 | transitive | BSD-3-Clause style, Dart authors | <https://pub.dev/packages/typed_data> |
 | `vector_math` | 2.2.0 | transitive | BSD-3-Clause style, Google Inc. | <https://pub.dev/packages/vector_math> |
 | `vm_service` | 15.2.0 | transitive | BSD-3-Clause style, Dart authors | <https://pub.dev/packages/vm_service> |
-| `web` | 1.1.1 | transitive | BSD-3-Clause style, Dart authors | <https://pub.dev/packages/web> |
+| `web` | 1.1.1 | direta | BSD-3-Clause style, Dart authors | <https://pub.dev/packages/web> |
 
 ## Dados, APIs e midia
 
@@ -75,7 +75,7 @@ Baseado em `pubspec.lock`. As dependencias SDK (`flutter`, `flutter_test` e `sky
 | TheStatsAPI | Fixture canonica dos 104 jogos da Copa do Mundo 2026 | `tools/data/world_cup_2026_fixtures.json`, `assets/data/jogos.json` (`fonteFixture: thestatsapi`) | O JSON declara: uso livre mediante atribuicao a TheStatsAPI. | <https://www.thestatsapi.com> |
 | TheSportsDB | Resultados, jogos ao vivo, historico bruto, times, badges, liga, venues, banners e URLs de video retornadas pela API | `tools/update_sportsdb.dart`, `assets/data/historico_partidas.json`, `assets/data/times_sportsdb.json`, `assets/data/venues_sportsdb.json`, `assets/data/liga_sportsdb.json` | Manter credito "Powered by TheSportsDB" quando dados/midia da API forem exibidos ou documentados. Respeitar os termos atuais do servico. | <https://www.thesportsdb.com/api.php> |
 | FixtureDownload | Fallback de agenda/resultados quando a SportsDB nao retorna informacao suficiente | `tools/update_sportsdb.dart`, possivel `fonteResultado` em `assets/data/jogos.json` | Manter atribuicao quando dados dessa fonte forem usados ou exportados. | <https://fixturedownload.com/> |
-| YouTube | Links de highlights vindos da SportsDB (`strVideo`) | Telas de detalhe de partida, quando houver URL | O app nao armazena videos; apenas referencia/abre URLs externas quando disponiveis. | <https://www.youtube.com/> |
+| YouTube | Links e embeds de highlights vindos da SportsDB (`strVideo`) | Telas de detalhe de partida, quando houver URL | O app nao armazena videos; apenas referencia, abre ou incorpora URLs externas quando disponiveis. | <https://www.youtube.com/> |
 
 ## Assets e midia remota
 

@@ -3,12 +3,63 @@
 Arquivos incluídos:
 
 ```text
+lib/core/football_group_rules.dart
 lib/core/sistema_palpites.dart
 lib/core/sistema_pontuacao_times.dart
 lib/core/sistema_pontuacao_participantes.dart
 ```
 
 ## Papel de cada arquivo
+
+### `football_group_rules.dart`
+
+Motor reutilizável de tabelas de grupos para futebol.
+
+Ele calcula:
+
+```text
+pontos
+jogos
+vitórias
+empates
+derrotas
+gols pró
+gols contra
+saldo de gols
+classificados diretos
+melhores terceiros, quando configurado
+```
+
+O sistema de pontos padrão é o clássico:
+
+```text
+vitória: 3 pontos
+empate: 1 ponto
+derrota: 0 ponto
+```
+
+Os critérios de desempate são configuráveis. O app usa hoje `FootballGroupRules.fifaStyle`, preservando a regra já usada no projeto:
+
+```text
+pontos gerais
+confronto direto entre os dois times comparados: pontos, saldo e gols
+saldo geral
+gols pró gerais
+fair play disponível na base
+nome como fallback determinístico
+```
+
+Para comparar terceiros de grupos diferentes, o app usa:
+
+```text
+pontos
+saldo geral
+gols pró
+fair play
+nome
+```
+
+Observação: a base atual ainda não guarda todos os dados disciplinares/ranking FIFA necessários para reproduzir literalmente todos os últimos critérios oficiais. Por isso, `fairPlayPoints` e `nome` funcionam como critérios determinísticos com os dados disponíveis.
 
 ### `sistema_palpites.dart`
 
@@ -26,13 +77,13 @@ Regras implementadas:
 
 ### `sistema_pontuacao_times.dart`
 
-Calcula tabelas de grupos e projeções de mata-mata.
+Adapta os dados do app para o motor de regras de futebol e calcula projeções de mata-mata.
 
 Ele consegue calcular:
 
 ```text
-tabela real dos grupos a partir de jogos.json
-tabela prevista de um participante a partir dos palpites dele
+tabela real dos grupos a partir de jogos.json, delegando para football_group_rules.dart
+tabela prevista de um participante a partir dos palpites dele, delegando para football_group_rules.dart
 melhores terceiros
 chaveamento projetado
 campeão, vice, terceiro e quarto projetados
@@ -85,18 +136,26 @@ pontuacaoFinal
 chaveamentoPrevisto
 ```
 
-## Próximo passo visual
+## Reuso em outro campeonato
 
-Com esses arquivos, a tela de classificação pode ser apenas uma renderização de:
+Para reutilizar o app em outro torneio de futebol:
+
+```text
+manter football_group_rules.dart
+ajustar o arquivo/fonte de jogos
+ajustar referências de mata-mata em jogos.json
+rever se a pontuação do bolão continua igual
+rever quantidade de classificados diretos e melhores terceiros
+```
+
+Se a competição não tiver melhores terceiros, configure `bestThirdQualifiers: 0`.
+
+Se a competição usar critérios de desempate diferentes, crie uma configuração própria de `FootballGroupRules` em vez de espalhar `if` pela UI.
+
+## Uso pelas telas
+
+As telas devem renderizar dados já calculados, sem reimplementar regra de pontuação. A classificação geral vem de:
 
 ```dart
 List<LinhaPontuacaoParticipante>
-```
-
-Sugestão para UI:
-
-```text
-plugins/ranking_table.dart
-plugins/participante_score_card.dart
-screens/classificacao_screen.dart
 ```

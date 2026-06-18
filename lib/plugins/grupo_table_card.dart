@@ -2,12 +2,21 @@ import 'package:flutter/material.dart';
 
 import '../core/sistema_pontuacao_times.dart';
 import '../core/functions/team_normalizer.dart';
+import 'team_badge.dart';
 
 class GrupoTableCard extends StatelessWidget {
   final TabelaGrupo tabela;
   final VoidCallback? onTap;
+  final String? Function(String nomeTime)? badgeForTeam;
+  final ValueChanged<String>? onTeamTap;
 
-  const GrupoTableCard({super.key, required this.tabela, this.onTap});
+  const GrupoTableCard({
+    super.key,
+    required this.tabela,
+    this.onTap,
+    this.badgeForTeam,
+    this.onTeamTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +56,8 @@ class GrupoTableCard extends StatelessWidget {
             _TeamRow(
               linha: linha,
               qualified: linha.posicao <= 2 || linha.classificouComoTerceiro,
+              badgeUrl: badgeForTeam?.call(linha.nome),
+              onTap: onTeamTap == null ? null : () => onTeamTap!(linha.nome),
             ),
         ],
       ),
@@ -109,14 +120,21 @@ class _HeaderRow extends StatelessWidget {
 class _TeamRow extends StatelessWidget {
   final LinhaTabelaTime linha;
   final bool qualified;
+  final String? badgeUrl;
+  final VoidCallback? onTap;
 
-  const _TeamRow({required this.linha, required this.qualified});
+  const _TeamRow({
+    required this.linha,
+    required this.qualified,
+    required this.badgeUrl,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
-    return Container(
+    final content = Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 9),
       decoration: BoxDecoration(
@@ -136,13 +154,14 @@ class _TeamRow extends StatelessWidget {
               ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w900),
             ),
           ),
+          TeamBadge(teamName: linha.nome, imageUrl: badgeUrl, size: 24),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               TeamNormalizer.sigla(linha.nome),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.6,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
             ),
           ),
           _Value(value: linha.jogos, width: 34),
@@ -154,6 +173,16 @@ class _TeamRow extends StatelessWidget {
           _Value(value: linha.golsPro),
         ],
       ),
+    );
+
+    if (onTap == null) {
+      return content;
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onTap,
+      child: content,
     );
   }
 }

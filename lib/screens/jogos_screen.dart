@@ -23,6 +23,7 @@ class JogosScreen extends StatefulWidget {
 
 class _JogosScreenState extends State<JogosScreen> {
   VisualizacaoJogos _visualizacao = VisualizacaoJogos.grupos;
+  PeriodoJogos _periodo = PeriodoJogos.hoje;
 
   BolaoController get controller => widget.controller;
 
@@ -31,6 +32,8 @@ class _JogosScreenState extends State<JogosScreen> {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        final jogos = controller.jogosPorPeriodo(_periodo);
+
         return Scaffold(
           appBar: AppBar(
             title: const Text('Partidas'),
@@ -51,7 +54,7 @@ class _JogosScreenState extends State<JogosScreen> {
                           SectionHeader(
                             title: 'Calendário',
                             subtitle:
-                                'Fase de grupos separada do mata-mata para reduzir ruído',
+                                'Abre nos jogos de hoje; jogos ao vivo aparecem dentro desse recorte',
                             trailing: SegmentedButton<VisualizacaoJogos>(
                               segments: const [
                                 ButtonSegment(
@@ -72,10 +75,20 @@ class _JogosScreenState extends State<JogosScreen> {
                               },
                             ),
                           ),
+                          _PeriodFilter(
+                            value: _periodo,
+                            onChanged: (value) {
+                              setState(() => _periodo = value);
+                            },
+                          ),
+                          const SizedBox(height: 14),
                           if (_visualizacao == VisualizacaoJogos.grupos)
-                            _GroupGames(controller: controller)
+                            _GroupGames(controller: controller, jogos: jogos)
                           else
-                            _KnockoutGames(controller: controller),
+                            _KnockoutGames(
+                              controller: controller,
+                              jogos: jogos,
+                            ),
                         ],
                       ),
                     ),
@@ -92,13 +105,29 @@ class _JogosScreenState extends State<JogosScreen> {
 
 class _GroupGames extends StatelessWidget {
   final BolaoController controller;
+  final List<Jogo> jogos;
 
-  const _GroupGames({required this.controller});
+  const _GroupGames({required this.controller, required this.jogos});
 
   @override
   Widget build(BuildContext context) {
-    final groups = controller.tabelasGrupos.tabelasPorGrupo.keys.toList()
-      ..sort();
+    final groupGames = jogos.where((jogo) => jogo.isFaseDeGrupos).toList();
+    final groups =
+        groupGames
+            .map((jogo) => jogo.grupo)
+            .whereType<String>()
+            .toSet()
+            .toList()
+          ..sort();
+
+    if (groups.isEmpty) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Text('Nenhuma partida de grupos nesse recorte.'),
+        ),
+      );
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -116,7 +145,13 @@ class _GroupGames extends StatelessWidget {
             for (final group in groups)
               SizedBox(
                 width: width,
-                child: _GroupBlock(controller: controller, group: group),
+                child: _GroupBlock(
+                  controller: controller,
+                  group: group,
+                  jogos: groupGames
+                      .where((jogo) => jogo.grupo == group)
+                      .toList(growable: false),
+                ),
               ),
           ],
         );
@@ -128,15 +163,16 @@ class _GroupGames extends StatelessWidget {
 class _GroupBlock extends StatelessWidget {
   final BolaoController controller;
   final String group;
+  final List<Jogo> jogos;
 
-  const _GroupBlock({required this.controller, required this.group});
+  const _GroupBlock({
+    required this.controller,
+    required this.group,
+    required this.jogos,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final jogos = controller.data.jogosOrdenados
-        .where((jogo) => jogo.grupo == group && jogo.isFaseDeGrupos)
-        .toList(growable: false);
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -184,8 +220,9 @@ class _GroupBlock extends StatelessWidget {
 
 class _KnockoutGames extends StatelessWidget {
   final BolaoController controller;
+  final List<Jogo> jogos;
 
-  const _KnockoutGames({required this.controller});
+  const _KnockoutGames({required this.controller, required this.jogos});
 
   @override
   Widget build(BuildContext context) {
@@ -196,9 +233,9 @@ class _KnockoutGames extends StatelessWidget {
     );
 
     final jogosPorFase = <String, List<Jogo>>{};
-    for (final jogo in controller.data.jogosOrdenados.where(
-      (jogo) => jogo.isMataMata,
-    )) {
+    final knockoutGames = jogos.where((jogo) => jogo.isMataMata).toList();
+
+    for (final jogo in knockoutGames) {
       jogosPorFase.putIfAbsent(jogo.faseCodigo, () => []).add(jogo);
     }
 
@@ -233,6 +270,13 @@ class _KnockoutGames extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
+        if (stages.isEmpty)
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Text('Nenhuma partida de mata-mata nesse recorte.'),
+            ),
+          ),
         for (final stage in stages) ...[
           SectionHeader(title: _stageLabel(stage)),
           for (final jogo in jogosPorFase[stage]!)
@@ -261,5 +305,69 @@ class _KnockoutGames extends StatelessWidget {
       'final' => 'Final',
       _ => stage,
     };
+  }
+}
+
+class _PeriodFilter extends StatelessWidget {
+  final PeriodoJogos value;
+  final ValueChanged<PeriodoJogos> onChanged;
+
+  const _PeriodFilter({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _Chip(
+          label: 'Hoje',
+          value: PeriodoJogos.hoje,
+          selected: value == PeriodoJogos.hoje,
+          onChanged: onChanged,
+        ),
+        _Chip(
+          label: 'Futuros',
+          value: PeriodoJogos.futuros,
+          selected: value == PeriodoJogos.futuros,
+          onChanged: onChanged,
+        ),
+        _Chip(
+          label: 'Passados',
+          value: PeriodoJogos.passados,
+          selected: value == PeriodoJogos.passados,
+          onChanged: onChanged,
+        ),
+        _Chip(
+          label: 'Todos',
+          value: PeriodoJogos.todos,
+          selected: value == PeriodoJogos.todos,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  final String label;
+  final PeriodoJogos value;
+  final bool selected;
+  final ValueChanged<PeriodoJogos> onChanged;
+
+  const _Chip({
+    required this.label,
+    required this.value,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onChanged(value),
+    );
   }
 }

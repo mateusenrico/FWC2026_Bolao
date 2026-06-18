@@ -8,11 +8,7 @@ void main() {
   group('SistemaPalpites', () {
     test('placar exato vale 5 pontos também no mata-mata', () {
       final pontuacao = SistemaPalpites.calcularPontuacaoPalpite(
-        jogo: _jogo(
-          faseTipo: 'mata_mata',
-          golsMandante: 2,
-          golsVisitante: 1,
-        ),
+        jogo: _jogo(faseTipo: 'mata_mata', golsMandante: 2, golsVisitante: 1),
         palpite: _palpite(2, 1),
       );
 
@@ -55,6 +51,23 @@ void main() {
 
       expect(pontuacao.pontos, 0);
     });
+
+    test('jogo futuro com placar visual 0x0 nao pontua', () {
+      final pontuacao = SistemaPalpites.calcularPontuacaoPalpite(
+        jogo: _jogo(
+          golsMandante: 0,
+          golsVisitante: 0,
+          statusJogo: 'agendado',
+          temResultado: false,
+          resultadoFinal: false,
+        ),
+        palpite: _palpite(0, 0),
+      );
+
+      expect(pontuacao.pontuavel, isFalse);
+      expect(pontuacao.pontos, 0);
+      expect(pontuacao.motivo, 'Jogo ainda sem resultado.');
+    });
   });
 }
 
@@ -62,6 +75,9 @@ Jogo _jogo({
   String faseTipo = 'fase_de_grupos',
   required int golsMandante,
   required int golsVisitante,
+  String statusJogo = 'encerrado',
+  bool temResultado = true,
+  bool resultadoFinal = true,
 }) {
   const reference = ReferenciaParticipanteJogo(
     tipo: 'time',
@@ -99,14 +115,14 @@ Jogo _jogo({
     mandanteReferencia: reference,
     visitanteReferencia: reference,
     idEventAtual: null,
-    statusJogo: 'encerrado',
+    statusJogo: statusJogo,
     golsMandante: golsMandante,
     golsVisitante: golsVisitante,
     vencedor: 'BRASIL',
     temHistoricoApi: true,
     temResultadoApi: true,
-    temResultado: true,
-    resultadoFinal: true,
+    temResultado: temResultado,
+    resultadoFinal: resultadoFinal,
     fonteResultado: 'teste',
   );
 }

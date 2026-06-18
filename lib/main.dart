@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'core/app_theme.dart';
 import 'core/app_routes.dart';
 import 'screens/grupos_screen.dart';
 import 'screens/home_screen.dart';
@@ -10,6 +11,8 @@ import 'screens/jogos_screen.dart';
 import 'screens/participante_detail_screen.dart';
 import 'screens/ranking_screen.dart';
 import 'screens/simulador_screen.dart';
+import 'screens/time_screen.dart';
+import 'screens/times_screen.dart';
 import 'services/bolao_controller.dart';
 
 void main() {
@@ -40,7 +43,7 @@ class _BolaoAppState extends State<BolaoApp> {
         if (snapshot.hasError) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            theme: _theme(),
+            theme: buildBolaoTheme(),
             home: Scaffold(
               appBar: AppBar(title: const Text('Bolão FWC 2026')),
               body: Padding(
@@ -57,7 +60,7 @@ class _BolaoAppState extends State<BolaoApp> {
         if (!snapshot.hasData) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            theme: _theme(),
+            theme: buildBolaoTheme(),
             home: const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             ),
@@ -99,7 +102,7 @@ class _BolaoNavigationAppState extends State<_BolaoNavigationApp> {
     return MaterialApp(
       title: 'Bolão FWC 2026',
       debugShowCheckedModeBanner: false,
-      theme: _theme(),
+      theme: buildBolaoTheme(),
       initialRoute: AppRoutes.home,
       onGenerateRoute: (settings) {
         switch (settings.name) {
@@ -148,6 +151,18 @@ class _BolaoNavigationAppState extends State<_BolaoNavigationApp> {
               settings: settings,
               builder: (_) => SimuladorScreen(controller: controller),
             );
+          case AppRoutes.times:
+            return MaterialPageRoute<void>(
+              settings: settings,
+              builder: (_) => TimesScreen(controller: controller),
+            );
+          case AppRoutes.time:
+            final nomeTime = settings.arguments as String?;
+            return MaterialPageRoute<void>(
+              settings: settings,
+              builder: (_) =>
+                  TimeScreen(controller: controller, nomeTime: nomeTime ?? ''),
+            );
           default:
             return MaterialPageRoute<void>(
               settings: settings,
@@ -157,34 +172,4 @@ class _BolaoNavigationAppState extends State<_BolaoNavigationApp> {
       },
     );
   }
-}
-
-ThemeData _theme() {
-  final colorScheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF087443),
-    brightness: Brightness.light,
-  );
-
-  return ThemeData(
-    useMaterial3: true,
-    colorScheme: colorScheme,
-    scaffoldBackgroundColor: colorScheme.surface,
-    cardTheme: CardThemeData(
-      elevation: 0,
-      color: colorScheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: colorScheme.outlineVariant),
-      ),
-    ),
-    appBarTheme: AppBarTheme(
-      centerTitle: false,
-      backgroundColor: colorScheme.surface,
-      foregroundColor: colorScheme.onSurface,
-      surfaceTintColor: Colors.transparent,
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-    ),
-  );
 }

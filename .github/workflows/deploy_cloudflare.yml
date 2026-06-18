@@ -7,9 +7,14 @@ on:
       - test
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     permissions:
       contents: read
@@ -17,18 +22,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
+        uses: actions/checkout@v6
 
       - name: Set up Flutter
+        id: flutter-action
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
+          pub-cache: true
 
       - name: Show Flutter version
         run: flutter --version
@@ -38,6 +40,15 @@ jobs:
 
       - name: Update JSON data from SportsDB
         run: dart run tools/update_sportsdb.dart
+
+      - name: Upload update logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-sportsdb-logs-${{ github.ref_name }}
+          path: logs/update_sportsdb/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Show updated data files
         run: |
@@ -62,18 +73,14 @@ jobs:
           ls -la build/web
           find build/web -maxdepth 2 -type f | head -50
 
-      - name: Install Wrangler
-        run: npm install --include=optional --no-audit --no-fund wrangler@latest
-
-      - name: Show Wrangler version
-        run: npx wrangler --version
-
       - name: Deploy to Cloudflare Pages
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          npx wrangler pages deploy build/web \
-            --project-name bolao2026fwc \
-            --branch ${{ github.ref_name }} \
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: >
+            pages deploy build/web
+            --project-name bolao2026fwc
+            --branch ${{ github.ref_name }}
             --commit-dirty=true

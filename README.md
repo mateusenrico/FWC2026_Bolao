@@ -32,7 +32,7 @@ Branch de desenvolvimento.
 ```bash
 git switch dev
 git pull origin dev
-flutter run -d chrome
+make run
 ```
 
 Depois de alterar código:
@@ -89,7 +89,7 @@ roda tools/update_sportsdb.dart
         ↓
 flutter build web --release
         ↓
-Wrangler publica build/web
+Wrangler Action publica build/web
         ↓
 Cloudflare Pages
 ```
@@ -120,8 +120,16 @@ feature/*
 
 ```bash
 flutter pub get
-flutter run -d chrome
+make run
 ```
+
+`make run` abre o app em profile no Chrome:
+
+```bash
+flutter run -d chrome --profile
+```
+
+O VS Code também possui `.vscode/launch.json` e `.vscode/settings.json` configurados para profile, facilitando inspeção pelo DevTools. Mais detalhes ficam em `docs/BUILD_DEPLOY.md`.
 
 Build local:
 
@@ -177,6 +185,7 @@ fwc2026_bolao/
 │
 ├── docs/
 │   ├── API_SAFETY.md
+│   ├── BUILD_DEPLOY.md
 │   ├── MIGRACAO_DADOS.md
 │   ├── README_CORE_PONTUACAO.md
 │   └── README_UI_RESPONSIVA.md
@@ -196,6 +205,7 @@ fwc2026_bolao/
 │
 ├── test/
 ├── web/
+├── Makefile
 ├── pubspec.yaml
 ├── THIRD_PARTY_NOTICES.md
 └── README.md
@@ -282,13 +292,50 @@ Funções e utilitários centrais que não são UI.
 Exemplos:
 
 ```text
+football_group_rules.dart
+sistema_palpites.dart
+sistema_pontuacao_times.dart
+sistema_pontuacao_participantes.dart
 json_utils.dart
 app_routes.dart
+app_theme.dart
 team_normalizer.dart
 functions/place_formatters.dart
+functions/youtube_utils.dart
 ```
 
 A raiz de `core/` concentra regras de domínio e objetos centrais. Funções pequenas de ajuda ficam em `lib/core/functions/`.
+
+### Reutilizável vs específico
+
+O app separa, sempre que possível, regras gerais de futebol das decisões específicas deste bolão:
+
+```text
+core/football_group_rules.dart
+```
+
+Motor reutilizável para tabelas de grupos de futebol: vitória, empate, derrota, gols pró, gols contra, saldo, critérios configuráveis de desempate, classificados diretos e melhores terceiros. Pode ser reaproveitado em outro campeonato de futebol ajustando a configuração de pontos/desempates.
+
+```text
+core/sistema_pontuacao_times.dart
+```
+
+Adaptador do app para a Copa 2026: transforma `Jogo` e `Palpite` em partidas computadas, usa as regras de grupos e projeta o mata-mata a partir das referências presentes em `jogos.json`.
+
+```text
+core/sistema_palpites.dart
+core/sistema_pontuacao_participantes.dart
+```
+
+Regras do bolão: pontuação dos palpites, bônus por grupos/final e ranking dos participantes. Para outro bolão, estes arquivos podem continuar iguais se a pontuação for a mesma; se a regra do grupo mudar, a alteração deve ficar preferencialmente na configuração/uso de `FootballGroupRules`.
+
+```text
+assets/data/
+tools/update_sportsdb.dart
+tools/data/world_cup_2026_fixtures.json
+```
+
+Parte mais específica da Copa 2026 e das fontes externas atuais. Para reaplicar o app em outra competição, esta é a camada que provavelmente mais muda.
 
 ### `lib/models/`
 
@@ -330,9 +377,13 @@ Exemplo:
 ```text
 partida_card.dart
 live_matches_banner.dart
+refresh_countdown_indicator.dart
+remote_media.dart
 ranking_podium.dart
 ranking_evolution_chart.dart
 mata_mata_bracket_view.dart
+team_overview_card.dart
+youtube_embed_player.dart
 ```
 
 ### `lib/screens/`
@@ -345,6 +396,8 @@ Exemplos:
 jogos_screen.dart
 ranking_screen.dart
 simulador_screen.dart
+times_screen.dart
+time_screen.dart
 debug/debug_assets_screen.dart
 ```
 
@@ -387,6 +440,10 @@ A tool:
 5. valida se todos os palpites apontam para `jogoId` existentes;
 6. gera logs em `logs/update_sportsdb/`.
 7. tenta enriquecer times, venues e liga com metadados visuais da TheSportsDB.
+
+No app em execução, o controller também faz uma atualização inicial ao carregar e mantém um timer de 1 minuto. A consulta automática de minuto só aplica refresh quando há jogo ao vivo; fora disso, o relógio local apenas evita que jogos recém-iniciados ou já estourados fiquem com status incoerente.
+
+Jogos ao vivo sem placar começam provisoriamente em 0x0 para ranking projetado. Se a janela máxima de jogo ao vivo expira e a API ainda não confirmou `FT`/final, o app deixa de exibir a partida como ao vivo; quando há placar da SportsDB nessa situação, ele pode ser tratado como encerrado por relógio para evitar que a tela fique presa no estado `2H`/`LIVE`.
 
 Esses diretórios não devem entrar no Git:
 
@@ -434,19 +491,30 @@ Finalizado ou praticamente fechado:
 - [x] serviço SportsDB resiliente
 - [x] tela de jogos
 - [x] tela de ranking com pódio, evolução e pontos projetados
+- [x] ranking com evolução por partida ou por dia brasileiro
+- [x] ranking com grid de pontos detalhado
 - [x] tela de detalhe de participante
 - [x] tela de grupos com detalhe clicável
 - [x] tela de simulações
+- [x] simulador com busca e cards compactos de placar
+- [x] tela de lista de times
+- [x] tela de detalhe de time com jogos e estatísticas
+- [x] dashboard inicial com cards de navegação
+- [x] modo visual Auto / Material / Cupertino no tema global
+- [x] paleta visual inspirada na identidade FWC 2026
 - [x] widget de jogos ao vivo em telas internas
+- [x] indicador visual de próxima atualização automática
 - [x] atualização inicial automática e refresh de minuto quando houver jogo ao vivo
 - [x] metadados visuais de times, venues e liga
+- [x] widgets de imagem remota para badges, banners, venues e liga
+- [x] player/embed de YouTube para highlights quando houver `strVideo`
 - [x] widgets em `plugins/`
 - [x] arquivo de créditos/licenças de terceiros
 
 Ainda falta:
 
-- [ ] tema visual definitivo
+- [ ] lapidar o tema visual definitivo depois de comparar Material/Cupertino
 - [ ] melhorar responsividade fina das telas novas
 - [ ] ampliar testes das regras de pontuação, ranking projetado e simulações
-- [ ] revisar o Chrome plugin quando a extensão ficar visível para o Codex
+- [ ] revisar Chrome/Browser plugin quando a extensão/navegador ficar visível para o Codex
 - [ ] escolher licença própria do projeto antes de qualquer publicação open source

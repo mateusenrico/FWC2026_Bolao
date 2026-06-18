@@ -158,6 +158,14 @@ class _GroupsGrid extends StatelessWidget {
                   ),
                   child: GrupoTableCard(
                     tabela: controller.tabelasGrupos.tabela(grupo)!,
+                    badgeForTeam: controller.badgeDoTime,
+                    onTeamTap: (nomeTime) {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.time,
+                        arguments: nomeTime,
+                      );
+                    },
                     onTap: () => onSelect(grupo),
                   ),
                 ),
@@ -193,8 +201,6 @@ class _GroupDetail extends StatelessWidget {
               ? 'Grupo encerrado'
               : 'Classificação parcial',
         ),
-        if (tabela != null) GrupoTableCard(tabela: tabela),
-        const SizedBox(height: 16),
         const SectionHeader(title: 'Partidas do grupo'),
         for (final jogo in jogos)
           PartidaCard(
@@ -215,7 +221,11 @@ class _GroupDetail extends StatelessWidget {
                 'Jogos do mata-mata que citam posições deste grupo no fixture',
           ),
           for (final jogo in provaveis)
-            _ProjectedReferenceCard(jogo: jogo, tabela: tabela),
+            _ProjectedReferenceCard(
+              controller: controller,
+              jogo: jogo,
+              tabela: tabela,
+            ),
         ],
       ],
     );
@@ -238,38 +248,29 @@ class _GroupDetail extends StatelessWidget {
 }
 
 class _ProjectedReferenceCard extends StatelessWidget {
+  final BolaoController controller;
   final Jogo jogo;
   final TabelaGrupo? tabela;
 
-  const _ProjectedReferenceCard({required this.jogo, required this.tabela});
+  const _ProjectedReferenceCard({
+    required this.controller,
+    required this.jogo,
+    required this.tabela,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final projectedGame = jogo.copyWith(
+      mandantePrevisto: _resolvedText(jogo.mandanteReferencia.descricao),
+      visitantePrevisto: _resolvedText(jogo.visitanteReferencia.descricao),
+    );
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Jogo ${jogo.matchNumber} · ${jogo.fase}',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: colors.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${_resolvedText(jogo.mandanteReferencia.descricao)} × ${_resolvedText(jogo.visitanteReferencia.descricao)}',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-            ),
-          ],
-        ),
-      ),
+    return PartidaCard(
+      jogo: projectedGame,
+      badgeMandante: controller.badgeDoTime(projectedGame.mandantePrevisto),
+      badgeVisitante: controller.badgeDoTime(projectedGame.visitantePrevisto),
+      onTap: () =>
+          Navigator.pushNamed(context, AppRoutes.jogo, arguments: jogo.jogoId),
     );
   }
 
@@ -279,15 +280,15 @@ class _ProjectedReferenceCard extends StatelessWidget {
     final terceiro = tabela?.terceiro;
 
     if (descricao.startsWith('1º') && primeiro != null) {
-      return '$descricao (${primeiro.nome})';
+      return primeiro.nome;
     }
 
     if (descricao.startsWith('2º') && segundo != null) {
-      return '$descricao (${segundo.nome})';
+      return segundo.nome;
     }
 
     if (descricao.startsWith('3º') && terceiro != null) {
-      return '$descricao (${terceiro.nome})';
+      return terceiro.nome;
     }
 
     return descricao;

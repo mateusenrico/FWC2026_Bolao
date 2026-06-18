@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_routes.dart';
+import '../core/functions/team_normalizer.dart';
 import '../core/sistema_pontuacao_participantes.dart';
 import '../core/sistema_pontuacao_times.dart';
 import '../models/bolao_data.dart';
@@ -10,6 +11,7 @@ import '../plugins/live_matches_banner.dart';
 import '../plugins/mata_mata_bracket_view.dart';
 import '../plugins/ranking_participante_card.dart';
 import '../plugins/section_header.dart';
+import '../plugins/team_badge.dart';
 import '../services/bolao_controller.dart';
 
 enum SimuladorFase { grupos, mataMata }
@@ -25,6 +27,7 @@ class SimuladorScreen extends StatefulWidget {
 
 class _SimuladorScreenState extends State<SimuladorScreen> {
   SimuladorFase _fase = SimuladorFase.grupos;
+  String _query = '';
   final Map<String, TextEditingController> _homeControllers = {};
   final Map<String, TextEditingController> _awayControllers = {};
 
@@ -101,7 +104,18 @@ class _SimuladorScreenState extends State<SimuladorScreen> {
                               },
                             ),
                           ),
+                          TextField(
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.search),
+                              hintText: 'Buscar jogo, time, grupo ou fase',
+                            ),
+                            onChanged: (value) {
+                              setState(() => _query = value);
+                            },
+                          ),
+                          const SizedBox(height: 14),
                           _SimulationInputs(
+                            controller: controller,
                             jogos: jogos,
                             homeControllers: _homeControllers,
                             awayControllers: _awayControllers,
@@ -146,6 +160,7 @@ class _SimuladorScreenState extends State<SimuladorScreen> {
   }
 
   List<Jogo> _jogosSimulaveis() {
+    final query = TeamNormalizer.normalize(_query);
     final jogos = controller.data.jogosOrdenados
         .where((jogo) {
           if (jogo.resultadoFinal) {
@@ -156,7 +171,24 @@ class _SimuladorScreenState extends State<SimuladorScreen> {
               ? jogo.isFaseDeGrupos
               : jogo.isMataMata;
         })
-        .take(18)
+        .where((jogo) {
+          if (query.isEmpty) {
+            return true;
+          }
+
+          final haystack = TeamNormalizer.normalize(
+            [
+              jogo.matchNumber.toString(),
+              jogo.mandantePrevisto,
+              jogo.visitantePrevisto,
+              jogo.grupo ?? '',
+              jogo.fase,
+            ].join(' '),
+          );
+
+          return haystack.contains(query);
+        })
+        .take(12)
         .toList(growable: false);
 
     return jogos;
@@ -189,12 +221,14 @@ class _SimuladorScreenState extends State<SimuladorScreen> {
 }
 
 class _SimulationInputs extends StatelessWidget {
+  final BolaoController controller;
   final List<Jogo> jogos;
   final Map<String, TextEditingController> homeControllers;
   final Map<String, TextEditingController> awayControllers;
   final VoidCallback onChanged;
 
   const _SimulationInputs({
+    required this.controller,
     required this.jogos,
     required this.homeControllers,
     required this.awayControllers,
@@ -212,56 +246,142 @@ class _SimulationInputs extends StatelessWidget {
       );
     }
 
-    return Column(
-      children: [
-        for (final jogo in jogos)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 68,
-                    child: Text(
-                      'Jogo ${jogo.matchNumber}',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 1020
+            ? 3
+            : constraints.maxWidth >= 680
+            ? 2
+            : 1;
+        final width = (constraints.maxWidth - ((columns - 1) * 12)) / columns;
+
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final jogo in jogos)
+              SizedBox(
+                width: width,
+                child: _SimulationCard(
+                  controller: controller,
+                  jogo: jogo,
+                  homeController: homeControllers.putIfAbsent(
+                    jogo.jogoId,
+                    TextEditingController.new,
                   ),
-                  Expanded(
-                    child: Text(
-                      jogo.confrontoPrevisto,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                  awayController: awayControllers.putIfAbsent(
+                    jogo.jogoId,
+                    TextEditingController.new,
                   ),
-                  const SizedBox(width: 12),
-                  _ScoreInput(
-                    controller: homeControllers.putIfAbsent(
-                      jogo.jogoId,
-                      TextEditingController.new,
-                    ),
-                    onChanged: onChanged,
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text('×'),
-                  ),
-                  _ScoreInput(
-                    controller: awayControllers.putIfAbsent(
-                      jogo.jogoId,
-                      TextEditingController.new,
-                    ),
-                    onChanged: onChanged,
-                  ),
-                ],
+                  onChanged: onChanged,
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SimulationCard extends StatelessWidget {
+  final BolaoController controller;
+  final Jogo jogo;
+  final TextEditingController homeController;
+  final TextEditingController awayController;
+  final VoidCallback onChanged;
+
+  const _SimulationCard({
+    required this.controller,
+    required this.jogo,
+    required this.homeController,
+    required this.awayController,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Jogo ${jogo.matchNumber} · ${jogo.grupo == null ? jogo.fase : 'Grupo ${jogo.grupo}'}',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: colors.onSurfaceVariant,
+                fontWeight: FontWeight.w800,
               ),
             ),
-          ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _SimulationTeam(
+                    name: jogo.mandantePrevisto,
+                    badgeUrl: controller.badgeDoTime(jogo.mandantePrevisto),
+                    alignEnd: true,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _ScoreInput(controller: homeController, onChanged: onChanged),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 7),
+                  child: Text('×'),
+                ),
+                _ScoreInput(controller: awayController, onChanged: onChanged),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _SimulationTeam(
+                    name: jogo.visitantePrevisto,
+                    badgeUrl: controller.badgeDoTime(jogo.visitantePrevisto),
+                    alignEnd: false,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SimulationTeam extends StatelessWidget {
+  final String name;
+  final String? badgeUrl;
+  final bool alignEnd;
+
+  const _SimulationTeam({
+    required this.name,
+    required this.badgeUrl,
+    required this.alignEnd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        TeamBadge(teamName: name, imageUrl: badgeUrl, size: 34),
+        const SizedBox(height: 5),
+        Text(
+          TeamNormalizer.sigla(name),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+        ),
+        Text(
+          name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: alignEnd ? TextAlign.right : TextAlign.left,
+          style: Theme.of(context).textTheme.labelSmall,
+        ),
       ],
     );
   }
