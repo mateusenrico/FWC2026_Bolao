@@ -25,9 +25,7 @@ class ReferenciaParticipanteJogo {
     required this.jogoIdReferencia,
   });
 
-  factory ReferenciaParticipanteJogo.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory ReferenciaParticipanteJogo.fromJson(Map<String, dynamic> json) {
     return ReferenciaParticipanteJogo(
       tipo: JsonUtils.stringValue(json, 'tipo'),
       descricao: JsonUtils.stringValue(json, 'descricao'),
@@ -37,10 +35,11 @@ class ReferenciaParticipanteJogo {
       grupo: JsonUtils.nullableString(json, 'grupo'),
       posicao: JsonUtils.nullableInt(json, 'posicao'),
       gruposElegiveis: JsonUtils.stringList(json, 'gruposElegiveis'),
-      matchNumberReferencia:
-          JsonUtils.nullableInt(json, 'matchNumberReferencia'),
-      jogoIdReferencia:
-          JsonUtils.nullableString(json, 'jogoIdReferencia'),
+      matchNumberReferencia: JsonUtils.nullableInt(
+        json,
+        'matchNumberReferencia',
+      ),
+      jogoIdReferencia: JsonUtils.nullableString(json, 'jogoIdReferencia'),
     );
   }
 

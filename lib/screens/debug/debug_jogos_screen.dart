@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/functions/team_normalizer.dart';
 import '../../models/bolao_data.dart';
 import '../../models/jogo.dart';
-import '../../plugins/jogos_table.dart';
+import '../../plugins/debug/debug_jogos_table.dart';
 import '../../services/asset_loader.dart';
 import '../../services/sportsdb_api_service.dart';
 

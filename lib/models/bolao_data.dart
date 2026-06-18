@@ -19,6 +19,22 @@ class BolaoData {
     required this.timesParticipantes,
   });
 
+  BolaoData copyWith({
+    List<Jogo>? jogos,
+    List<HistoricoPartida>? historicoPartidas,
+    List<Participante>? participantes,
+    List<Palpite>? palpites,
+    List<TimeParticipante>? timesParticipantes,
+  }) {
+    return BolaoData(
+      jogos: jogos ?? this.jogos,
+      historicoPartidas: historicoPartidas ?? this.historicoPartidas,
+      participantes: participantes ?? this.participantes,
+      palpites: palpites ?? this.palpites,
+      timesParticipantes: timesParticipantes ?? this.timesParticipantes,
+    );
+  }
+
   Map<String, Jogo> get jogosPorId {
     return {for (final jogo in jogos) jogo.jogoId: jogo};
   }

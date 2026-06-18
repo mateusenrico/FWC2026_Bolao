@@ -300,6 +300,13 @@ class SportsDbEvent {
   final String? strGroup;
   final int? intRound;
 
+  final String? strHomeTeamBadge;
+  final String? strAwayTeamBadge;
+  final String? strThumb;
+  final String? strPoster;
+  final String? strFanart;
+  final String? strBanner;
+
   const SportsDbEvent({
     required this.idEvent,
     required this.idLeague,
@@ -319,6 +326,12 @@ class SportsDbEvent {
     required this.strStatus,
     required this.strGroup,
     required this.intRound,
+    required this.strHomeTeamBadge,
+    required this.strAwayTeamBadge,
+    required this.strThumb,
+    required this.strPoster,
+    required this.strFanart,
+    required this.strBanner,
   });
 
   factory SportsDbEvent.fromJson(Map<String, dynamic> json) {
@@ -341,6 +354,12 @@ class SportsDbEvent {
       strStatus: _nullableString(json['strStatus']),
       strGroup: _nullableString(json['strGroup']),
       intRound: _nullableInt(json['intRound']),
+      strHomeTeamBadge: _nullableString(json['strHomeTeamBadge']),
+      strAwayTeamBadge: _nullableString(json['strAwayTeamBadge']),
+      strThumb: _nullableString(json['strThumb']),
+      strPoster: _nullableString(json['strPoster']),
+      strFanart: _nullableString(json['strFanart']),
+      strBanner: _nullableString(json['strBanner']),
     );
   }
 
@@ -380,6 +399,10 @@ class SportsDbEvent {
     }
 
     return 'encerrado';
+  }
+
+  String? get stadiumImage {
+    return strThumb ?? strPoster ?? strFanart ?? strBanner;
   }
 
   static DateTime? _parseApiTimestampUtc(dynamic value) {
