@@ -34,7 +34,7 @@ class _BolaoAppState extends State<BolaoApp> {
   void initState() {
     super.initState();
     _themeController = BolaoThemeController();
-    _controllerFuture = BolaoController.carregar();
+    _controllerFuture = BolaoController.carregar(atualizarAntesDeExibir: true);
   }
 
   @override
@@ -59,6 +59,7 @@ class _BolaoAppState extends State<BolaoApp> {
                   theme: buildBolaoTheme(Brightness.light),
                   darkTheme: buildBolaoTheme(Brightness.dark),
                   themeMode: _themeController.mode,
+                  builder: _clampedTextBuilder,
                   home: Scaffold(
                     appBar: AppBar(title: const Text('Bolão FWC 2026')),
                     body: Padding(
@@ -78,9 +79,8 @@ class _BolaoAppState extends State<BolaoApp> {
                   theme: buildBolaoTheme(Brightness.light),
                   darkTheme: buildBolaoTheme(Brightness.dark),
                   themeMode: _themeController.mode,
-                  home: const Scaffold(
-                    body: Center(child: CircularProgressIndicator()),
-                  ),
+                  builder: _clampedTextBuilder,
+                  home: const _BolaoSplashScreen(),
                 );
               }
 
@@ -132,6 +132,7 @@ class _BolaoNavigationAppState extends State<_BolaoNavigationApp> {
       theme: buildBolaoTheme(Brightness.light),
       darkTheme: buildBolaoTheme(Brightness.dark),
       themeMode: widget.themeController.mode,
+      builder: _clampedTextBuilder,
       initialRoute: AppRoutes.home,
       onGenerateRoute: (settings) {
         switch (settings.name) {
@@ -199,6 +200,84 @@ class _BolaoNavigationAppState extends State<_BolaoNavigationApp> {
             );
         }
       },
+    );
+  }
+}
+
+Widget _clampedTextBuilder(BuildContext context, Widget? child) {
+  final media = MediaQuery.of(context);
+  return MediaQuery(
+    data: media.copyWith(
+      textScaler: media.textScaler.clamp(
+        minScaleFactor: 0.9,
+        maxScaleFactor: 1.28,
+      ),
+    ),
+    child: child ?? const SizedBox.shrink(),
+  );
+}
+
+class _BolaoSplashScreen extends StatelessWidget {
+  const _BolaoSplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 86,
+                height: 86,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: colors.outlineVariant),
+                ),
+                child: Image.asset(
+                  'assets/media/app_icons/league_badge.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.sports_soccer,
+                      color: colors.primary,
+                      size: 42,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Bolão FWC 2026',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Atualizando placares antes de abrir...',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colors.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 22),
+              const SizedBox(
+                width: 180,
+                child: LinearProgressIndicator(minHeight: 4),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -34,6 +34,7 @@ class RankingEvolutionChart extends StatelessWidget {
   final RankingEvolutionMetric metric;
   final double height;
   final bool showLegend;
+  final bool showAxisLabel;
 
   const RankingEvolutionChart({
     super.key,
@@ -45,6 +46,7 @@ class RankingEvolutionChart extends StatelessWidget {
     required this.metric,
     this.height = 280,
     this.showLegend = true,
+    this.showAxisLabel = true,
   });
 
   @override
@@ -92,6 +94,7 @@ class RankingEvolutionChart extends StatelessWidget {
                   participantColors: participantColors,
                   podiumPositions: podiumPositions,
                   metric: metric,
+                  showAxisLabel: showAxisLabel,
                 ),
                 child: const SizedBox.expand(),
               ),
@@ -130,6 +133,7 @@ class _RankingEvolutionPainter extends CustomPainter {
   final Map<String, Color> participantColors;
   final Map<String, int> podiumPositions;
   final RankingEvolutionMetric metric;
+  final bool showAxisLabel;
 
   const _RankingEvolutionPainter({
     required this.points,
@@ -137,6 +141,7 @@ class _RankingEvolutionPainter extends CustomPainter {
     required this.participantColors,
     required this.podiumPositions,
     required this.metric,
+    required this.showAxisLabel,
   });
 
   @override
@@ -271,11 +276,13 @@ class _RankingEvolutionPainter extends CustomPainter {
       index++;
     }
 
-    _drawLabel(
-      canvas,
-      metric == RankingEvolutionMetric.pontos ? 'Pontos' : 'Posição',
-      Offset(chart.right - 58, chart.bottom + 10),
-    );
+    if (showAxisLabel) {
+      _drawLabel(
+        canvas,
+        metric == RankingEvolutionMetric.pontos ? 'Pontos' : 'Posição',
+        Offset(chart.right - 58, chart.bottom + 10),
+      );
+    }
     _drawLabel(
       canvas,
       metric == RankingEvolutionMetric.pontos ? '$maxPoints' : '$minPositionº',
@@ -469,7 +476,8 @@ class _RankingEvolutionPainter extends CustomPainter {
         oldDelegate.colors != colors ||
         oldDelegate.participantColors != participantColors ||
         oldDelegate.podiumPositions != podiumPositions ||
-        oldDelegate.metric != metric;
+        oldDelegate.metric != metric ||
+        oldDelegate.showAxisLabel != showAxisLabel;
   }
 }
 

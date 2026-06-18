@@ -104,6 +104,9 @@ class _TimesScreenState extends State<TimesScreen> {
                                         badgeUrl: controller.badgeDoTime(
                                           time.nome,
                                         ),
+                                        flagUrl: controller.bandeiraDoTime(
+                                          time.nome,
+                                        ),
                                         imageUrl: controller.imagemDoTime(
                                           time.nome,
                                         ),

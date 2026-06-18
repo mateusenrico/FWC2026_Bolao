@@ -7,6 +7,7 @@ import '../core/functions/participant_colors.dart';
 import '../core/sistema_pontuacao_participantes.dart';
 import '../models/jogo.dart';
 import '../plugins/api_refresh_action.dart';
+import '../plugins/live_matches_banner.dart';
 import '../plugins/live_palpite_grid.dart';
 import '../plugins/partida_card.dart';
 import '../plugins/ranking_evolution_chart.dart';
@@ -44,40 +45,71 @@ class _HomeScreenState extends State<HomeScreen> {
             title: const SizedBox.shrink(),
             actions: [ApiRefreshAction(controller: controller)],
           ),
-          body: RefreshIndicator(
-            onRefresh: controller.atualizarApi,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 980;
+          body: Column(
+            children: [
+              if (controller.temJogosAoVivo)
+                LiveMatchesBanner(controller: controller),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: controller.atualizarApi,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wide = constraints.maxWidth >= 980;
 
-                return SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(
-                    constraints.maxWidth < 600 ? 12 : 24,
-                    16,
-                    constraints.maxWidth < 600 ? 12 : 24,
-                    36,
-                  ),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1320),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _DashboardHero(controller: controller),
-                          const SizedBox(height: 20),
-                          _NextGamesSection(
-                            controller: controller,
-                            jogos: destaques,
-                          ),
-                          const SizedBox(height: 24),
-                          if (wide)
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      return SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          constraints.maxWidth < 600 ? 12 : 24,
+                          16,
+                          constraints.maxWidth < 600 ? 12 : 24,
+                          36,
+                        ),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1320),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                SizedBox(
-                                  width: 370,
-                                  child: _RankingSection(
+                                _DashboardHero(controller: controller),
+                                const SizedBox(height: 20),
+                                _NextGamesSection(
+                                  controller: controller,
+                                  jogos: destaques,
+                                ),
+                                const SizedBox(height: 24),
+                                if (wide)
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: 370,
+                                        child: _RankingSection(
+                                          controller: controller,
+                                          expanded: _rankingExpandido,
+                                          onToggle: () {
+                                            setState(() {
+                                              _rankingExpandido =
+                                                  !_rankingExpandido;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 24),
+                                      Expanded(
+                                        child: _GamesSection(
+                                          controller: controller,
+                                          periodo: _periodo,
+                                          jogos: jogos,
+                                          onPeriodoChanged: (value) {
+                                            setState(() => _periodo = value);
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                else ...[
+                                  _RankingSection(
                                     controller: controller,
                                     expanded: _rankingExpandido,
                                     onToggle: () {
@@ -86,10 +118,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       });
                                     },
                                   ),
-                                ),
-                                const SizedBox(width: 24),
-                                Expanded(
-                                  child: _GamesSection(
+                                  const SizedBox(height: 24),
+                                  _GamesSection(
                                     controller: controller,
                                     periodo: _periodo,
                                     jogos: jogos,
@@ -97,36 +127,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                       setState(() => _periodo = value);
                                     },
                                   ),
-                                ),
+                                ],
                               ],
-                            )
-                          else ...[
-                            _RankingSection(
-                              controller: controller,
-                              expanded: _rankingExpandido,
-                              onToggle: () {
-                                setState(() {
-                                  _rankingExpandido = !_rankingExpandido;
-                                });
-                              },
                             ),
-                            const SizedBox(height: 24),
-                            _GamesSection(
-                              controller: controller,
-                              periodo: _periodo,
-                              jogos: jogos,
-                              onPeriodoChanged: (value) {
-                                setState(() => _periodo = value);
-                              },
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -206,7 +217,9 @@ class _NextGamesSection extends StatelessWidget {
           jogo: jogo,
           badgeMandante: controller.badgeDoTime(jogo.mandantePrevisto),
           badgeVisitante: controller.badgeDoTime(jogo.visitantePrevisto),
-          imageUrl: controller.imagemDoEstadio(jogo.jogoId),
+          imageUrl:
+              controller.bannerDoJogo(jogo.jogoId) ??
+              controller.imagemDoJogo(jogo.jogoId),
           liveClock: controller.tempoAtualDoJogo(jogo),
           destaque: true,
           onTap: () {
@@ -355,6 +368,7 @@ class _RankingMiniEvolution extends StatelessWidget {
         metric: RankingEvolutionMetric.posicao,
         height: 150,
         showLegend: false,
+        showAxisLabel: false,
       ),
     );
   }
@@ -564,6 +578,9 @@ class _GamesSectionState extends State<_GamesSection> {
               badgeVisitante: widget.controller.badgeDoTime(
                 jogo.visitantePrevisto,
               ),
+              imageUrl:
+                  widget.controller.bannerDoJogo(jogo.jogoId) ??
+                  widget.controller.imagemDoJogo(jogo.jogoId),
               liveClock: widget.controller.tempoAtualDoJogo(jogo),
               onTap: () {
                 Navigator.pushNamed(

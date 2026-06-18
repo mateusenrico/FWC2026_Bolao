@@ -87,6 +87,7 @@ class SportsDbApiService {
     return switch (status) {
       'encerrado' => 3,
       'em_andamento' => 2,
+      'adiado' => 1,
       'agendado' => 1,
       _ => 0,
     };
@@ -680,7 +681,28 @@ class SportsDbTimelineItem {
 
   bool get isCard => isYellowCard || isRedCard;
 
+  bool get isCancelled {
+    return _containsAny(type, const [
+          'cancelled',
+          'disallowed',
+          'var',
+          'anulado',
+        ]) ||
+        _containsAny(detail, const [
+          'cancelled',
+          'disallowed',
+          'var',
+          'anulado',
+        ]);
+  }
+
+  bool get isNotable => isGoal || isCard || isCancelled;
+
   String get displayType {
+    if (isCancelled) {
+      return isGoal ? 'Gol anulado' : 'Revisão/Anulado';
+    }
+
     if (isGoal) {
       return 'Gol';
     }
@@ -862,6 +884,7 @@ class SportsDbEvent {
   final String? strCountry;
   final String? idVenue;
   final String? strStatus;
+  final String? strPostponed;
   final String? strGroup;
   final int? intRound;
 
@@ -894,6 +917,7 @@ class SportsDbEvent {
     required this.strCountry,
     required this.idVenue,
     required this.strStatus,
+    required this.strPostponed,
     required this.strGroup,
     required this.intRound,
     required this.strLeagueBadge,
@@ -927,6 +951,7 @@ class SportsDbEvent {
       strCountry: _nullableString(json['strCountry']),
       idVenue: _nullableString(json['idVenue']),
       strStatus: _nullableString(json['strStatus']),
+      strPostponed: _nullableString(json['strPostponed']),
       strGroup: _nullableString(json['strGroup']),
       intRound: _nullableInt(json['intRound']),
       strLeagueBadge: _nullableString(json['strLeagueBadge']),
@@ -953,6 +978,11 @@ class SportsDbEvent {
 
   String get statusCanonico {
     final status = strStatus?.toUpperCase().trim();
+    final postponed = strPostponed?.toLowerCase().trim();
+
+    if (postponed == 'yes' || status == 'POSTPONED' || status == 'PST') {
+      return 'adiado';
+    }
 
     if ({'FT', 'AET', 'PEN', 'FINISHED', 'MATCH FINISHED'}.contains(status)) {
       return 'encerrado';

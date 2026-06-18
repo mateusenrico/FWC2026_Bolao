@@ -116,6 +116,7 @@ SportsDbEvent _eventFor(
     strCountry: null,
     idVenue: null,
     strStatus: status,
+    strPostponed: null,
     strGroup: jogo.grupo,
     intRound: jogo.rodada,
     strLeagueBadge: null,

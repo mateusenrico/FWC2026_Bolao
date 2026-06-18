@@ -6,6 +6,7 @@ import '../core/sistema_pontuacao_times.dart';
 import '../models/time_participante.dart';
 import '../plugins/api_refresh_action.dart';
 import '../plugins/live_matches_banner.dart';
+import '../plugins/match_media.dart';
 import '../plugins/partida_card.dart';
 import '../plugins/remote_media.dart';
 import '../plugins/section_header.dart';
@@ -60,6 +61,7 @@ class TimeScreen extends StatelessWidget {
                       _TeamHero(
                         time: time,
                         imageUrl: controller.imagemDoTime(time.nome),
+                        flagUrl: controller.bandeiraDoTime(time.nome),
                         badgeUrl: controller.badgeDoTime(time.nome),
                       ),
                       Center(
@@ -71,6 +73,13 @@ class TimeScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _TeamStats(time: time, linha: linha),
+                                const SizedBox(height: 14),
+                                TeamMediaStrip(
+                                  flagUrl: controller.bandeiraDoTime(time.nome),
+                                  teamImageUrl: controller.imagemDoTime(
+                                    time.nome,
+                                  ),
+                                ),
                                 const SizedBox(height: 22),
                                 const SectionHeader(
                                   title: 'Jogos do time',
@@ -86,6 +95,9 @@ class TimeScreen extends StatelessWidget {
                                     badgeVisitante: controller.badgeDoTime(
                                       jogo.visitantePrevisto,
                                     ),
+                                    imageUrl:
+                                        controller.bannerDoJogo(jogo.jogoId) ??
+                                        controller.imagemDoJogo(jogo.jogoId),
                                     onTap: () {
                                       Navigator.pushNamed(
                                         context,
@@ -94,6 +106,9 @@ class TimeScreen extends StatelessWidget {
                                       );
                                     },
                                   ),
+                                const SizedBox(height: 18),
+                                const SectionHeader(title: 'Elenco'),
+                                const _RosterAvailabilityCard(),
                                 if (sportsDb?.descricao != null &&
                                     sportsDb!.descricao!.isNotEmpty) ...[
                                   const SizedBox(height: 18),
@@ -129,11 +144,13 @@ class TimeScreen extends StatelessWidget {
 class _TeamHero extends StatelessWidget {
   final TimeParticipante time;
   final String? imageUrl;
+  final String? flagUrl;
   final String? badgeUrl;
 
   const _TeamHero({
     required this.time,
     required this.imageUrl,
+    required this.flagUrl,
     required this.badgeUrl,
   });
 
@@ -141,57 +158,39 @@ class _TeamHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 260,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          RemoteImage(
-            url: imageUrl,
-            borderRadius: BorderRadius.zero,
-            placeholder: const ColoredBox(color: Color(0xFF060606)),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.12),
-                  Colors.black.withValues(alpha: 0.78),
+      child: TeamFlagBackdrop(
+        flagUrl: flagUrl,
+        fallbackImageUrl: imageUrl,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TeamBadge(teamName: time.nome, imageUrl: badgeUrl, size: 76),
+                  const SizedBox(height: 12),
+                  Text(
+                    TeamNormalizer.sigla(time.nome),
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Text(
+                    '${time.nome} · Grupo ${time.grupo}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.86),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TeamBadge(teamName: time.nome, imageUrl: badgeUrl, size: 76),
-                const SizedBox(height: 12),
-                Text(
-                  TeamNormalizer.sigla(time.nome),
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                Text(
-                  '${time.nome} · Grupo ${time.grupo}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.86),
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            right: 16,
-            bottom: 12,
-            child: imageUrl == null
-                ? const SizedBox.shrink()
-                : const MediaCredit(),
-          ),
-        ],
+            if (flagUrl != null || imageUrl != null)
+              const Positioned(right: 16, bottom: 12, child: MediaCredit()),
+          ],
+        ),
       ),
     );
   }
@@ -228,6 +227,37 @@ class _TeamStats extends StatelessWidget {
             _Metric(label: 'GP', value: '${linha?.golsPro ?? 0}'),
             _Metric(label: 'GC', value: '${linha?.golsContra ?? 0}'),
             _Metric(label: 'SG', value: '${linha?.saldoGols ?? 0}'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RosterAvailabilityCard extends StatelessWidget {
+  const _RosterAvailabilityCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.groups_outlined, color: colors.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Elenco ainda não disponível na base local.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colors.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           ],
         ),
       ),

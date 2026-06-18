@@ -48,6 +48,50 @@ void main() {
     expect(ranking.first.pontuacoesPalpites.last.pontuavel, isFalse);
     expect(ranking.last.pontuacoesPalpites.last.pontuavel, isFalse);
   });
+
+  test('classificacao desempata por numero de placares exatos', () {
+    final data = BolaoData(
+      jogos: [
+        _jogo(
+          jogoId: 'jogo-1',
+          matchNumber: 1,
+          golsMandante: 1,
+          golsVisitante: 0,
+          temResultado: true,
+          resultadoFinal: true,
+          statusJogo: 'encerrado',
+        ),
+        _jogo(
+          jogoId: 'jogo-2',
+          matchNumber: 2,
+          golsMandante: 2,
+          golsVisitante: 1,
+          temResultado: true,
+          resultadoFinal: true,
+          statusJogo: 'encerrado',
+        ),
+      ],
+      historicoPartidas: const [],
+      participantes: [
+        _participante('ana', 'Ana'),
+        _participante('caio', 'Caio'),
+      ],
+      palpites: [
+        _palpite('ana', 'jogo-1', 1, 0),
+        _palpite('ana', 'jogo-2', 0, 0),
+        _palpite('caio', 'jogo-1', 2, 0),
+        _palpite('caio', 'jogo-2', 3, 2),
+      ],
+      timesParticipantes: const [],
+    );
+
+    final ranking = SistemaPontuacaoParticipantes.calcularClassificacao(data);
+
+    expect(ranking.map((linha) => linha.participanteId), ['ana', 'caio']);
+    expect(ranking.first.pontosTotal, ranking.last.pontosTotal);
+    expect(ranking.first.placaresExatos, 1);
+    expect(ranking.last.placaresExatos, 0);
+  });
 }
 
 Jogo _jogo({

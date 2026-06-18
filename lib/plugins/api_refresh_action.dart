@@ -25,7 +25,7 @@ class ApiRefreshAction extends StatelessWidget {
                   context,
                 ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
               },
-              icon: const Icon(Icons.dashboard_outlined),
+              icon: const Icon(Icons.home_outlined),
             ),
           ),
         const ThemeModeAction(),

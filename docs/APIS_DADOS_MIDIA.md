@@ -11,6 +11,7 @@ sem alegar afiliacao com FIFA, selecoes, estadios ou provedores de dados.
 | Fonte | Status | Uso |
 | --- | --- | --- |
 | TheSportsDB | Fonte principal | Jogos ao vivo/resultados, times, badges, imagens, venues, liga, videos e detalhes de partida quando retornados |
+| FlagCDN/Flagpedia | Fonte auxiliar de midia | Bandeiras por codigo ISO quando a SportsDB nao fornece uma imagem de bandeira especifica |
 | TheStatsAPI fixture seed | Fonte auxiliar/canonica inicial | Seed da agenda de 104 jogos usado como base estatica |
 | FixtureDownload | Fallback | Conferencia/fallback de agenda ou resultado quando necessario |
 
@@ -30,10 +31,12 @@ Categorias geradas hoje:
 
 ```text
 assets/media/team_badges/
+assets/media/team_flags/
 assets/media/team_images/
 assets/media/venue_images/
 assets/media/match_images/
 assets/media/league_images/
+assets/media/app_icons/
 ```
 
 Como boa pratica, se o projeto virar publico/open source, revisar termos e
@@ -44,6 +47,7 @@ permissoes de redistribuicao das imagens antes de publicar os assets.
 | API | O que oferece | Observacao |
 | --- | --- | --- |
 | TheSportsDB | API JSON gratuita/crowd-sourced, times, eventos, jogadores, arte, placares, highlights e imagens | Melhor encaixe atual; ja esta integrada |
+| FlagCDN/Flagpedia | CDN publica de bandeiras em PNG/WebP/SVG/JPEG baseada em Wikimedia Commons | Integrada para bandeiras de times quando ha codigo ISO confiavel |
 | football-data.org | Futebol em formato maquina, placares, fixtures, tabelas, squads, lineups/subs | Exige token para uso real; boa candidata para squads/lineups se os termos fizerem sentido |
 | BALLDONTLIE FIFA World Cup API | Dados de Copa 2018/2022/2026, times, estadios, jogadores, elencos, jogos, standings, lineups, eventos, stats e odds | Exige chave; muito rica para detalhes de partida/elenco |
 | API-Football / API-SPORTS | Livescore, standings, eventos, line-ups, players, odds e estatisticas | Freemium/paga; candidata forte se a SportsDB ficar incompleta |
@@ -54,6 +58,8 @@ permissoes de redistribuicao das imagens antes de publicar os assets.
 
 - TheSportsDB: <https://www.thesportsdb.com/free_sports_api>
 - TheSportsDB docs de imagens: <https://www.thesportsdb.com/docs_api_guide>
+- FlagCDN: <https://flagcdn.com/>
+- Flagpedia API/CDN: <https://flagpedia.net/download/api>
 - football-data.org docs: <https://www.football-data.org/documentation/api>
 - BALLDONTLIE FIFA World Cup API: <https://fifa.balldontlie.io/>
 - API-Football: <https://www.api-football.com/>

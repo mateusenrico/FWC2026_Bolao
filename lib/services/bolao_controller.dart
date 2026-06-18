@@ -70,17 +70,24 @@ class BolaoController extends ChangeNotifier {
 
   static Future<BolaoController> carregar({
     SportsDbApiService apiService = const SportsDbApiService(),
+    bool atualizarAntesDeExibir = false,
   }) async {
     final results = await Future.wait([
       AssetLoader.carregarBolaoData(),
       LocalMediaManifestService.carregar(),
     ]);
 
-    return BolaoController._(
+    final controller = BolaoController._(
       data: results[0] as BolaoData,
       apiService: apiService,
       localMediaByRemoteUrl: results[1] as Map<String, String>,
     );
+
+    if (atualizarAntesDeExibir) {
+      await controller.atualizarApi(automatico: true);
+    }
+
+    return controller;
   }
 
   BolaoData get data => _data;
@@ -491,8 +498,27 @@ class BolaoController extends ChangeNotifier {
     return _resolveMediaUrl(_mediaCatalog.badgeForTeam(nomeTime));
   }
 
-  String? imagemDoEstadio(String jogoId) {
+  String? bandeiraDoTime(String nomeTime) {
+    return _resolveMediaUrl(_mediaCatalog.flagForTeam(nomeTime));
+  }
+
+  String? bannerDoJogo(String jogoId) {
+    return _resolveMediaUrl(_mediaCatalog.bannerForMatch(jogoId));
+  }
+
+  String? imagemDoJogo(String jogoId) {
     return _resolveMediaUrl(_mediaCatalog.imageForMatch(jogoId));
+  }
+
+  String? imagemDoEstadio(String jogoId) {
+    final jogo = jogoPorId(jogoId);
+    if (jogo == null) {
+      return null;
+    }
+
+    return _resolveMediaUrl(
+      _mediaCatalog.venueForMatch(_data, jogo)?.melhorImagem,
+    );
   }
 
   String? videoDoJogo(String jogoId) {
@@ -500,7 +526,10 @@ class BolaoController extends ChangeNotifier {
   }
 
   String? imagemDoTime(String nomeTime) {
-    return _resolveMediaUrl(timeSportsDb(nomeTime)?.melhorImagem);
+    return _resolveMediaUrl(
+      _mediaCatalog.imageForTeam(nomeTime) ??
+          timeSportsDb(nomeTime)?.melhorImagem,
+    );
   }
 
   String? tempoAtualDoJogo(Jogo jogo) {
@@ -644,14 +673,38 @@ class BolaoController extends ChangeNotifier {
     List<LinhaPontuacaoParticipante> linhas,
   ) {
     final ativos = _participanteIdsComPalpite();
-    final visiveis = linhas
-        .where((linha) => ativos.contains(linha.participanteId))
-        .toList(growable: false);
+    final visiveis =
+        linhas
+            .where((linha) => ativos.contains(linha.participanteId))
+            .toList(growable: false)
+          ..sort(_compararLinhasRanking);
 
     return [
       for (var index = 0; index < visiveis.length; index++)
         visiveis[index].copyWith(posicao: index + 1),
     ];
+  }
+
+  int _compararLinhasRanking(
+    LinhaPontuacaoParticipante a,
+    LinhaPontuacaoParticipante b,
+  ) {
+    final pontos = b.pontosTotal.compareTo(a.pontosTotal);
+    if (pontos != 0) {
+      return pontos;
+    }
+
+    final exatos = b.placaresExatos.compareTo(a.placaresExatos);
+    if (exatos != 0) {
+      return exatos;
+    }
+
+    final resultados = b.resultadosCorretos.compareTo(a.resultadosCorretos);
+    if (resultados != 0) {
+      return resultados;
+    }
+
+    return a.nome.compareTo(b.nome);
   }
 
   Set<String> _participanteIdsComPalpite() {
@@ -828,6 +881,8 @@ class BolaoController extends ChangeNotifier {
 
     final status = finalResult
         ? 'encerrado'
+        : eventStatus == 'adiado'
+        ? 'adiado'
         : eventStatus == 'encerrado'
         ? 'encerrado'
         : jogo.isEmAndamento && eventStatus == 'agendado'
@@ -933,7 +988,7 @@ class BolaoController extends ChangeNotifier {
 
     final jogos = _data.jogos
         .map((jogo) {
-          if (jogo.resultadoFinal) {
+          if (jogo.resultadoFinal || jogo.isAdiado) {
             return jogo;
           }
 
