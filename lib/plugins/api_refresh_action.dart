@@ -14,38 +14,14 @@ class ApiRefreshAction extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const ThemeModeAction(),
-        IconButton(
-          tooltip: 'Atualizar dados da SportsDB',
-          onPressed: controller.atualizandoApi
-              ? null
-              : () async {
-                  await controller.atualizarApi();
-
-                  if (!context.mounted) {
-                    return;
-                  }
-
-                  final message = controller.mensagemAtualizacao;
-                  if (message == null || message.isEmpty) {
-                    return;
-                  }
-
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(
-                      SnackBar(
-                        content: Text(message),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                },
-          icon: controller.atualizandoApi
-              ? const SizedBox.square(
-                  dimension: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.refresh),
-        ),
+        if (controller.atualizandoApi)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 14),
+            child: SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
       ],
     );
   }
