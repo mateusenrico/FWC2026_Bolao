@@ -547,88 +547,51 @@ class _RankingPointsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    const minTableWidth = 760.0;
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colors.surfaceContainerHigh,
-              colors.surfaceContainerLow.withValues(alpha: 0.72),
-            ],
-          ),
+    if (ranking.isEmpty) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(18),
+          child: Text('Ainda não há participantes pontuando.'),
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final tableWidth = constraints.maxWidth > minTableWidth
-                ? constraints.maxWidth
-                : minTableWidth;
+      );
+    }
 
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SizedBox(
-                width: tableWidth,
-                child: Column(
-                  children: [
-                    _RankingGridHeader(colors: colors),
-                    for (final linha in ranking)
-                      _RankingGridRow(
-                        linha: linha,
-                        color: participantColors[linha.participanteId],
-                        liveDelta: liveDelta(linha.participanteId),
-                        onTap: () => onTapParticipante(linha.participanteId),
-                      ),
-                  ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 12.0;
+        final useTwoColumns = constraints.maxWidth >= 820;
+        final width = useTwoColumns
+            ? (constraints.maxWidth - gap) / 2
+            : constraints.maxWidth;
+
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final linha in ranking)
+              SizedBox(
+                width: width,
+                child: _RankingSummaryCard(
+                  linha: linha,
+                  color: participantColors[linha.participanteId],
+                  liveDelta: liveDelta(linha.participanteId),
+                  onTap: () => onTapParticipante(linha.participanteId),
                 ),
               ),
-            );
-          },
-        ),
-      ),
+          ],
+        );
+      },
     );
   }
 }
 
-class _RankingGridHeader extends StatelessWidget {
-  final ColorScheme colors;
-
-  const _RankingGridHeader({required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      color: colors.surfaceContainerHighest.withValues(alpha: 0.68),
-      child: Row(
-        children: const [
-          _GridHeaderCell(label: '#', width: 62),
-          _GridHeaderCell(label: 'Participante', width: 220, alignStart: true),
-          _GridHeaderCell(label: 'Total', width: 72),
-          _GridHeaderCell(label: 'Ao vivo', width: 76),
-          _GridHeaderCell(label: 'Exato', width: 70),
-          _GridHeaderCell(label: 'Res.+gol', width: 82),
-          _GridHeaderCell(label: 'Resultado', width: 88),
-          _GridHeaderCell(label: 'Gol', width: 58),
-          _GridHeaderCell(label: 'Nada', width: 62),
-        ],
-      ),
-    );
-  }
-}
-
-class _RankingGridRow extends StatelessWidget {
+class _RankingSummaryCard extends StatelessWidget {
   final LinhaPontuacaoParticipante linha;
   final Color? color;
   final int liveDelta;
   final VoidCallback onTap;
 
-  const _RankingGridRow({
+  const _RankingSummaryCard({
     required this.linha,
     required this.color,
     required this.liveDelta,
@@ -646,42 +609,34 @@ class _RankingGridRow extends StatelessWidget {
         linha.palpitesComDoisPontos -
         linha.palpitesComUmPonto;
 
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 62),
-        decoration: BoxDecoration(
-          color: ParticipantColors.softBackgroundFor(accent, colors),
-          border: Border(
-            bottom: BorderSide(
-              color: colors.outlineVariant.withValues(alpha: 0.5),
-            ),
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      color: ParticipantColors.softBackgroundFor(accent, colors),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: colors.outlineVariant.withValues(alpha: 0.62)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(left: BorderSide(color: accent, width: 5)),
           ),
-        ),
-        child: Row(
-          children: [
-            Container(width: 5, color: accent),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 9,
-                ),
-                child: Row(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   children: [
-                    SizedBox(
-                      width: 62,
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: ParticipantPositionBadge(
-                          position: linha.posicao,
-                          color: accent,
-                          size: 34,
-                        ),
-                      ),
+                    ParticipantPositionBadge(
+                      position: linha.posicao,
+                      color: accent,
+                      size: 34,
                     ),
-                    SizedBox(
-                      width: 220,
+                    const SizedBox(width: 10),
+                    Expanded(
                       child: ParticipantNameInline(
                         name: linha.nome,
                         color: accent,
@@ -691,61 +646,97 @@ class _RankingGridRow extends StatelessWidget {
                         ),
                       ),
                     ),
-                    _GridValueCell(
-                      value: '${linha.pontosTotal}',
-                      width: 72,
-                      strong: true,
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${linha.pontosTotal}',
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
+                                color: accent,
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
+                        if (liveDelta != 0)
+                          _LiveDeltaChip(value: liveDelta, color: accent)
+                        else
+                          Text(
+                            'Total',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(color: colors.onSurfaceVariant),
+                          ),
+                      ],
                     ),
-                    _GridValueCell(
-                      value: liveDelta > 0 ? '+$liveDelta' : '0',
-                      width: 76,
-                      color: liveDelta > 0 ? accent : colors.onSurfaceVariant,
-                    ),
-                    _GridValueCell(value: '${linha.placaresExatos}', width: 70),
-                    _GridValueCell(
-                      value: '${linha.palpitesComTresPontos}',
-                      width: 82,
-                    ),
-                    _GridValueCell(
-                      value: '${linha.palpitesComDoisPontos}',
-                      width: 88,
-                    ),
-                    _GridValueCell(
-                      value: '${linha.palpitesComUmPonto}',
-                      width: 58,
-                    ),
-                    _GridValueCell(value: '${zeros.clamp(0, 999)}', width: 62),
                   ],
                 ),
-              ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _ScoreBreakdownPill(
+                      label: 'Exato',
+                      value: linha.placaresExatos,
+                      color: accent,
+                      highlight: linha.placaresExatos > 0,
+                    ),
+                    _ScoreBreakdownPill(
+                      label: 'Res.+gol',
+                      value: linha.palpitesComTresPontos,
+                      color: accent,
+                      highlight: linha.palpitesComTresPontos > 0,
+                    ),
+                    _ScoreBreakdownPill(
+                      label: 'Resultado',
+                      value: linha.palpitesComDoisPontos,
+                      color: accent,
+                      highlight: linha.palpitesComDoisPontos > 0,
+                    ),
+                    _ScoreBreakdownPill(
+                      label: 'Gol',
+                      value: linha.palpitesComUmPonto,
+                      color: accent,
+                      highlight: linha.palpitesComUmPonto > 0,
+                    ),
+                    _ScoreBreakdownPill(
+                      label: 'Nada',
+                      value: zeros.clamp(0, 999),
+                      color: colors.onSurfaceVariant,
+                      highlight: false,
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _GridHeaderCell extends StatelessWidget {
-  final String label;
-  final double width;
-  final bool alignStart;
+class _LiveDeltaChip extends StatelessWidget {
+  final int value;
+  final Color color;
 
-  const _GridHeaderCell({
-    required this.label,
-    required this.width,
-    this.alignStart = false,
-  });
+  const _LiveDeltaChip({required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
+    final prefix = value > 0 ? '+' : '';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.52)),
+      ),
       child: Text(
-        label,
-        textAlign: alignStart ? TextAlign.left : TextAlign.center,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        '$prefix$value ao vivo',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: color,
           fontWeight: FontWeight.w900,
         ),
       ),
@@ -753,30 +744,59 @@ class _GridHeaderCell extends StatelessWidget {
   }
 }
 
-class _GridValueCell extends StatelessWidget {
-  final String value;
-  final double width;
-  final bool strong;
-  final Color? color;
+class _ScoreBreakdownPill extends StatelessWidget {
+  final String label;
+  final int value;
+  final Color color;
+  final bool highlight;
 
-  const _GridValueCell({
+  const _ScoreBreakdownPill({
+    required this.label,
     required this.value,
-    required this.width,
-    this.strong = false,
-    this.color,
+    required this.color,
+    required this.highlight,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      child: Text(
-        value,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: color,
-          fontWeight: strong ? FontWeight.w900 : FontWeight.w800,
+    final colors = Theme.of(context).colorScheme;
+    final foreground = highlight ? color : colors.onSurfaceVariant;
+
+    return Container(
+      constraints: const BoxConstraints(minWidth: 72),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      decoration: BoxDecoration(
+        color: highlight
+            ? color.withValues(alpha: 0.13)
+            : colors.surfaceContainerHighest.withValues(alpha: 0.74),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: highlight
+              ? color.withValues(alpha: 0.42)
+              : colors.outlineVariant.withValues(alpha: 0.62),
         ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$value',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: foreground,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colors.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
