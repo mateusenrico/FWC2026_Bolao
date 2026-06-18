@@ -10,6 +10,7 @@ A atualização usa:
 - `eventsnextleague.php?id=4429`
 - `eventspastleague.php?id=4429`
 - `eventsday.php?d=YYYY-MM-DD&s=Soccer`, filtrando `idLeague == 4429`
+- `lookupevent.php?id=<idEvent>`, no refresh em memória, limitado a eventos próximos/relevantes
 - `search_all_teams.php?l=FIFA World Cup`
 - `lookupleague.php?id=4429`
 - `lookupvenue.php?id=<idVenue>`
@@ -29,6 +30,11 @@ A atualização usa:
 8. enriquece times, venues e liga quando a SportsDB retorna metadados visuais;
 9. mantém o build funcionando mesmo se a API estiver parcialmente indisponível.
 10. limita a janela de status ao vivo para evitar que um jogo preso em `LIVE`, `1H`, `2H` ou `HT` continue pontuando indefinidamente.
+
+No app, `BolaoController.atualizarApi()` também passa alguns `idEvent` relevantes
+para `SportsDbApiService`, que consulta `lookupevent.php`. Essa consulta é
+deduplicada e limitada para complementar a janela de `eventsday` sem fazer uma
+chamada individual para todos os 104 jogos a cada minuto.
 
 ## Atribuicoes e licencas
 

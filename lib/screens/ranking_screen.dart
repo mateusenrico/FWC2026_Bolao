@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/app_routes.dart';
 import '../core/functions/date_time_utils.dart';
+import '../core/functions/participant_colors.dart';
 import '../core/sistema_pontuacao_participantes.dart';
 import '../plugins/api_refresh_action.dart';
 import '../plugins/live_matches_banner.dart';
@@ -27,6 +28,7 @@ class _RankingScreenState extends State<RankingScreen> {
   final Set<String> _selecionados = {};
   RankingEvolutionMode _evolutionMode = RankingEvolutionMode.partidas;
   RankingEvolutionMetric _evolutionMetric = RankingEvolutionMetric.pontos;
+  RangeValues? _evolutionRange;
 
   BolaoController get controller => widget.controller;
 
@@ -43,6 +45,13 @@ class _RankingScreenState extends State<RankingScreen> {
         }
 
         final points = _buildEvolutionPoints(_evolutionMode);
+        final evolutionRange = _rangeFor(points);
+        final visiblePoints = _filterByRange(points, evolutionRange);
+        final participantColors = _participantColors();
+        final podiumPositions = {
+          for (final linha in ranking.take(3))
+            linha.participanteId: linha.posicao,
+        };
         final showLiveDelta =
             controller.ordenacaoRanking == OrdenacaoRanking.consolidado;
 
@@ -111,7 +120,10 @@ class _RankingScreenState extends State<RankingScreen> {
                                 selected: {_evolutionMode},
                                 showSelectedIcon: false,
                                 onSelectionChanged: (value) {
-                                  setState(() => _evolutionMode = value.first);
+                                  setState(() {
+                                    _evolutionMode = value.first;
+                                    _evolutionRange = null;
+                                  });
                                 },
                               ),
                               SegmentedButton<RankingEvolutionMetric>(
@@ -156,10 +168,23 @@ class _RankingScreenState extends State<RankingScreen> {
                               });
                             },
                           ),
+                          if (evolutionRange != null) ...[
+                            const SizedBox(height: 12),
+                            _EvolutionRangeFilter(
+                              mode: _evolutionMode,
+                              points: points,
+                              value: evolutionRange,
+                              onChanged: (value) {
+                                setState(() => _evolutionRange = value);
+                              },
+                            ),
+                          ],
                           const SizedBox(height: 12),
                           RankingEvolutionChart(
-                            points: points,
+                            points: visiblePoints,
                             selectedParticipantes: _selecionados,
+                            participantColors: participantColors,
+                            podiumPositions: podiumPositions,
                             metric: _evolutionMetric,
                           ),
                           const SizedBox(height: 22),
@@ -373,6 +398,58 @@ class _RankingScreenState extends State<RankingScreen> {
 
     return result;
   }
+
+  RangeValues? _rangeFor(List<RankingEvolutionPoint> points) {
+    final steps = points.map((point) => point.step).toSet().toList()..sort();
+    if (steps.length < 2) {
+      return null;
+    }
+
+    final min = steps.first.toDouble();
+    final max = steps.last.toDouble();
+    final current = _evolutionRange;
+    if (current == null) {
+      return RangeValues(min, max);
+    }
+
+    final start = current.start.clamp(min, max).toDouble();
+    final end = current.end.clamp(min, max).toDouble();
+    if (start <= end) {
+      return RangeValues(start, end);
+    }
+
+    return RangeValues(end, start);
+  }
+
+  List<RankingEvolutionPoint> _filterByRange(
+    List<RankingEvolutionPoint> points,
+    RangeValues? range,
+  ) {
+    if (range == null) {
+      return points;
+    }
+
+    final start = range.start.round();
+    final end = range.end.round();
+    return [
+      for (final point in points)
+        if (point.step >= start && point.step <= end) point,
+    ];
+  }
+
+  Map<String, Color> _participantColors() {
+    final result = <String, Color>{};
+    for (var index = 0; index < controller.data.participantes.length; index++) {
+      final participante = controller.data.participantes[index];
+      result[participante.participanteId] = ParticipantColors.resolve(
+        participanteId: participante.participanteId,
+        index: index,
+        corHex: participante.corHex,
+      );
+    }
+
+    return result;
+  }
 }
 
 class _ParticipantFilter extends StatelessWidget {
@@ -400,6 +477,93 @@ class _ParticipantFilter extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+class _EvolutionRangeFilter extends StatelessWidget {
+  final RankingEvolutionMode mode;
+  final List<RankingEvolutionPoint> points;
+  final RangeValues value;
+  final ValueChanged<RangeValues> onChanged;
+
+  const _EvolutionRangeFilter({
+    required this.mode,
+    required this.points,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final steps = points.map((point) => point.step).toSet().toList()..sort();
+    if (steps.length < 2) {
+      return const SizedBox.shrink();
+    }
+
+    final minStep = steps.first;
+    final maxStep = steps.last;
+    final labels = <int, String>{};
+    for (final point in points) {
+      labels.putIfAbsent(point.step, () => point.stepLabel);
+    }
+
+    final start = value.start.round().clamp(minStep, maxStep).toInt();
+    final end = value.end.round().clamp(minStep, maxStep).toInt();
+    final title = mode == RankingEvolutionMode.partidas
+        ? 'Partidas exibidas'
+        : 'Dias exibidos';
+    final currentLabel =
+        '${_labelFor(labels, start)} - '
+        '${_labelFor(labels, end)}';
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colors.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                ),
+                Text(
+                  currentLabel,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: colors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            RangeSlider(
+              min: minStep.toDouble(),
+              max: maxStep.toDouble(),
+              divisions: maxStep - minStep,
+              labels: RangeLabels(
+                _labelFor(labels, start),
+                _labelFor(labels, end),
+              ),
+              values: RangeValues(start.toDouble(), end.toDouble()),
+              onChanged: onChanged,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _labelFor(Map<int, String> labels, int step) {
+    return labels[step] ?? '$step';
   }
 }
 

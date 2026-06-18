@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../core/functions/participant_colors.dart';
+
 class RankingEvolutionPoint {
   final String participanteId;
   final String nome;
@@ -25,12 +27,16 @@ enum RankingEvolutionMetric { pontos, posicao }
 class RankingEvolutionChart extends StatelessWidget {
   final List<RankingEvolutionPoint> points;
   final Set<String> selectedParticipantes;
+  final Map<String, Color> participantColors;
+  final Map<String, int> podiumPositions;
   final RankingEvolutionMetric metric;
 
   const RankingEvolutionChart({
     super.key,
     required this.points,
     required this.selectedParticipantes,
+    this.participantColors = const {},
+    this.podiumPositions = const {},
     required this.metric,
   });
 
@@ -54,8 +60,6 @@ class RankingEvolutionChart extends StatelessWidget {
       participants.putIfAbsent(point.participanteId, () => point.nome);
     }
 
-    final palette = _palette(Theme.of(context).colorScheme);
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -68,7 +72,8 @@ class RankingEvolutionChart extends StatelessWidget {
                 painter: _RankingEvolutionPainter(
                   points: visible,
                   colors: Theme.of(context).colorScheme,
-                  palette: palette,
+                  participantColors: participantColors,
+                  podiumPositions: podiumPositions,
                   metric: metric,
                 ),
                 child: const SizedBox.expand(),
@@ -79,11 +84,11 @@ class RankingEvolutionChart extends StatelessWidget {
               spacing: 10,
               runSpacing: 8,
               children: [
-                for (final entry
-                    in participants.entries.toList().asMap().entries)
+                for (final entry in participants.entries)
                   _LegendItem(
-                    color: palette[entry.key % palette.length],
-                    name: entry.value.value,
+                    color: _colorFor(entry.key),
+                    name: entry.value,
+                    podiumPosition: podiumPositions[entry.key],
                   ),
               ],
             ),
@@ -93,32 +98,24 @@ class RankingEvolutionChart extends StatelessWidget {
     );
   }
 
-  List<Color> _palette(ColorScheme colors) {
-    return [
-      colors.primary,
-      colors.tertiary,
-      const Color(0xFF00AFA0),
-      const Color(0xFF276BFF),
-      const Color(0xFFE80012),
-      const Color(0xFFFF0B6D),
-      const Color(0xFF008A3D),
-      const Color(0xFFC99B28),
-      const Color(0xFFFFFFFF),
-      const Color(0xFF35A7FF),
-    ];
+  Color _colorFor(String participanteId) {
+    return participantColors[participanteId] ??
+        ParticipantColors.resolve(participanteId: participanteId, index: 0);
   }
 }
 
 class _RankingEvolutionPainter extends CustomPainter {
   final List<RankingEvolutionPoint> points;
   final ColorScheme colors;
-  final List<Color> palette;
+  final Map<String, Color> participantColors;
+  final Map<String, int> podiumPositions;
   final RankingEvolutionMetric metric;
 
   const _RankingEvolutionPainter({
     required this.points,
     required this.colors,
-    required this.palette,
+    required this.participantColors,
+    required this.podiumPositions,
     required this.metric,
   });
 
@@ -155,17 +152,6 @@ class _RankingEvolutionPainter extends CustomPainter {
       byParticipant.putIfAbsent(point.participanteId, () => []).add(point);
     }
 
-    final palette = [
-      colors.primary,
-      colors.secondary,
-      colors.tertiary,
-      const Color(0xFF0F766E),
-      const Color(0xFFB42318),
-      const Color(0xFF7C3AED),
-      const Color(0xFFCA8A04),
-      const Color(0xFF2563EB),
-    ];
-
     var index = 0;
     for (final entry in byParticipant.entries) {
       final participantPoints = entry.value
@@ -191,19 +177,35 @@ class _RankingEvolutionPainter extends CustomPainter {
         }
       }
 
-      final color = palette[index % palette.length];
+      final podiumPosition = podiumPositions[entry.key];
+      final medalColor = ParticipantColors.medalColor(podiumPosition);
+      final color =
+          participantColors[entry.key] ??
+          ParticipantColors.resolve(participanteId: entry.key, index: index);
       final paint = Paint()
         ..color = color
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.4
+        ..strokeWidth = podiumPosition == null ? 2.4 : 3.2
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round;
 
       if (participantPoints.length > 1) {
+        if (podiumPosition != null) {
+          canvas.drawPath(
+            path,
+            Paint()
+              ..color = medalColor.withValues(alpha: 0.34)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 6.8
+              ..strokeCap = StrokeCap.round
+              ..strokeJoin = StrokeJoin.round,
+          );
+        }
         canvas.drawPath(path, paint);
       }
 
-      for (final point in participantPoints) {
+      for (var i = 0; i < participantPoints.length; i++) {
+        final point = participantPoints[i];
         final x = maxStep <= 1
             ? chart.left
             : chart.left + ((point.step - 1) / (maxStep - 1)) * chart.width;
@@ -213,6 +215,10 @@ class _RankingEvolutionPainter extends CustomPainter {
           maxPoints: maxPoints,
           maxPosition: maxPosition,
         );
+        if (podiumPosition != null && i == participantPoints.length - 1) {
+          canvas.drawCircle(Offset(x, y), 7.5, Paint()..color = medalColor);
+          canvas.drawCircle(Offset(x, y), 5, Paint()..color = colors.surface);
+        }
         canvas.drawCircle(Offset(x, y), 3, Paint()..color = color);
       }
       index++;
@@ -271,7 +277,8 @@ class _RankingEvolutionPainter extends CustomPainter {
   bool shouldRepaint(_RankingEvolutionPainter oldDelegate) {
     return oldDelegate.points != points ||
         oldDelegate.colors != colors ||
-        oldDelegate.palette != palette ||
+        oldDelegate.participantColors != participantColors ||
+        oldDelegate.podiumPositions != podiumPositions ||
         oldDelegate.metric != metric;
   }
 }
@@ -279,14 +286,39 @@ class _RankingEvolutionPainter extends CustomPainter {
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String name;
+  final int? podiumPosition;
 
-  const _LegendItem({required this.color, required this.name});
+  const _LegendItem({
+    required this.color,
+    required this.name,
+    required this.podiumPosition,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (podiumPosition != null) ...[
+          Container(
+            width: 22,
+            height: 22,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: ParticipantColors.medalColor(podiumPosition),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '$podiumPosition',
+              style: const TextStyle(
+                color: Color(0xFF08090F),
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
         Container(
           width: 10,
           height: 10,

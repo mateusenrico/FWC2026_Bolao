@@ -241,6 +241,9 @@ Serve para auditoria, metadados e informação bruta da API. Não deve ser neces
 
 Lista de participantes do bolão.
 
+Cada participante pode definir `corHex`, usada como cor fixa em gráficos,
+legendas e visualizações comparativas.
+
 ### `palpites.json`
 
 Lista normalizada de palpites, conectando:
@@ -301,6 +304,7 @@ app_routes.dart
 app_theme.dart
 team_normalizer.dart
 functions/place_formatters.dart
+functions/participant_colors.dart
 functions/youtube_utils.dart
 ```
 
@@ -489,32 +493,37 @@ Finalizado ou praticamente fechado:
 - [x] models principais
 - [x] asset loader
 - [x] serviço SportsDB resiliente
+- [x] refresh em memória com `lookupevent` para eventos próximos/relevantes
 - [x] tela de jogos
 - [x] tela de ranking com pódio, evolução e pontos projetados
 - [x] ranking com evolução por partida ou por dia brasileiro
+- [x] ranking com gráfico por pontos ou posição e recorte por faixa de partidas/dias
+- [x] ranking com cores fixas por participante e destaque ouro/prata/bronze no gráfico
 - [x] ranking com grid de pontos detalhado
 - [x] tela de detalhe de participante
 - [x] tela de grupos com detalhe clicável
 - [x] tela de simulações
 - [x] simulador com busca e cards compactos de placar
+- [x] simulador com limpeza rápida dos placares digitados
 - [x] tela de lista de times
 - [x] tela de detalhe de time com jogos e estatísticas
 - [x] dashboard inicial com cards de navegação
-- [x] modo visual Auto / Material / Cupertino no tema global
+- [x] tema global único em Material 3 escuro
 - [x] paleta visual inspirada na identidade FWC 2026
 - [x] widget de jogos ao vivo em telas internas
 - [x] indicador visual de próxima atualização automática
 - [x] atualização inicial automática e refresh de minuto quando houver jogo ao vivo
 - [x] metadados visuais de times, venues e liga
 - [x] widgets de imagem remota para badges, banners, venues e liga
+- [x] imagens remotas com cache do Flutter/browser e `gaplessPlayback`
+- [x] badges no chaveamento quando a tela possui catálogo de mídia
 - [x] player/embed de YouTube para highlights quando houver `strVideo`
 - [x] widgets em `plugins/`
 - [x] arquivo de créditos/licenças de terceiros
 
 Ainda falta:
 
-- [ ] lapidar o tema visual definitivo depois de comparar Material/Cupertino
-- [ ] melhorar responsividade fina das telas novas
-- [ ] ampliar testes das regras de pontuação, ranking projetado e simulações
+- [ ] fazer QA visual real no Chrome/browser para lapidar contraste, espaçamento e responsividade fina
+- [ ] ampliar testes de ranking projetado e simulações complexas
 - [ ] revisar Chrome/Browser plugin quando a extensão/navegador ficar visível para o Codex
 - [ ] escolher licença própria do projeto antes de qualquer publicação open source

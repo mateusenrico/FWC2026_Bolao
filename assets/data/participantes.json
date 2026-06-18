@@ -2,6 +2,7 @@
   {
     "participanteId": "p40a471872e",
     "nome": "Ana",
+    "corHex": "#35A7FF",
     "jogosPalpitados": 72,
     "jogosSemPalpite": 32,
     "jogosPalpitadosFaseGrupos": 72,
@@ -12,6 +13,7 @@
   {
     "participanteId": "pf18f290d55",
     "nome": "Beatriz",
+    "corHex": "#FF0B6D",
     "jogosPalpitados": 72,
     "jogosSemPalpite": 32,
     "jogosPalpitadosFaseGrupos": 72,
@@ -22,6 +24,7 @@
   {
     "participanteId": "p73c93a72cb",
     "nome": "Caio",
+    "corHex": "#00D8C8",
     "jogosPalpitados": 72,
     "jogosSemPalpite": 32,
     "jogosPalpitadosFaseGrupos": 72,
@@ -32,6 +35,7 @@
   {
     "participanteId": "p1ec1562405",
     "nome": "Gabriel",
+    "corHex": "#FF684A",
     "jogosPalpitados": 72,
     "jogosSemPalpite": 32,
     "jogosPalpitadosFaseGrupos": 72,
@@ -42,6 +46,7 @@
   {
     "participanteId": "p0e1dda405f",
     "nome": "Jorge",
+    "corHex": "#B9F700",
     "jogosPalpitados": 72,
     "jogosSemPalpite": 32,
     "jogosPalpitadosFaseGrupos": 72,
@@ -52,6 +57,7 @@
   {
     "participanteId": "p88eaa5e0c9",
     "nome": "Juliana",
+    "corHex": "#9B5CFF",
     "jogosPalpitados": 72,
     "jogosSemPalpite": 32,
     "jogosPalpitadosFaseGrupos": 72,
@@ -62,6 +68,7 @@
   {
     "participanteId": "p06b874fbe1",
     "nome": "Kaique",
+    "corHex": "#FFD166",
     "jogosPalpitados": 0,
     "jogosSemPalpite": 104,
     "jogosPalpitadosFaseGrupos": 0,
@@ -72,6 +79,7 @@
   {
     "participanteId": "p007c476953",
     "nome": "Luiza",
+    "corHex": "#00C85A",
     "jogosPalpitados": 72,
     "jogosSemPalpite": 32,
     "jogosPalpitadosFaseGrupos": 72,
@@ -82,6 +90,7 @@
   {
     "participanteId": "p810f83ab24",
     "nome": "Mateus",
+    "corHex": "#276BFF",
     "jogosPalpitados": 72,
     "jogosSemPalpite": 32,
     "jogosPalpitadosFaseGrupos": 72,
@@ -92,6 +101,7 @@
   {
     "participanteId": "p5bca7671e3",
     "nome": "Marcelo",
+    "corHex": "#F72585",
     "jogosPalpitados": 72,
     "jogosSemPalpite": 32,
     "jogosPalpitadosFaseGrupos": 72,
@@ -102,6 +112,7 @@
   {
     "participanteId": "pc304730d48",
     "nome": "Mariana",
+    "corHex": "#38BDF8",
     "jogosPalpitados": 72,
     "jogosSemPalpite": 32,
     "jogosPalpitadosFaseGrupos": 72,
@@ -112,6 +123,7 @@
   {
     "participanteId": "pc4bb99b17a",
     "nome": "Sofia",
+    "corHex": "#F97316",
     "jogosPalpitados": 72,
     "jogosSemPalpite": 32,
     "jogosPalpitadosFaseGrupos": 72,
@@ -122,6 +134,7 @@
   {
     "participanteId": "p86361c7629",
     "nome": "Victor",
+    "corHex": "#F0ABFC",
     "jogosPalpitados": 71,
     "jogosSemPalpite": 33,
     "jogosPalpitadosFaseGrupos": 71,

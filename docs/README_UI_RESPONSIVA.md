@@ -11,8 +11,16 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - cards de partidas com siglas oficiais, badges/bandeiras, placar e status;
 - detalhe da partida;
 - detalhe do participante;
+- ranking detalhado com pódio, grade de pontos e evolução por pontos ou posição;
+- filtro de evolução por participantes e por faixa de partidas ou dias;
+- cores fixas por participante, vindas de `participantes.json`, usadas no gráfico e na legenda;
+- destaque visual de ouro, prata e bronze para os três primeiros no gráfico;
 - classificação dos grupos;
 - projeção colapsável do mata-mata por participante;
+- chaveamento com badges quando a tela possui catálogo de mídia;
+- tema Material 3 escuro como padrão atual;
+- imagens remotas com cache do Flutter/browser e `gaplessPlayback` para reduzir flicker;
+- simulador com busca, cards compactos e limpeza rápida de placares digitados;
 - atualização da SportsDB em memória, preservando os assets locais se a API falhar;
 - mesma regra 5/3/2/1/0 para jogos de grupos e mata-mata;
 - testes básicos da regra de pontuação, incluindo placar exato no mata-mata.

@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../core/functions/team_normalizer.dart';
 import '../core/sistema_pontuacao_times.dart';
+import 'team_badge.dart';
+
+typedef TeamBadgeUrlResolver = String? Function(String teamName);
 
 class MataMataBracketView extends StatelessWidget {
   final ChaveamentoProjetado chaveamento;
+  final TeamBadgeUrlResolver? badgeUrlForTeam;
 
-  const MataMataBracketView({super.key, required this.chaveamento});
+  const MataMataBracketView({
+    super.key,
+    required this.chaveamento,
+    this.badgeUrlForTeam,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +44,11 @@ class MataMataBracketView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (final stage in orderedStages)
-                _StageColumn(stage: stage, jogos: stages[stage]!),
+                _StageColumn(
+                  stage: stage,
+                  jogos: stages[stage]!,
+                  badgeUrlForTeam: badgeUrlForTeam,
+                ),
             ],
           );
         }
@@ -49,7 +61,11 @@ class MataMataBracketView extends StatelessWidget {
               for (final stage in orderedStages)
                 SizedBox(
                   width: stage == 'round-of-32' ? 230 : 210,
-                  child: _StageColumn(stage: stage, jogos: stages[stage]!),
+                  child: _StageColumn(
+                    stage: stage,
+                    jogos: stages[stage]!,
+                    badgeUrlForTeam: badgeUrlForTeam,
+                  ),
                 ),
             ],
           ),
@@ -62,8 +78,13 @@ class MataMataBracketView extends StatelessWidget {
 class _StageColumn extends StatelessWidget {
   final String stage;
   final List<JogoProjetado> jogos;
+  final TeamBadgeUrlResolver? badgeUrlForTeam;
 
-  const _StageColumn({required this.stage, required this.jogos});
+  const _StageColumn({
+    required this.stage,
+    required this.jogos,
+    required this.badgeUrlForTeam,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +100,8 @@ class _StageColumn extends StatelessWidget {
             ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 8),
-          for (final jogo in jogos) _ProjectedGameTile(jogo: jogo),
+          for (final jogo in jogos)
+            _ProjectedGameTile(jogo: jogo, badgeUrlForTeam: badgeUrlForTeam),
         ],
       ),
     );
@@ -100,8 +122,9 @@ class _StageColumn extends StatelessWidget {
 
 class _ProjectedGameTile extends StatelessWidget {
   final JogoProjetado jogo;
+  final TeamBadgeUrlResolver? badgeUrlForTeam;
 
-  const _ProjectedGameTile({required this.jogo});
+  const _ProjectedGameTile({required this.jogo, required this.badgeUrlForTeam});
 
   @override
   Widget build(BuildContext context) {
@@ -128,11 +151,13 @@ class _ProjectedGameTile extends StatelessWidget {
           const SizedBox(height: 6),
           _TeamLine(
             name: jogo.mandante?.nome,
+            badgeUrl: _badgeFor(jogo.mandante?.nome),
             goals: jogo.golsMandante,
             winner: jogo.vencedor?.timeKey == jogo.mandante?.timeKey,
           ),
           _TeamLine(
             name: jogo.visitante?.nome,
+            badgeUrl: _badgeFor(jogo.visitante?.nome),
             goals: jogo.golsVisitante,
             winner: jogo.vencedor?.timeKey == jogo.visitante?.timeKey,
           ),
@@ -140,15 +165,25 @@ class _ProjectedGameTile extends StatelessWidget {
       ),
     );
   }
+
+  String? _badgeFor(String? name) {
+    if (name == null || badgeUrlForTeam == null) {
+      return null;
+    }
+
+    return badgeUrlForTeam!(name);
+  }
 }
 
 class _TeamLine extends StatelessWidget {
   final String? name;
+  final String? badgeUrl;
   final int? goals;
   final bool winner;
 
   const _TeamLine({
     required this.name,
+    required this.badgeUrl,
     required this.goals,
     required this.winner,
   });
@@ -159,6 +194,10 @@ class _TeamLine extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
+          if (name != null) ...[
+            TeamBadge(teamName: name!, imageUrl: badgeUrl, size: 22),
+            const SizedBox(width: 7),
+          ],
           Expanded(
             child: Text(
               name == null ? 'A definir' : TeamNormalizer.sigla(name!),
