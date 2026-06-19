@@ -786,15 +786,6 @@ class _DashboardHero extends StatelessWidget {
                   compact: compact,
                   onTap: () => Navigator.pushNamed(context, AppRoutes.times),
                 ),
-                _DashboardTile(
-                  width: width,
-                  icon: Icons.tune_outlined,
-                  title: 'Simular',
-                  color: FwcColors.teal,
-                  compact: compact,
-                  onTap: () =>
-                      Navigator.pushNamed(context, AppRoutes.simulador),
-                ),
               ],
             );
           },

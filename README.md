@@ -166,7 +166,7 @@ UI atual:
 
 - dashboard responsivo com placares ao vivo/proximos jogos, ranking parcial e mini grafico;
 - tela de ranking com cards compactos, podio, evolucao por pontos/posicao e marcadores fixos por participante;
-- chaveamento de mata-mata com conectores no desktop e leitura vertical no celular;
+- chaveamento de mata-mata em duas metades no desktop, com final/3º lugar ao centro, e leitura vertical no celular;
 - badges, bandeiras, banners de partidas, imagem de estadio e icones vindos primeiro do cache local e depois das URLs externas;
 - splash inicial espera uma consulta da API antes de exibir o dashboard, preservando a base local se a API falhar.
 
@@ -498,7 +498,7 @@ A tool:
 6. gera logs em `logs/update_sportsdb/`.
 7. tenta enriquecer times, venues e liga com metadados visuais da TheSportsDB.
 
-No app em execução, o controller também faz uma atualização inicial ao carregar e mantém um timer de 5 segundos. A consulta automática desse timer aplica os dados dinâmicos que realmente mudaram, como placar, status, mídia e eventos associados, sem colocar a UI inteira em estado de carregamento. Fora disso, o relógio local apenas evita que jogos recém-iniciados ou já estourados fiquem com status incoerente.
+No app em execução, o controller também faz uma atualização inicial ao carregar e mantém um timer de 5 segundos. A consulta automática desse timer aplica os dados dinâmicos que realmente mudaram, como placar, status, mídia e eventos associados, sem colocar a UI inteira em estado de carregamento. Fora disso, o relógio local apenas evita que jogos recém-iniciados ou já estourados fiquem com status incoerente. O refresh é monotônico para placar/status: depois que um placar maior ou encerrado é conhecido, respostas atrasadas da API não podem devolver o jogo para placar menor ou estado ao vivo mais antigo.
 
 Na tela de detalhe da partida, o app consulta sob demanda os endpoints `lookuptimeline.php`, `lookuplineup.php`, `eventresults.php` e `lookupeventstats.php` por `idEvent`. Esses dados são cacheados por partida e invalidados quando o jogo está ao vivo, para permitir que gols/cartões/estatísticas acompanhem o refresh sem pesar a tela inicial.
 
@@ -564,9 +564,9 @@ Finalizado ou praticamente fechado:
 - [x] ranking da home com setas de subida/queda/empate comparando posição consolidada e posição ao vivo
 - [x] tela de detalhe de participante
 - [x] tela de grupos com detalhe clicável
-- [x] tela de simulações
-- [x] simulador com busca e cards compactos de placar
-- [x] simulador com limpeza rápida dos placares digitados
+- [x] tela de simulações preservada no código
+- [ ] simulador exposto na navegação principal
+- [x] simulador retirado temporariamente da navegação enquanto a experiência não estiver no padrão visual do restante do app
 - [x] tela de lista de times
 - [x] tela de detalhe de time com jogos e estatísticas
 - [x] dashboard inicial com cards de navegação
@@ -578,13 +578,14 @@ Finalizado ou praticamente fechado:
 - [x] widget de jogos ao vivo em telas internas
 - [x] indicador visual de próxima atualização automática
 - [x] atualização inicial automática e refresh incremental de 5 segundos quando houver jogo ao vivo
+- [x] refresh anti-regressão no app e no tool de deploy para evitar oscilação de placar/status
 - [x] navegação mobile para Grupos e Times validada sem overflow horizontal
 - [x] metadados visuais de times, venues e liga
 - [x] widgets de imagem remota para badges, banners, venues e liga
 - [x] imagens remotas com cache do Flutter/browser, `gaplessPlayback` e fallback HTML no Web para CORS
 - [x] badges no chaveamento quando a tela possui catálogo de mídia
 - [x] player/embed de YouTube para highlights quando houver `strVideo`
-- [x] palpites da partida agrupados por vitória do mandante, empate, vitória do visitante e sem palpite completo
+- [x] palpites da partida agrupados por vitória do mandante, empate e vitória do visitante
 - [x] widgets em `plugins/`
 - [x] arquivo de créditos/licenças de terceiros
 

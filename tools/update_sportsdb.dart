@@ -968,12 +968,7 @@ class TournamentDataUpdater {
         continue;
       }
 
-      final previous = result[matchNumber];
-
-      if (previous == null ||
-          _sportsDbEventPriority(event) >= _sportsDbEventPriority(previous)) {
-        result[matchNumber] = event;
-      }
+      result[matchNumber] = _preferSportsDbEvent(result[matchNumber], event);
     }
 
     return result;
@@ -1012,20 +1007,6 @@ class TournamentDataUpdater {
     }
 
     return _asInt(bestFixture?['matchNumber']);
-  }
-
-  int _sportsDbEventPriority(Map<String, dynamic> event) {
-    var priority = 0;
-
-    if (_hasScore(event)) {
-      priority += 10;
-    }
-
-    if (_sportsDbIsFinal(event)) {
-      priority += 100;
-    }
-
-    return priority;
   }
 
   List<Map<String, dynamic>> _buildCanonicalGames({
@@ -1282,10 +1263,32 @@ class TournamentDataUpdater {
     required Map<String, dynamic>? fixtureDownload,
     required DateTime kickoffUtc,
   }) {
+    final oldHomeScore = _asInt(oldGame?['golsMandante']);
+    final oldAwayScore = _asInt(oldGame?['golsVisitante']);
+    final oldFinal = oldGame?['resultadoFinal'] == true;
+    final oldSource = oldGame?['fonteResultado']?.toString() ?? 'base_anterior';
+
     if (sportsDb != null && _sportsDbIsFinal(sportsDb)) {
+      final sportsHomeScore = _asInt(sportsDb['intHomeScore']);
+      final sportsAwayScore = _asInt(sportsDb['intAwayScore']);
+
+      if (_scoreRegressed(
+        currentHome: oldHomeScore,
+        currentAway: oldAwayScore,
+        incomingHome: sportsHomeScore,
+        incomingAway: sportsAwayScore,
+      )) {
+        return _ResultData(
+          homeScore: oldHomeScore,
+          awayScore: oldAwayScore,
+          resultFinal: true,
+          source: oldSource,
+        );
+      }
+
       return _ResultData(
-        homeScore: _asInt(sportsDb['intHomeScore']),
-        awayScore: _asInt(sportsDb['intAwayScore']),
+        homeScore: sportsHomeScore,
+        awayScore: sportsAwayScore,
         resultFinal: true,
         source: 'sportsdb',
       );
@@ -1308,16 +1311,20 @@ class TournamentDataUpdater {
       );
     }
 
-    final oldHomeScore = _asInt(oldGame?['golsMandante']);
-    final oldAwayScore = _asInt(oldGame?['golsVisitante']);
-    final oldFinal = oldGame?['resultadoFinal'] == true;
-
-    if (oldHomeScore != null && oldAwayScore != null && oldFinal) {
+    if (oldHomeScore != null &&
+        oldAwayScore != null &&
+        oldFinal &&
+        !_scoreAdvanced(
+          currentHome: oldHomeScore,
+          currentAway: oldAwayScore,
+          incomingHome: _asInt(sportsDb?['intHomeScore']),
+          incomingAway: _asInt(sportsDb?['intAwayScore']),
+        )) {
       return _ResultData(
         homeScore: oldHomeScore,
         awayScore: oldAwayScore,
         resultFinal: true,
-        source: oldGame?['fonteResultado']?.toString() ?? 'base_anterior',
+        source: oldSource,
       );
     }
 
@@ -1329,24 +1336,25 @@ class TournamentDataUpdater {
           {'LIVE', '1H', '2H', 'HT'}.contains(sportsStatus) ||
           DateTime.now().toUtc().difference(kickoffUtc).inMinutes <= 180;
 
-      if (oldHomeScore != null &&
-          oldAwayScore != null &&
-          sportsHomeScore != null &&
-          sportsAwayScore != null &&
-          sportsLive &&
-          sportsHomeScore + sportsAwayScore < oldHomeScore + oldAwayScore) {
+      if (sportsLive &&
+          _scoreRegressed(
+            currentHome: oldHomeScore,
+            currentAway: oldAwayScore,
+            incomingHome: sportsHomeScore,
+            incomingAway: sportsAwayScore,
+          )) {
         return _ResultData(
           homeScore: oldHomeScore,
           awayScore: oldAwayScore,
           resultFinal: oldFinal,
-          source: oldGame?['fonteResultado']?.toString() ?? 'base_anterior',
+          source: oldSource,
         );
       }
 
       return _ResultData(
         homeScore: sportsHomeScore,
         awayScore: sportsAwayScore,
-        resultFinal: false,
+        resultFinal: oldFinal,
         source: 'sportsdb',
       );
     }
@@ -1356,7 +1364,7 @@ class TournamentDataUpdater {
         homeScore: oldHomeScore,
         awayScore: oldAwayScore,
         resultFinal: oldFinal,
-        source: oldGame?['fonteResultado']?.toString() ?? 'base_anterior',
+        source: oldSource,
       );
     }
 
@@ -1391,6 +1399,38 @@ class TournamentDataUpdater {
       resultFinal: false,
       source: null,
     );
+  }
+
+  bool _scoreRegressed({
+    required int? currentHome,
+    required int? currentAway,
+    required int? incomingHome,
+    required int? incomingAway,
+  }) {
+    if (currentHome == null ||
+        currentAway == null ||
+        incomingHome == null ||
+        incomingAway == null) {
+      return false;
+    }
+
+    return incomingHome + incomingAway < currentHome + currentAway;
+  }
+
+  bool _scoreAdvanced({
+    required int? currentHome,
+    required int? currentAway,
+    required int? incomingHome,
+    required int? incomingAway,
+  }) {
+    if (currentHome == null ||
+        currentAway == null ||
+        incomingHome == null ||
+        incomingAway == null) {
+      return false;
+    }
+
+    return incomingHome + incomingAway > currentHome + currentAway;
   }
 
   List<Map<String, dynamic>> _buildCanonicalHistory({
@@ -2349,14 +2389,6 @@ class TournamentDataUpdater {
 
     final incomingFinal = _sportsDbIsFinal(incoming);
     final currentFinal = _sportsDbIsFinal(current);
-    if (incomingFinal && !currentFinal) {
-      return incoming;
-    }
-
-    if (currentFinal && !incomingFinal) {
-      return current;
-    }
-
     final incomingHasScore = _hasScore(incoming);
     final currentHasScore = _hasScore(current);
     if (incomingHasScore && !currentHasScore) {
@@ -2372,10 +2404,26 @@ class TournamentDataUpdater {
           _asInt(incoming['intHomeScore'])! + _asInt(incoming['intAwayScore'])!;
       final currentTotal =
           _asInt(current['intHomeScore'])! + _asInt(current['intAwayScore'])!;
-      if (incomingTotal < currentTotal &&
-          _sportsDbStatusCanonico(incoming) == 'em_andamento') {
+
+      if (incomingTotal != currentTotal) {
+        return incomingTotal > currentTotal ? incoming : current;
+      }
+
+      if (incomingFinal && !currentFinal) {
+        return incoming;
+      }
+
+      if (currentFinal && !incomingFinal) {
         return current;
       }
+    }
+
+    if (incomingFinal && !currentFinal) {
+      return incoming;
+    }
+
+    if (currentFinal && !incomingFinal) {
+      return current;
     }
 
     final incomingStatusRank = _sportsDbStatusRank(incoming);
