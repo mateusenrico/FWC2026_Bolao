@@ -6,15 +6,15 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 
 - tela inicial responsiva;
 - destaque para partida ao vivo ou próximo horário, com grid compacto de palpites; jogos ao vivo exibem pontos parciais;
-- banner ao vivo fixo no topo da home enquanto houver partida em andamento;
+- banner ao vivo fixo no topo da home apenas quando o bloco principal não estiver exibindo “Acontecendo agora”;
 - ranking parcial colapsável na home, sem toggle, ordenado por consolidado + ao vivo quando houver jogo em andamento;
 - mini gráfico de evolução por posição abaixo do ranking parcial da home;
 - filtros de partidas: hoje, amanhã, rodada, passados, futuros e todos;
-- cards de partidas com siglas oficiais, badges/bandeiras, banner do jogo, placar e status;
+- cards de partidas com siglas oficiais, badges/bandeiras, imagem principal unificada do jogo, placar e status;
 - detalhe da partida;
 - detalhe da partida com palpites agrupados por resultado apostado, imagem do estádio e dados de timeline/escalação/estatísticas quando a SportsDB disponibilizar;
 - tela de partida com ordem: dados básicos, palpites, resumo compacto dos times, dados externos e vídeo;
-- detalhe do participante com placar principal alternando entre palpite futuro e resultado/parcial real;
+- detalhe do participante com grid responsivo de palpites e placar principal alternando entre palpite futuro e resultado/parcial real;
 - ranking detalhado com pódio, cards compactos de pontos e evolução por pontos ou posição;
 - filtro de evolução por participantes e por faixa de partidas ou dias;
 - gráfico de evolução com eixo X reescalado conforme a faixa filtrada;
@@ -27,7 +27,7 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - classificação dos grupos;
 - projeção colapsável do mata-mata por participante;
 - chaveamento com badges quando a tela possui catálogo de mídia;
-- chaveamento de mata-mata em duas metades no desktop, com final/3º lugar no centro, e leitura vertical no celular;
+- chaveamento de mata-mata em duas metades no desktop, com conectores, final destacada no centro, 3º lugar menor abaixo e leitura vertical no celular;
 - tema Material 3 seguindo o sistema por padrão, com botão claro/escuro no AppBar;
 - imagens remotas com cache do Flutter/browser, `gaplessPlayback` e fallback HTML no Web para reduzir flicker e contornar CORS;
 - bandeiras cacheadas em `assets/media/team_flags/` e badge da liga usado no splash/ícones web;

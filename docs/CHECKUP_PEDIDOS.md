@@ -17,7 +17,7 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Promover `test` para `main` e `dev` para `test` antes de novos pedidos, salvo ordem contraria | Completo | Regra operacional registrada no fluxo atual |
 | Widget de ao vivo em telas internas, menor que o destaque da home | Completo | `LiveMatchesBanner` |
 | Home mostra ao vivo ou proximo jogo | Completo | `BolaoController.proximosDestaques`, `HomeScreen` |
-| Home mantem banner ao vivo fixo ao navegar pelo dashboard | Completo | `HomeScreen`, `LiveMatchesBanner` |
+| Home evita duplicar o banner ao vivo quando o bloco “Acontecendo agora” ja esta visivel | Completo | `HomeScreen`, `LiveMatchesBanner` |
 | Team badges/bandeiras por URLs da SportsDB/historico | Completo | `MediaCatalogService`, `TeamBadge`, `RemoteImage` |
 | Bandeiras dos times como fundo visual quando disponiveis | Completo | `CountryFlagUrls`, `TeamFlagBackdrop`, `assets/media/team_flags/` |
 | Banners/thumbs/posters de jogos em cards de partidas | Completo | `MatchBannerImage`, `PartidaCard`, `MediaCatalogService` |
@@ -56,9 +56,9 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Tabela de ranking ocupa a largura disponivel sem sobra deslocada | Completo | `_RankingPointsGrid` |
 | Participantes sem nenhum palpite completo nao aparecem nos rankings/palpites | Completo | `BolaoController` |
 | Tela do participante com filtros de palpites (+5, zerados, futuros etc.) | Completo | `ParticipanteDetailScreen` |
-| Tela do participante mostra palpite vs resultado/parcial com cores e pontos | Completo | `PalpiteJogoCard` |
+| Tela do participante mostra palpite vs resultado/parcial com cores e pontos | Completo | `PalpiteJogoCard`; grid responsivo e placar principal unico |
 | Separar grupos e mata-mata nas exibicoes de jogos | Completo | `JogosScreen`, `MataMataBracketView` |
-| Chaveamento em formato visual para mata-mata, responsivo | Completo | `MataMataBracketView`; desktop usa metades esquerda/direita com final no centro, mobile usa colunas verticais |
+| Chaveamento em formato visual para mata-mata, responsivo | Completo | `MataMataBracketView`; desktop usa metades esquerda/direita com linhas e final destacada no centro, mobile usa colunas verticais |
 | Resolver melhores terceiros de forma global antes do fallback por slot | Completo | `SistemaPontuacaoTimes._resolverSlotsMelhoresTerceiros` |
 | Simulador de cenarios com busca/cards compactos | Preservado, oculto da navegacao | `SimuladorScreen` continua no codigo; rota/atalho removidos por enquanto |
 | Tela de grupos clicavel com detalhe, partidas e cruzamentos provaveis | Completo | `GruposScreen`, `GrupoTableCard` |
@@ -66,6 +66,7 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Tabela de grupos com dados completos de futebol | Completo | `FootballGroupRules`, `SistemaPontuacaoTimes`, testes |
 | Encapsular regras classicas de grupos de futebol de forma reutilizavel | Completo | `core/football_group_rules.dart` |
 | Tela de times e detalhe de time com jogos/estatisticas | Completo | `TimesScreen`, `TimeScreen` |
+| Tela de times em ordem alfabetica | Completo | `BolaoController.timesOrdenados` |
 | Elenco/fotos de jogadores na tela do time | Parcial por API | Area reservada em `TimeScreen`; falta persistir roster por `lookup_all_players` ou fonte equivalente |
 | Mandante/visitante corretos no detalhe da partida | Completo | `JogoDetailScreen`, `Jogo` |
 | Nomes/local/cidade formatados sem texto bruto | Completo | `PlaceFormatters`, `VenueSportsDb` |

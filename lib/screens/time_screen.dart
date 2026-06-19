@@ -95,9 +95,9 @@ class TimeScreen extends StatelessWidget {
                                     badgeVisitante: controller.badgeDoTime(
                                       jogo.visitantePrevisto,
                                     ),
-                                    imageUrl:
-                                        controller.bannerDoJogo(jogo.jogoId) ??
-                                        controller.imagemDoJogo(jogo.jogoId),
+                                    imageUrl: controller.imagemPrincipalDoJogo(
+                                      jogo.jogoId,
+                                    ),
                                     onTap: () {
                                       Navigator.pushNamed(
                                         context,

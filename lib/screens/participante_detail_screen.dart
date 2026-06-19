@@ -132,32 +132,57 @@ class _ParticipanteDetailScreenState extends State<ParticipanteDetailScreen> {
                               ),
                             )
                           else
-                            for (final jogo in jogos)
-                              PalpiteJogoCard(
-                                jogo: jogo,
-                                palpite: controller.palpiteDoParticipanteNoJogo(
-                                  participanteId: widget.participanteId,
-                                  jogoId: jogo.jogoId,
-                                ),
-                                pontuacao: controller
-                                    .pontuacaoDoParticipanteNoJogo(
-                                      participanteId: widget.participanteId,
-                                      jogoId: jogo.jogoId,
-                                    ),
-                                badgeMandante: controller.badgeDoTime(
-                                  jogo.mandantePrevisto,
-                                ),
-                                badgeVisitante: controller.badgeDoTime(
-                                  jogo.visitantePrevisto,
-                                ),
-                                onTap: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    AppRoutes.jogo,
-                                    arguments: jogo.jogoId,
-                                  );
-                                },
-                              ),
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final columns = constraints.maxWidth >= 820
+                                    ? 2
+                                    : 1;
+                                final width =
+                                    (constraints.maxWidth -
+                                        ((columns - 1) * 12)) /
+                                    columns;
+
+                                return Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  children: [
+                                    for (final jogo in jogos)
+                                      SizedBox(
+                                        width: width,
+                                        child: PalpiteJogoCard(
+                                          jogo: jogo,
+                                          palpite: controller
+                                              .palpiteDoParticipanteNoJogo(
+                                                participanteId:
+                                                    widget.participanteId,
+                                                jogoId: jogo.jogoId,
+                                              ),
+                                          pontuacao: controller
+                                              .pontuacaoDoParticipanteNoJogo(
+                                                participanteId:
+                                                    widget.participanteId,
+                                                jogoId: jogo.jogoId,
+                                              ),
+                                          badgeMandante: controller.badgeDoTime(
+                                            jogo.mandantePrevisto,
+                                          ),
+                                          badgeVisitante: controller
+                                              .badgeDoTime(
+                                                jogo.visitantePrevisto,
+                                              ),
+                                          onTap: () {
+                                            Navigator.pushNamed(
+                                              context,
+                                              AppRoutes.jogo,
+                                              arguments: jogo.jogoId,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
+                            ),
                         ],
                       ),
                     ),

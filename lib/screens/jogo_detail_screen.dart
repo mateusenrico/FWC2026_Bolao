@@ -241,8 +241,7 @@ class _MatchHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final backgroundUrl =
-        controller.imagemDoJogo(jogo.jogoId) ??
-        controller.bannerDoJogo(jogo.jogoId) ??
+        controller.imagemPrincipalDoJogo(jogo.jogoId) ??
         controller.imagemDoEstadio(jogo.jogoId);
 
     return Container(

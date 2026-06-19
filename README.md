@@ -166,8 +166,8 @@ UI atual:
 
 - dashboard responsivo com placares ao vivo/proximos jogos, ranking parcial e mini grafico;
 - tela de ranking com cards compactos, podio, evolucao por pontos/posicao e marcadores fixos por participante;
-- chaveamento de mata-mata em duas metades no desktop, com final/3º lugar ao centro, e leitura vertical no celular;
-- badges, bandeiras, banners de partidas, imagem de estadio e icones vindos primeiro do cache local e depois das URLs externas;
+- chaveamento de mata-mata em duas metades no desktop, com linhas, final destacada ao centro e leitura vertical no celular;
+- badges, bandeiras, imagem principal unificada de partidas, imagem de estadio e icones vindos primeiro do cache local e depois das URLs externas;
 - splash inicial espera uma consulta da API antes de exibir o dashboard, preservando a base local se a API falhar.
 
 ---
@@ -563,11 +563,13 @@ Finalizado ou praticamente fechado:
 - [x] ranking e palpites ocultam participantes sem nenhum palpite completo
 - [x] ranking da home com setas de subida/queda/empate comparando posição consolidada e posição ao vivo
 - [x] tela de detalhe de participante
+- [x] tela de participante com palpites em grid responsivo e placar principal unico por jogo
 - [x] tela de grupos com detalhe clicável
 - [x] tela de simulações preservada no código
 - [ ] simulador exposto na navegação principal
 - [x] simulador retirado temporariamente da navegação enquanto a experiência não estiver no padrão visual do restante do app
 - [x] tela de lista de times
+- [x] lista de times em ordem alfabetica
 - [x] tela de detalhe de time com jogos e estatísticas
 - [x] dashboard inicial com cards de navegação
 - [x] dashboard mobile com atalhos compactos por ícone

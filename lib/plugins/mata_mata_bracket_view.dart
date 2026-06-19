@@ -85,6 +85,15 @@ class _SplitBracket extends StatelessWidget {
 
   const _SplitBracket({required this.stages, required this.badgeUrlForTeam});
 
+  static const columnWidth = 216.0;
+  static const centerWidth = 268.0;
+  static const columnGap = 48.0;
+  static const labelHeight = 30.0;
+  static const tileHeight = 96.0;
+  static const finalTileHeight = 126.0;
+  static const thirdPlaceTileHeight = 88.0;
+  static const rowGap = 14.0;
+
   @override
   Widget build(BuildContext context) {
     final knockoutStages = stages
@@ -97,76 +106,197 @@ class _SplitBracket extends StatelessWidget {
           (stage) => stage.stage == 'final' || stage.stage == 'third-place',
         )
         .toList(growable: false);
+    final leftStages = [
+      for (final stage in knockoutStages)
+        _BracketStage(stage: stage.stage, jogos: _half(stage.jogos, true)),
+    ];
+    final rightStages = [
+      for (final stage in knockoutStages.reversed)
+        _BracketStage(stage: stage.stage, jogos: _half(stage.jogos, false)),
+    ];
+    final maxRows = leftStages.isEmpty
+        ? 1
+        : leftStages
+              .map((stage) => stage.jogos.length)
+              .fold<int>(1, (max, value) => value > max ? value : max);
+    final sideColumns = leftStages.length;
+    final sideWidth = sideColumns * columnWidth + (sideColumns * columnGap);
+    final width = sideWidth * 2 + centerWidth;
+    final height =
+        labelHeight + maxRows * tileHeight + (maxRows - 1) * rowGap + 18;
+    final finalGame = finalStage
+        .expand((stage) => stage.stage == 'final' ? stage.jogos : const [])
+        .cast<JogoProjetado?>()
+        .firstOrNull;
+    final thirdPlaceGame = finalStage
+        .expand(
+          (stage) => stage.stage == 'third-place' ? stage.jogos : const [],
+        )
+        .cast<JogoProjetado?>()
+        .firstOrNull;
+    final finalCenterY = labelHeight + (height - labelHeight) * 0.46;
+    final finalTop = finalCenterY - finalTileHeight / 2;
+    final thirdTop = finalTop + finalTileHeight + 24;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _BracketHalf(
-              stages: knockoutStages,
-              firstHalf: true,
-              badgeUrlForTeam: badgeUrlForTeam,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _FinalColumn(
-                stages: finalStage,
-                badgeUrlForTeam: badgeUrlForTeam,
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: CustomPaint(
+          painter: _SplitBracketConnectorPainter(
+            leftStages: leftStages,
+            rightStages: rightStages,
+            maxRows: maxRows,
+            finalCenterY: finalCenterY,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+          child: Stack(
+            children: [
+              for (var index = 0; index < leftStages.length; index++)
+                _StageLabelPositioned(
+                  left: _leftX(index),
+                  width: columnWidth,
+                  label: _stageLabel(leftStages[index].stage),
+                  alignRight: false,
+                ),
+              for (var index = 0; index < rightStages.length; index++)
+                _StageLabelPositioned(
+                  left: _rightX(index, sideColumns),
+                  width: columnWidth,
+                  label: _stageLabel(rightStages[index].stage),
+                  alignRight: true,
+                ),
+              for (
+                var stageIndex = 0;
+                stageIndex < leftStages.length;
+                stageIndex++
+              )
+                for (
+                  var gameIndex = 0;
+                  gameIndex < leftStages[stageIndex].jogos.length;
+                  gameIndex++
+                )
+                  Positioned(
+                    left: _leftX(stageIndex),
+                    top:
+                        _centerYFor(
+                          itemCount: leftStages[stageIndex].jogos.length,
+                          gameIndex: gameIndex,
+                          maxRows: maxRows,
+                        ) -
+                        tileHeight / 2,
+                    width: columnWidth,
+                    height: tileHeight,
+                    child: _ProjectedGameTile(
+                      jogo: leftStages[stageIndex].jogos[gameIndex],
+                      badgeUrlForTeam: badgeUrlForTeam,
+                      margin: EdgeInsets.zero,
+                    ),
+                  ),
+              for (
+                var stageIndex = 0;
+                stageIndex < rightStages.length;
+                stageIndex++
+              )
+                for (
+                  var gameIndex = 0;
+                  gameIndex < rightStages[stageIndex].jogos.length;
+                  gameIndex++
+                )
+                  Positioned(
+                    left: _rightX(stageIndex, sideColumns),
+                    top:
+                        _centerYFor(
+                          itemCount: rightStages[stageIndex].jogos.length,
+                          gameIndex: gameIndex,
+                          maxRows: maxRows,
+                        ) -
+                        tileHeight / 2,
+                    width: columnWidth,
+                    height: tileHeight,
+                    child: _ProjectedGameTile(
+                      jogo: rightStages[stageIndex].jogos[gameIndex],
+                      badgeUrlForTeam: badgeUrlForTeam,
+                      margin: EdgeInsets.zero,
+                    ),
+                  ),
+              Positioned(
+                left: sideWidth,
+                top: 0,
+                width: centerWidth,
+                height: labelHeight,
+                child: Center(
+                  child: Text(
+                    'Decisão',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
               ),
-            ),
-            _BracketHalf(
-              stages: knockoutStages.reversed.toList(growable: false),
-              firstHalf: false,
-              badgeUrlForTeam: badgeUrlForTeam,
-            ),
-          ],
+              if (finalGame != null)
+                Positioned(
+                  left: sideWidth + 10,
+                  top: finalTop,
+                  width: centerWidth - 20,
+                  height: finalTileHeight,
+                  child: _ProjectedGameTile(
+                    jogo: finalGame,
+                    badgeUrlForTeam: badgeUrlForTeam,
+                    margin: EdgeInsets.zero,
+                    highlight: true,
+                    title: 'Final da Copa',
+                  ),
+                ),
+              if (thirdPlaceGame != null)
+                Positioned(
+                  left: sideWidth + 24,
+                  top: thirdTop,
+                  width: centerWidth - 48,
+                  height: thirdPlaceTileHeight,
+                  child: _ProjectedGameTile(
+                    jogo: thirdPlaceGame,
+                    badgeUrlForTeam: badgeUrlForTeam,
+                    margin: EdgeInsets.zero,
+                    dense: true,
+                    title: '3º lugar',
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
-}
 
-class _BracketHalf extends StatelessWidget {
-  final List<_BracketStage> stages;
-  final bool firstHalf;
-  final TeamBadgeUrlResolver? badgeUrlForTeam;
-
-  const _BracketHalf({
-    required this.stages,
-    required this.firstHalf,
-    required this.badgeUrlForTeam,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        for (var index = 0; index < stages.length; index++) ...[
-          SizedBox(
-            width: 216,
-            child: _StageColumn(
-              stage: stages[index].stage,
-              jogos: _half(stages[index].jogos, firstHalf),
-              badgeUrlForTeam: badgeUrlForTeam,
-            ),
-          ),
-          if (index < stages.length - 1)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Icon(
-                firstHalf ? Icons.chevron_right : Icons.chevron_left,
-                color: Theme.of(context).colorScheme.outline,
-              ),
-            ),
-        ],
-      ],
-    );
+  static double _leftX(int stageIndex) {
+    return stageIndex * (columnWidth + columnGap);
   }
 
-  List<JogoProjetado> _half(List<JogoProjetado> jogos, bool firstHalf) {
+  static double _rightX(int stageIndex, int sideColumns) {
+    final sideWidth = sideColumns * columnWidth + sideColumns * columnGap;
+    return sideWidth +
+        centerWidth +
+        columnGap +
+        stageIndex * (columnWidth + columnGap);
+  }
+
+  static double _centerYFor({
+    required int itemCount,
+    required int gameIndex,
+    required int maxRows,
+  }) {
+    if (itemCount <= 0) {
+      return labelHeight + tileHeight / 2;
+    }
+
+    final span = maxRows / itemCount;
+    final centerRow = gameIndex * span + (span - 1) / 2;
+    return labelHeight + centerRow * (tileHeight + rowGap) + tileHeight / 2;
+  }
+
+  static List<JogoProjetado> _half(List<JogoProjetado> jogos, bool firstHalf) {
     if (jogos.length <= 1) {
       return jogos;
     }
@@ -178,35 +308,192 @@ class _BracketHalf extends StatelessWidget {
   }
 }
 
-class _FinalColumn extends StatelessWidget {
-  final List<_BracketStage> stages;
-  final TeamBadgeUrlResolver? badgeUrlForTeam;
+class _StageLabelPositioned extends StatelessWidget {
+  final double left;
+  final double width;
+  final String label;
+  final bool alignRight;
 
-  const _FinalColumn({required this.stages, required this.badgeUrlForTeam});
+  const _StageLabelPositioned({
+    required this.left,
+    required this.width,
+    required this.label,
+    required this.alignRight,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final finals = stages
-        .expand((stage) => stage.jogos)
-        .toList(growable: false);
-
-    return SizedBox(
-      width: 232,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Decisão',
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 8),
-          for (final jogo in finals)
-            _ProjectedGameTile(jogo: jogo, badgeUrlForTeam: badgeUrlForTeam),
-        ],
+    return Positioned(
+      left: left,
+      top: 0,
+      width: width,
+      height: _SplitBracket.labelHeight,
+      child: Align(
+        alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+        ),
       ),
     );
+  }
+}
+
+class _SplitBracketConnectorPainter extends CustomPainter {
+  final List<_BracketStage> leftStages;
+  final List<_BracketStage> rightStages;
+  final int maxRows;
+  final double finalCenterY;
+  final Color color;
+
+  const _SplitBracketConnectorPainter({
+    required this.leftStages,
+    required this.rightStages,
+    required this.maxRows,
+    required this.finalCenterY,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.78)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    _paintLeft(canvas, paint);
+    _paintRight(canvas, paint);
+    _paintFinalConnectors(canvas, paint);
+  }
+
+  void _paintLeft(Canvas canvas, Paint paint) {
+    for (var stageIndex = 0; stageIndex < leftStages.length - 1; stageIndex++) {
+      _paintStageConnection(
+        canvas: canvas,
+        paint: paint,
+        fromStage: leftStages[stageIndex],
+        toStage: leftStages[stageIndex + 1],
+        fromX: _SplitBracket._leftX(stageIndex) + _SplitBracket.columnWidth,
+        toX: _SplitBracket._leftX(stageIndex + 1),
+        leftToRight: true,
+      );
+    }
+  }
+
+  void _paintRight(Canvas canvas, Paint paint) {
+    for (
+      var stageIndex = rightStages.length - 1;
+      stageIndex > 0;
+      stageIndex--
+    ) {
+      _paintStageConnection(
+        canvas: canvas,
+        paint: paint,
+        fromStage: rightStages[stageIndex],
+        toStage: rightStages[stageIndex - 1],
+        fromX: _SplitBracket._rightX(stageIndex, rightStages.length),
+        toX:
+            _SplitBracket._rightX(stageIndex - 1, rightStages.length) +
+            _SplitBracket.columnWidth,
+        leftToRight: false,
+      );
+    }
+  }
+
+  void _paintStageConnection({
+    required Canvas canvas,
+    required Paint paint,
+    required _BracketStage fromStage,
+    required _BracketStage toStage,
+    required double fromX,
+    required double toX,
+    required bool leftToRight,
+  }) {
+    if (fromStage.jogos.length < 2 || toStage.jogos.isEmpty) {
+      return;
+    }
+
+    final pairCount = (fromStage.jogos.length ~/ 2).clamp(
+      0,
+      toStage.jogos.length,
+    );
+    final xMid = fromX + (toX - fromX) / 2;
+
+    for (var pairIndex = 0; pairIndex < pairCount; pairIndex++) {
+      final topGameIndex = pairIndex * 2;
+      final bottomGameIndex = topGameIndex + 1;
+      final yTop = _centerY(fromStage, topGameIndex);
+      final yBottom = _centerY(fromStage, bottomGameIndex);
+      final yTarget = _centerY(toStage, pairIndex);
+      final yJoin = (yTop + yBottom) / 2;
+      final path = Path()
+        ..moveTo(fromX, yTop)
+        ..lineTo(xMid, yTop)
+        ..lineTo(xMid, yBottom)
+        ..lineTo(fromX, yBottom)
+        ..moveTo(xMid, yJoin)
+        ..lineTo(toX, yTarget);
+
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  void _paintFinalConnectors(Canvas canvas, Paint paint) {
+    if (leftStages.isNotEmpty && leftStages.last.jogos.isNotEmpty) {
+      final leftStart =
+          _SplitBracket._leftX(leftStages.length - 1) +
+          _SplitBracket.columnWidth;
+      final leftEnd =
+          leftStages.length *
+          (_SplitBracket.columnWidth + _SplitBracket.columnGap);
+      final y = _centerY(leftStages.last, 0);
+      canvas.drawPath(
+        Path()
+          ..moveTo(leftStart, y)
+          ..lineTo(leftEnd - _SplitBracket.columnGap / 2, y)
+          ..lineTo(leftEnd, finalCenterY),
+        paint,
+      );
+    }
+
+    if (rightStages.isNotEmpty && rightStages.first.jogos.isNotEmpty) {
+      final rightEnd =
+          rightStages.length *
+              (_SplitBracket.columnWidth + _SplitBracket.columnGap) +
+          _SplitBracket.centerWidth;
+      final rightStart = _SplitBracket._rightX(0, rightStages.length);
+      final y = _centerY(rightStages.first, 0);
+      canvas.drawPath(
+        Path()
+          ..moveTo(rightStart, y)
+          ..lineTo(rightEnd + _SplitBracket.columnGap / 2, y)
+          ..lineTo(rightEnd, finalCenterY),
+        paint,
+      );
+    }
+  }
+
+  double _centerY(_BracketStage stage, int gameIndex) {
+    return _SplitBracket._centerYFor(
+      itemCount: stage.jogos.length,
+      gameIndex: gameIndex,
+      maxRows: maxRows,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _SplitBracketConnectorPainter oldDelegate) {
+    return oldDelegate.leftStages != leftStages ||
+        oldDelegate.rightStages != rightStages ||
+        oldDelegate.maxRows != maxRows ||
+        oldDelegate.finalCenterY != finalCenterY ||
+        oldDelegate.color != color;
   }
 }
 
@@ -463,11 +750,17 @@ class _ProjectedGameTile extends StatelessWidget {
   final JogoProjetado jogo;
   final TeamBadgeUrlResolver? badgeUrlForTeam;
   final EdgeInsetsGeometry margin;
+  final bool highlight;
+  final bool dense;
+  final String? title;
 
   const _ProjectedGameTile({
     required this.jogo,
     required this.badgeUrlForTeam,
     this.margin = const EdgeInsets.only(bottom: 8),
+    this.highlight = false,
+    this.dense = false,
+    this.title,
   });
 
   @override
@@ -476,34 +769,51 @@ class _ProjectedGameTile extends StatelessWidget {
 
     return Container(
       margin: margin,
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.all(
+        highlight
+            ? 14
+            : dense
+            ? 8
+            : 10,
+      ),
       decoration: BoxDecoration(
-        color: colors.surfaceContainerLow,
+        color: highlight
+            ? colors.primaryContainer.withValues(alpha: 0.72)
+            : colors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colors.outlineVariant),
+        border: Border.all(
+          color: highlight ? colors.primary : colors.outlineVariant,
+          width: highlight ? 1.8 : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Jogo ${jogo.matchNumber}',
+            title ?? 'Jogo ${jogo.matchNumber}',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colors.onSurfaceVariant,
+              color: highlight
+                  ? colors.onPrimaryContainer
+                  : colors.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: dense ? 4 : 6),
           _TeamLine(
             name: jogo.mandante?.nome,
             badgeUrl: _badgeFor(jogo.mandante?.nome),
             goals: jogo.golsMandante,
             winner: jogo.vencedor?.timeKey == jogo.mandante?.timeKey,
+            highlight: highlight,
+            dense: dense,
           ),
           _TeamLine(
             name: jogo.visitante?.nome,
             badgeUrl: _badgeFor(jogo.visitante?.nome),
             goals: jogo.golsVisitante,
             winner: jogo.vencedor?.timeKey == jogo.visitante?.timeKey,
+            highlight: highlight,
+            dense: dense,
           ),
         ],
       ),
@@ -524,23 +834,37 @@ class _TeamLine extends StatelessWidget {
   final String? badgeUrl;
   final int? goals;
   final bool winner;
+  final bool highlight;
+  final bool dense;
 
   const _TeamLine({
     required this.name,
     required this.badgeUrl,
     required this.goals,
     required this.winner,
+    this.highlight = false,
+    this.dense = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: EdgeInsets.symmetric(vertical: dense ? 1 : 2),
       child: Row(
         children: [
           if (name != null) ...[
-            TeamBadge(teamName: name!, imageUrl: badgeUrl, size: 22),
-            const SizedBox(width: 7),
+            TeamBadge(
+              teamName: name!,
+              imageUrl: badgeUrl,
+              size: highlight
+                  ? 28
+                  : dense
+                  ? 19
+                  : 22,
+            ),
+            SizedBox(width: dense ? 5 : 7),
           ],
           Expanded(
             child: Text(
@@ -549,14 +873,18 @@ class _TeamLine extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: winner ? FontWeight.w900 : FontWeight.w600,
+                color: highlight ? colors.onPrimaryContainer : null,
+                fontSize: highlight ? 16 : null,
               ),
             ),
           ),
           Text(
             goals?.toString() ?? '',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w900),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: highlight ? colors.onPrimaryContainer : null,
+              fontSize: highlight ? 16 : null,
+            ),
           ),
         ],
       ),

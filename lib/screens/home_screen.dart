@@ -38,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, _) {
         final destaques = controller.proximosDestaques;
         final jogos = controller.jogosPorPeriodo(_periodo);
+        final destaqueAoVivo = destaques.any((jogo) => jogo.isEmAndamento);
         // final classificacao = controller.classificacao;
 
         return Scaffold(
@@ -47,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           body: Column(
             children: [
-              if (controller.temJogosAoVivo)
+              if (controller.temJogosAoVivo && !destaqueAoVivo)
                 LiveMatchesBanner(controller: controller),
               Expanded(
                 child: RefreshIndicator(
@@ -217,9 +218,7 @@ class _NextGamesSection extends StatelessWidget {
           jogo: jogo,
           badgeMandante: controller.badgeDoTime(jogo.mandantePrevisto),
           badgeVisitante: controller.badgeDoTime(jogo.visitantePrevisto),
-          imageUrl:
-              controller.bannerDoJogo(jogo.jogoId) ??
-              controller.imagemDoJogo(jogo.jogoId),
+          imageUrl: controller.imagemPrincipalDoJogo(jogo.jogoId),
           liveClock: controller.tempoAtualDoJogo(jogo),
           destaque: true,
           onTap: () {
@@ -578,9 +577,7 @@ class _GamesSectionState extends State<_GamesSection> {
               badgeVisitante: widget.controller.badgeDoTime(
                 jogo.visitantePrevisto,
               ),
-              imageUrl:
-                  widget.controller.bannerDoJogo(jogo.jogoId) ??
-                  widget.controller.imagemDoJogo(jogo.jogoId),
+              imageUrl: widget.controller.imagemPrincipalDoJogo(jogo.jogoId),
               liveClock: widget.controller.tempoAtualDoJogo(jogo),
               onTap: () {
                 Navigator.pushNamed(

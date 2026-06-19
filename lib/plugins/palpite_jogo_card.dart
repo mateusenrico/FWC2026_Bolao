@@ -44,7 +44,7 @@ class PalpiteJogoCard extends StatelessWidget {
     final cardColor = _statusColor(colors);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: EdgeInsets.zero,
       color: cardColor,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -91,54 +91,10 @@ class PalpiteJogoCard extends StatelessWidget {
               const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 560;
-                  final veryCompact = constraints.maxWidth < 340;
+                  final compact = constraints.maxWidth < 520;
+                  final veryCompact = constraints.maxWidth < 330;
 
-                  if (compact) {
-                    final teams = Row(
-                      children: [
-                        Expanded(
-                          child: _TeamLabel(
-                            teamName: jogo.mandantePrevisto,
-                            badgeUrl: badgeMandante,
-                            alignEnd: true,
-                          ),
-                        ),
-                        if (!veryCompact) ...[
-                          const SizedBox(width: 10),
-                          _ScoreLabel(title: primaryLabel, value: primaryScore),
-                          const SizedBox(width: 10),
-                        ],
-                        Expanded(
-                          child: _TeamLabel(
-                            teamName: jogo.visitantePrevisto,
-                            badgeUrl: badgeVisitante,
-                            alignEnd: false,
-                          ),
-                        ),
-                      ],
-                    );
-
-                    return Column(
-                      children: [
-                        teams,
-                        if (veryCompact) ...[
-                          const SizedBox(height: 10),
-                          _ScoreLabel(title: primaryLabel, value: primaryScore),
-                        ],
-                        const SizedBox(height: 10),
-                        Text(
-                          comparisonText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: colors.onSurfaceVariant),
-                        ),
-                      ],
-                    );
-                  }
-
-                  return Row(
+                  final teams = Row(
                     children: [
                       Expanded(
                         child: _TeamLabel(
@@ -147,24 +103,49 @@ class PalpiteJogoCard extends StatelessWidget {
                           alignEnd: true,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      _ScoreLabel(title: primaryLabel, value: primaryScore),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: Icon(Icons.arrow_forward, size: 18),
-                      ),
-                      _ScoreLabel(
-                        title: scoreIsResult ? 'Palpite' : 'Status',
-                        value: scoreIsResult
-                            ? palpite?.placarTexto ?? '-'
-                            : 'Não iniciado',
-                      ),
-                      const SizedBox(width: 8),
+                      if (!veryCompact) ...[
+                        SizedBox(width: compact ? 8 : 12),
+                        _ScoreLabel(title: primaryLabel, value: primaryScore),
+                        SizedBox(width: compact ? 8 : 12),
+                      ],
                       Expanded(
                         child: _TeamLabel(
                           teamName: jogo.visitantePrevisto,
                           badgeUrl: badgeVisitante,
                           alignEnd: false,
+                        ),
+                      ),
+                    ],
+                  );
+
+                  return Column(
+                    children: [
+                      teams,
+                      if (veryCompact) ...[
+                        const SizedBox(height: 10),
+                        _ScoreLabel(title: primaryLabel, value: primaryScore),
+                      ],
+                      const SizedBox(height: 10),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.surfaceContainer.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          comparisonText,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: colors.onSurfaceVariant,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ),
                     ],
@@ -308,16 +289,21 @@ class _ScoreLabel extends StatelessWidget {
         ),
         const SizedBox(height: 3),
         Container(
+          constraints: const BoxConstraints(minWidth: 58, maxWidth: 92),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
           decoration: BoxDecoration(
             color: colors.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(9),
           ),
-          child: Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+            ),
           ),
         ),
       ],

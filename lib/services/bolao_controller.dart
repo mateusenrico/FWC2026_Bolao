@@ -140,12 +140,12 @@ class BolaoController extends ChangeNotifier {
   List<TimeParticipante> get timesOrdenados {
     final result = [..._data.timesParticipantes];
     result.sort((a, b) {
-      final group = a.grupo.compareTo(b.grupo);
-      if (group != 0) {
-        return group;
+      final name = a.nome.compareTo(b.nome);
+      if (name != 0) {
+        return name;
       }
 
-      return a.nome.compareTo(b.nome);
+      return a.grupo.compareTo(b.grupo);
     });
     return result;
   }
@@ -510,6 +510,10 @@ class BolaoController extends ChangeNotifier {
 
   String? imagemDoJogo(String jogoId) {
     return _resolveMediaUrl(_mediaCatalog.imageForMatch(jogoId));
+  }
+
+  String? imagemPrincipalDoJogo(String jogoId) {
+    return imagemDoJogo(jogoId) ?? bannerDoJogo(jogoId);
   }
 
   String? imagemDoEstadio(String jogoId) {
