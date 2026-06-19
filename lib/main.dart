@@ -10,7 +10,6 @@ import 'screens/jogo_detail_screen.dart';
 import 'screens/jogos_screen.dart';
 import 'screens/participante_detail_screen.dart';
 import 'screens/ranking_screen.dart';
-import 'screens/simulador_screen.dart';
 import 'screens/time_screen.dart';
 import 'screens/times_screen.dart';
 import 'services/bolao_controller.dart';
@@ -175,11 +174,6 @@ class _BolaoNavigationAppState extends State<_BolaoNavigationApp> {
             return MaterialPageRoute<void>(
               settings: settings,
               builder: (_) => JogosScreen(controller: controller),
-            );
-          case AppRoutes.simulador:
-            return MaterialPageRoute<void>(
-              settings: settings,
-              builder: (_) => SimuladorScreen(controller: controller),
             );
           case AppRoutes.times:
             return MaterialPageRoute<void>(

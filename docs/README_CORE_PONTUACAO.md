@@ -89,7 +89,7 @@ chaveamento projetado
 campeão, vice, terceiro e quarto projetados
 ```
 
-Observação: a projeção de melhores terceiros usa os grupos elegíveis já presentes no `jogos.json` e escolhe deterministicamente o melhor terceiro disponível entre os elegíveis. A FIFA possui uma tabela oficial com 495 combinações em Annexe C. Esta primeira versão do core não embute as 495 combinações completas; ela é suficiente para simulação/projeção interna, mas pode ser refinada depois se você quiser refletir literalmente cada opção do Annexe C.
+Observação: a projeção de melhores terceiros usa os grupos elegíveis já presentes no `jogos.json`, resolve todos os slots de terceiros em conjunto para evitar repetir grupo e tenta manter a ordem dos melhores terceiros. A FIFA possui uma tabela oficial com 495 combinações no Annexe C; o core ainda não embute essa tabela completa, mas deixou de usar uma escolha puramente gulosa por partida. Se o app precisar espelhar literalmente cada combinação oficial, a evolução natural é transformar o Annexe C em uma tabela de lookup versionada.
 
 ### `sistema_pontuacao_participantes.dart`
 

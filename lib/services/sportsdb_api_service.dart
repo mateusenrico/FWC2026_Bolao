@@ -45,14 +45,6 @@ class SportsDbApiService {
       return incoming;
     }
 
-    if (incoming.isFinal && !current.isFinal) {
-      return incoming;
-    }
-
-    if (current.isFinal && !incoming.isFinal) {
-      return current;
-    }
-
     if (incoming.temPlacar && !current.temPlacar) {
       return incoming;
     }
@@ -64,10 +56,26 @@ class SportsDbApiService {
     if (incoming.temPlacar && current.temPlacar) {
       final incomingTotal = incoming.intHomeScore! + incoming.intAwayScore!;
       final currentTotal = current.intHomeScore! + current.intAwayScore!;
-      if (incomingTotal < currentTotal &&
-          incoming.statusCanonico == 'em_andamento') {
+
+      if (incomingTotal != currentTotal) {
+        return incomingTotal > currentTotal ? incoming : current;
+      }
+
+      if (incoming.isFinal && !current.isFinal) {
+        return incoming;
+      }
+
+      if (current.isFinal && !incoming.isFinal) {
         return current;
       }
+    }
+
+    if (incoming.isFinal && !current.isFinal) {
+      return incoming;
+    }
+
+    if (current.isFinal && !incoming.isFinal) {
+      return current;
     }
 
     final incomingStatusRank = _statusRank(incoming.statusCanonico);

@@ -1,6 +1,6 @@
 # Checkup de pedidos e cobertura
 
-Ultima revisao: v2.6.0-dev.
+Ultima revisao: v2.6.1-dev.
 
 Este documento consolida os pedidos feitos durante a evolucao do app e o estado
 de implementacao. Quando algo depende de fonte externa, a implementacao fica
@@ -29,7 +29,7 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Refresh inicial ao abrir o app | Completo | `BolaoController.carregar(atualizarAntesDeExibir: true)`, splash inicial |
 | Refresh automatico durante jogos ao vivo | Completo | Timer de 5s em `BolaoController` |
 | Refresh automatico sem apagar a tela ou voltar para a home | Completo | Atualizacao automatica so notifica UI quando dados dinamicos mudam |
-| Refresh ao vivo nao pode regredir placar por resposta atrasada/incompleta da API | Completo | `BolaoController`, `SportsDbApiService`, `tools/update_sportsdb.dart`, teste de regressao |
+| Refresh ao vivo nao pode regredir placar/status por resposta atrasada/incompleta da API | Completo | `BolaoController`, `SportsDbApiService`, `tools/update_sportsdb.dart`, testes de regressao |
 | Remover dependencia visual do botao de refresh manual | Completo | `ApiRefreshAction` mostra apenas tema e indicador |
 | Barra/indicador de proxima atualizacao | Completo | `RefreshCountdownIndicator` |
 | Jogos iniciados sem placar contam provisoriamente como 0x0 para ranking projetado | Completo | `BolaoController._aplicarRelogioLocal`, `_mesclarJogoComEvento` |
@@ -58,8 +58,9 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Tela do participante com filtros de palpites (+5, zerados, futuros etc.) | Completo | `ParticipanteDetailScreen` |
 | Tela do participante mostra palpite vs resultado/parcial com cores e pontos | Completo | `PalpiteJogoCard` |
 | Separar grupos e mata-mata nas exibicoes de jogos | Completo | `JogosScreen`, `MataMataBracketView` |
-| Chaveamento em formato visual para mata-mata, responsivo | Completo | `MataMataBracketView`; desktop usa conectores entre fases, mobile usa colunas verticais |
-| Simulador de cenarios com busca/cards compactos | Completo | `SimuladorScreen` |
+| Chaveamento em formato visual para mata-mata, responsivo | Completo | `MataMataBracketView`; desktop usa metades esquerda/direita com final no centro, mobile usa colunas verticais |
+| Resolver melhores terceiros de forma global antes do fallback por slot | Completo | `SistemaPontuacaoTimes._resolverSlotsMelhoresTerceiros` |
+| Simulador de cenarios com busca/cards compactos | Preservado, oculto da navegacao | `SimuladorScreen` continua no codigo; rota/atalho removidos por enquanto |
 | Tela de grupos clicavel com detalhe, partidas e cruzamentos provaveis | Completo | `GruposScreen`, `GrupoTableCard` |
 | Tela de grupos abre todos e esconde os demais ao clicar em um grupo | Completo | `GruposScreen` |
 | Tabela de grupos com dados completos de futebol | Completo | `FootballGroupRules`, `SistemaPontuacaoTimes`, testes |
@@ -81,7 +82,7 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Dashboard sem subtitulos redundantes nos atalhos | Completo | `_DashboardHero`, `_DashboardTile` |
 | Destaque ao vivo ou proximo jogo com grid compacto dos palpites | Completo | `LivePalpiteGrid`, `HomeScreen` |
 | Dois ou mais jogos ao vivo em paralelo no dashboard | Completo | `HomeScreen` empilha no celular e distribui em duas colunas no desktop |
-| Detalhe da partida com palpites agrupados por resultado apostado | Completo | `PalpiteMatchGroups`, `PalpiteResultGroupCard` |
+| Detalhe da partida com palpites agrupados por resultado apostado | Completo | `PalpiteMatchGroups`, `PalpiteResultGroupCard`; grupo vazio de sem palpite foi suprimido |
 | Grupos de palpites mostram resumo qualitativo, nao soma total agregada | Completo | `PalpiteResultGroupCard` |
 | Exibir os palpites logo abaixo dos dados basicos da partida | Completo | `JogoDetailScreen` |
 | Paineis dos times abaixo dos palpites e em tamanho menor | Completo | `TeamMatchPanel(compact: true)` no detalhe de jogo |

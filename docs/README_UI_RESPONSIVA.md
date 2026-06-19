@@ -27,13 +27,14 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - classificação dos grupos;
 - projeção colapsável do mata-mata por participante;
 - chaveamento com badges quando a tela possui catálogo de mídia;
-- chaveamento de mata-mata com conectores entre fases no desktop e leitura vertical no celular;
+- chaveamento de mata-mata em duas metades no desktop, com final/3º lugar no centro, e leitura vertical no celular;
 - tema Material 3 seguindo o sistema por padrão, com botão claro/escuro no AppBar;
 - imagens remotas com cache do Flutter/browser, `gaplessPlayback` e fallback HTML no Web para reduzir flicker e contornar CORS;
 - bandeiras cacheadas em `assets/media/team_flags/` e badge da liga usado no splash/ícones web;
 - clamp global de texto para reduzir sobreposição quando o navegador/celular usa fonte muito grande;
-- simulador com busca, cards compactos e limpeza rápida de placares digitados;
+- simulador preservado no código, mas temporariamente removido da navegação principal;
 - atualização incremental da SportsDB em memória a cada 5 segundos durante jogos ao vivo, preservando os assets locais se a API falhar;
+- refresh anti-regressão para evitar que placares/status voltem para snapshots mais antigos da API;
 - tabelas de grupos responsivas no celular, sem largura mínima que cause overflow horizontal;
 - mesma regra 5/3/2/1/0 para jogos de grupos e mata-mata;
 - testes básicos da regra de pontuação, incluindo placar exato no mata-mata.

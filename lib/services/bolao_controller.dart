@@ -211,7 +211,9 @@ class BolaoController extends ChangeNotifier {
         return;
       }
 
-      final eventosPorJogo = _associarEventosAosJogos(result.events);
+      final eventosPorJogo = _consolidarEventosPorJogo(
+        _associarEventosAosJogos(result.events),
+      );
       final jogosAtualizados =
           _data.jogos
               .map(
@@ -797,6 +799,72 @@ class BolaoController extends ChangeNotifier {
     return result;
   }
 
+  Map<String, SportsDbEvent> _consolidarEventosPorJogo(
+    Map<String, SportsDbEvent> recebidos,
+  ) {
+    final result = Map<String, SportsDbEvent>.from(_eventoPorJogoId);
+
+    for (final entry in recebidos.entries) {
+      result[entry.key] = _preferirEvento(result[entry.key], entry.value);
+    }
+
+    return result;
+  }
+
+  SportsDbEvent _preferirEvento(SportsDbEvent? atual, SportsDbEvent novo) {
+    if (atual == null) {
+      return novo;
+    }
+
+    if (novo.temPlacar && !atual.temPlacar) {
+      return novo;
+    }
+
+    if (atual.temPlacar && !novo.temPlacar) {
+      return atual;
+    }
+
+    if (novo.temPlacar && atual.temPlacar) {
+      final novoTotal = novo.intHomeScore! + novo.intAwayScore!;
+      final atualTotal = atual.intHomeScore! + atual.intAwayScore!;
+
+      if (novoTotal != atualTotal) {
+        return novoTotal > atualTotal ? novo : atual;
+      }
+
+      if (novo.isFinal && !atual.isFinal) {
+        return novo;
+      }
+
+      if (atual.isFinal && !novo.isFinal) {
+        return atual;
+      }
+    }
+
+    final novoRank = _rankStatusEvento(novo.statusCanonico);
+    final atualRank = _rankStatusEvento(atual.statusCanonico);
+
+    if (novoRank > atualRank) {
+      return novo;
+    }
+
+    if (atualRank > novoRank) {
+      return atual;
+    }
+
+    return novo;
+  }
+
+  int _rankStatusEvento(String status) {
+    return switch (status) {
+      'encerrado' => 4,
+      'em_andamento' => 3,
+      'adiado' => 2,
+      'agendado' => 1,
+      _ => 0,
+    };
+  }
+
   SportsDbEvent? _buscarEventoPorTimesEHorario(
     Jogo jogo,
     List<SportsDbEvent> events,
@@ -854,20 +922,22 @@ class BolaoController extends ChangeNotifier {
     }
 
     final eventStatus = event.statusCanonico;
-    final finalInferredByClock = event.isEncerradoInferidoPorRelogio;
-    final finalResult =
-        jogo.resultadoFinal || event.isFinal || finalInferredByClock;
+    final currentFinal = jogo.resultadoFinal || jogo.isEncerrado;
+    final finalInferredByClock = _deveInferirEncerradoPorRelogio(jogo, event);
+    final incomingFinished =
+        event.isFinal || finalInferredByClock || eventStatus == 'encerrado';
     final scoreUsable =
-        event.temPlacar && (finalResult || eventStatus == 'em_andamento');
+        event.temPlacar &&
+        (incomingFinished || currentFinal || eventStatus == 'em_andamento');
     final incomingScoreRegresses =
-        scoreUsable &&
-        !finalResult &&
-        _placarAoVivoRegrediu(jogo, event.intHomeScore, event.intAwayScore);
+        scoreUsable && _placarEventoRegrediu(jogo, event);
     final applyIncomingScore = scoreUsable && !incomingScoreRegresses;
     final liveWithoutScore =
         !event.temPlacar && eventStatus == 'em_andamento' && !jogo.temResultado;
     final hasResult =
         jogo.temResultado || applyIncomingScore || liveWithoutScore;
+    final finalResult =
+        currentFinal || (incomingFinished && (hasResult || event.temPlacar));
     final homeScore = applyIncomingScore
         ? event.intHomeScore
         : liveWithoutScore
@@ -905,7 +975,9 @@ class BolaoController extends ChangeNotifier {
       temResultado: hasResult,
       resultadoFinal: finalResult,
       fonteResultado: applyIncomingScore
-          ? finalInferredByClock
+          ? event.isFinal
+                ? 'sportsdb_final'
+                : finalInferredByClock
                 ? 'sportsdb_encerrado_por_relogio'
                 : 'sportsdb_refresh'
           : liveWithoutScore
@@ -914,23 +986,39 @@ class BolaoController extends ChangeNotifier {
     );
   }
 
-  bool _placarAoVivoRegrediu(
-    Jogo jogo,
-    int? incomingHomeScore,
-    int? incomingAwayScore,
-  ) {
+  bool _placarEventoRegrediu(Jogo jogo, SportsDbEvent event) {
     if (!jogo.temResultado ||
         jogo.golsMandante == null ||
         jogo.golsVisitante == null ||
-        incomingHomeScore == null ||
-        incomingAwayScore == null) {
+        event.intHomeScore == null ||
+        event.intAwayScore == null) {
       return false;
     }
 
     final currentTotal = jogo.golsMandante! + jogo.golsVisitante!;
-    final incomingTotal = incomingHomeScore + incomingAwayScore;
+    final incomingTotal = event.intHomeScore! + event.intAwayScore!;
 
     return incomingTotal < currentTotal;
+  }
+
+  bool _deveInferirEncerradoPorRelogio(Jogo jogo, SportsDbEvent event) {
+    if (!event.temPlacar || event.isFinal) {
+      return false;
+    }
+
+    final kickoff = event.strTimestampUtc?.toUtc() ?? jogo.dataUtc?.toUtc();
+    if (kickoff == null) {
+      return false;
+    }
+
+    return DateTime.now().toUtc().difference(kickoff) >
+        _janelaAoVivoDoJogo(jogo);
+  }
+
+  Duration _janelaAoVivoDoJogo(Jogo jogo) {
+    return jogo.isMataMata
+        ? const Duration(minutes: 170)
+        : const Duration(minutes: 125);
   }
 
   String? _vencedor(
@@ -1000,13 +1088,11 @@ class BolaoController extends ChangeNotifier {
           }
 
           final elapsed = nowUtc.difference(kickoff).inMinutes;
-          final deveEstarAoVivo =
-              elapsed >= 0 &&
-              elapsed <= SportsDbEvent.maxLiveDuration.inMinutes;
+          final janelaAoVivo = _janelaAoVivoDoJogo(jogo).inMinutes;
+          final deveEstarAoVivo = elapsed >= 0 && elapsed <= janelaAoVivo;
 
           if (!deveEstarAoVivo) {
-            if (jogo.isEmAndamento &&
-                elapsed > SportsDbEvent.maxLiveDuration.inMinutes) {
+            if (jogo.isEmAndamento && elapsed > janelaAoVivo) {
               mudou = true;
 
               return Jogo.fromJson({

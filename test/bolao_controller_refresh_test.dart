@@ -58,6 +58,60 @@ void main() {
       expect(atualizado.golsVisitante, 1);
     },
   );
+
+  test(
+    'refresh preserva melhor placar mesmo apos encerramento inferido',
+    () async {
+      final api = _FakeSportsDbApiService();
+      final controller = await BolaoController.carregar(apiService: api);
+      final jogo = controller.data.jogos.firstWhere(
+        (jogo) =>
+            jogo.idEventAtual != null &&
+            !jogo.resultadoFinal &&
+            !jogo.temResultado,
+      );
+
+      api.enqueue([
+        _eventFor(
+          jogo,
+          homeScore: 3,
+          awayScore: 0,
+          status: 'LIVE',
+          timestampUtc: DateTime.now().toUtc().subtract(
+            const Duration(hours: 3),
+          ),
+        ),
+      ]);
+      await controller.atualizarApi();
+
+      var atualizado = controller.jogoPorId(jogo.jogoId)!;
+      expect(atualizado.statusJogo, 'encerrado');
+      expect(atualizado.resultadoFinal, isTrue);
+      expect(atualizado.golsMandante, 3);
+      expect(atualizado.golsVisitante, 0);
+
+      api.enqueue([
+        _eventFor(jogo, homeScore: 6, awayScore: 0, status: 'LIVE'),
+      ]);
+      await controller.atualizarApi();
+
+      atualizado = controller.jogoPorId(jogo.jogoId)!;
+      expect(atualizado.statusJogo, 'encerrado');
+      expect(atualizado.resultadoFinal, isTrue);
+      expect(atualizado.golsMandante, 6);
+      expect(atualizado.golsVisitante, 0);
+
+      api.enqueue([
+        _eventFor(jogo, homeScore: 3, awayScore: 0, status: 'LIVE'),
+      ]);
+      await controller.atualizarApi();
+
+      atualizado = controller.jogoPorId(jogo.jogoId)!;
+      expect(atualizado.statusJogo, 'encerrado');
+      expect(atualizado.golsMandante, 6);
+      expect(atualizado.golsVisitante, 0);
+    },
+  );
 }
 
 class _FakeSportsDbApiService extends SportsDbApiService {
@@ -95,6 +149,7 @@ SportsDbEvent _eventFor(
   required int? homeScore,
   required int? awayScore,
   required String status,
+  DateTime? timestampUtc,
 }) {
   return SportsDbEvent(
     idEvent: jogo.idEventAtual!,
@@ -110,7 +165,7 @@ SportsDbEvent _eventFor(
     dateEventLocal: null,
     strTime: null,
     strTimeLocal: null,
-    strTimestampUtc: DateTime.now().toUtc(),
+    strTimestampUtc: timestampUtc ?? DateTime.now().toUtc(),
     strVenue: jogo.estadio,
     strCity: jogo.cidadeSede,
     strCountry: null,

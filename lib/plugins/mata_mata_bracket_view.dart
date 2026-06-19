@@ -57,6 +57,16 @@ class MataMataBracketView extends StatelessWidget {
           );
         }
 
+        if (constraints.maxWidth >= 960) {
+          return _SplitBracket(
+            stages: [
+              for (final stage in orderedStages)
+                _BracketStage(stage: stage, jogos: stages[stage]!),
+            ],
+            badgeUrlForTeam: badgeUrlForTeam,
+          );
+        }
+
         return _ConnectedBracket(
           stages: [
             for (final stage in orderedStages)
@@ -65,6 +75,137 @@ class MataMataBracketView extends StatelessWidget {
           badgeUrlForTeam: badgeUrlForTeam,
         );
       },
+    );
+  }
+}
+
+class _SplitBracket extends StatelessWidget {
+  final List<_BracketStage> stages;
+  final TeamBadgeUrlResolver? badgeUrlForTeam;
+
+  const _SplitBracket({required this.stages, required this.badgeUrlForTeam});
+
+  @override
+  Widget build(BuildContext context) {
+    final knockoutStages = stages
+        .where(
+          (stage) => stage.stage != 'final' && stage.stage != 'third-place',
+        )
+        .toList(growable: false);
+    final finalStage = stages
+        .where(
+          (stage) => stage.stage == 'final' || stage.stage == 'third-place',
+        )
+        .toList(growable: false);
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _BracketHalf(
+              stages: knockoutStages,
+              firstHalf: true,
+              badgeUrlForTeam: badgeUrlForTeam,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _FinalColumn(
+                stages: finalStage,
+                badgeUrlForTeam: badgeUrlForTeam,
+              ),
+            ),
+            _BracketHalf(
+              stages: knockoutStages.reversed.toList(growable: false),
+              firstHalf: false,
+              badgeUrlForTeam: badgeUrlForTeam,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BracketHalf extends StatelessWidget {
+  final List<_BracketStage> stages;
+  final bool firstHalf;
+  final TeamBadgeUrlResolver? badgeUrlForTeam;
+
+  const _BracketHalf({
+    required this.stages,
+    required this.firstHalf,
+    required this.badgeUrlForTeam,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        for (var index = 0; index < stages.length; index++) ...[
+          SizedBox(
+            width: 216,
+            child: _StageColumn(
+              stage: stages[index].stage,
+              jogos: _half(stages[index].jogos, firstHalf),
+              badgeUrlForTeam: badgeUrlForTeam,
+            ),
+          ),
+          if (index < stages.length - 1)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Icon(
+                firstHalf ? Icons.chevron_right : Icons.chevron_left,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+
+  List<JogoProjetado> _half(List<JogoProjetado> jogos, bool firstHalf) {
+    if (jogos.length <= 1) {
+      return jogos;
+    }
+
+    final pivot = (jogos.length / 2).ceil();
+    return firstHalf
+        ? jogos.take(pivot).toList(growable: false)
+        : jogos.skip(pivot).toList(growable: false);
+  }
+}
+
+class _FinalColumn extends StatelessWidget {
+  final List<_BracketStage> stages;
+  final TeamBadgeUrlResolver? badgeUrlForTeam;
+
+  const _FinalColumn({required this.stages, required this.badgeUrlForTeam});
+
+  @override
+  Widget build(BuildContext context) {
+    final finals = stages
+        .expand((stage) => stage.jogos)
+        .toList(growable: false);
+
+    return SizedBox(
+      width: 232,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Decisão',
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 8),
+          for (final jogo in finals)
+            _ProjectedGameTile(jogo: jogo, badgeUrlForTeam: badgeUrlForTeam),
+        ],
+      ),
     );
   }
 }

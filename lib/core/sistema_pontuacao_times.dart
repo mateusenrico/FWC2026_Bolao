@@ -581,23 +581,32 @@ class SistemaPontuacaoTimes {
     final perdedores = <int, TimeProjetado>{};
     final gruposDeTerceirosUsados = <String>{};
     final avisos = <String>[];
+    final melhoresTerceirosPorSlot = _resolverSlotsMelhoresTerceiros(
+      jogosOrdenados: jogosOrdenados,
+      tabelas: tabelas,
+      avisos: avisos,
+    );
 
     for (final jogo in jogosOrdenados.where((jogo) => jogo.isMataMata)) {
       final mandante = _resolverReferencia(
         referencia: jogo.mandanteReferencia,
+        slotMelhorTerceiro: '${jogo.matchNumber}:mandante',
         tabelas: tabelas,
         vencedores: vencedores,
         perdedores: perdedores,
         gruposDeTerceirosUsados: gruposDeTerceirosUsados,
+        melhoresTerceirosPorSlot: melhoresTerceirosPorSlot,
         avisos: avisos,
       );
 
       final visitante = _resolverReferencia(
         referencia: jogo.visitanteReferencia,
+        slotMelhorTerceiro: '${jogo.matchNumber}:visitante',
         tabelas: tabelas,
         vencedores: vencedores,
         perdedores: perdedores,
         gruposDeTerceirosUsados: gruposDeTerceirosUsados,
+        melhoresTerceirosPorSlot: melhoresTerceirosPorSlot,
         avisos: avisos,
       );
 
@@ -689,10 +698,12 @@ class SistemaPontuacaoTimes {
 
   static TimeProjetado? _resolverReferencia({
     required ReferenciaParticipanteJogo referencia,
+    required String slotMelhorTerceiro,
     required ConjuntoTabelasGrupo tabelas,
     required Map<int, TimeProjetado> vencedores,
     required Map<int, TimeProjetado> perdedores,
     required Set<String> gruposDeTerceirosUsados,
+    required Map<String, LinhaTabelaTime> melhoresTerceirosPorSlot,
     required List<String> avisos,
   }) {
     if (referencia.isTime) {
@@ -720,6 +731,12 @@ class SistemaPontuacaoTimes {
     }
 
     if (referencia.isMelhorTerceiro) {
+      final preResolvido = melhoresTerceirosPorSlot[slotMelhorTerceiro];
+      if (preResolvido != null) {
+        gruposDeTerceirosUsados.add(preResolvido.grupo.toUpperCase());
+        return preResolvido.toTimeProjetado();
+      }
+
       for (final terceiro in tabelas.melhoresTerceiros) {
         final grupo = terceiro.grupo.toUpperCase();
 
@@ -774,4 +791,100 @@ class SistemaPontuacaoTimes {
 
     return null;
   }
+
+  static Map<String, LinhaTabelaTime> _resolverSlotsMelhoresTerceiros({
+    required List<Jogo> jogosOrdenados,
+    required ConjuntoTabelasGrupo tabelas,
+    required List<String> avisos,
+  }) {
+    final slots = <_MelhorTerceiroSlot>[];
+
+    for (final jogo in jogosOrdenados.where((jogo) => jogo.isMataMata)) {
+      if (jogo.mandanteReferencia.isMelhorTerceiro) {
+        slots.add(
+          _MelhorTerceiroSlot(
+            key: '${jogo.matchNumber}:mandante',
+            gruposElegiveis: jogo.mandanteReferencia.gruposElegiveis,
+          ),
+        );
+      }
+
+      if (jogo.visitanteReferencia.isMelhorTerceiro) {
+        slots.add(
+          _MelhorTerceiroSlot(
+            key: '${jogo.matchNumber}:visitante',
+            gruposElegiveis: jogo.visitanteReferencia.gruposElegiveis,
+          ),
+        );
+      }
+    }
+
+    if (slots.isEmpty || tabelas.melhoresTerceiros.isEmpty) {
+      return const {};
+    }
+
+    final slotsOrdenados = [...slots]
+      ..sort((a, b) {
+        final byRestriction = a.gruposElegiveis.length.compareTo(
+          b.gruposElegiveis.length,
+        );
+        if (byRestriction != 0) {
+          return byRestriction;
+        }
+
+        return a.key.compareTo(b.key);
+      });
+
+    final assignments = <String, LinhaTabelaTime>{};
+    final usedGroups = <String>{};
+
+    bool solve(int index) {
+      if (index >= slotsOrdenados.length) {
+        return true;
+      }
+
+      final slot = slotsOrdenados[index];
+      for (final terceiro in tabelas.melhoresTerceiros) {
+        final grupo = terceiro.grupo.toUpperCase();
+        if (!slot.gruposElegiveis.contains(grupo) ||
+            usedGroups.contains(grupo)) {
+          continue;
+        }
+
+        assignments[slot.key] = terceiro;
+        usedGroups.add(grupo);
+
+        if (solve(index + 1)) {
+          return true;
+        }
+
+        assignments.remove(slot.key);
+        usedGroups.remove(grupo);
+      }
+
+      return false;
+    }
+
+    if (solve(0)) {
+      return Map.unmodifiable(assignments);
+    }
+
+    avisos.add(
+      'Não foi possível resolver globalmente todos os melhores terceiros; '
+      'o chaveamento usará fallback por slot.',
+    );
+    return const {};
+  }
+}
+
+class _MelhorTerceiroSlot {
+  final String key;
+  final List<String> gruposElegiveis;
+
+  _MelhorTerceiroSlot({
+    required this.key,
+    required List<String> gruposElegiveis,
+  }) : gruposElegiveis = gruposElegiveis
+           .map((grupo) => grupo.toUpperCase())
+           .toList(growable: false);
 }

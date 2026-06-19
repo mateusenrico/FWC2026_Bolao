@@ -107,11 +107,13 @@ class PalpiteMatchGroups {
         ResultadoPartida.visitante,
         ResultadoPartida.indefinido,
       ])
-        GrupoPalpitesJogo(
-          resultado: resultado,
-          palpites: List.unmodifiable(grouped[resultado]!),
-          resultadoAtual: resultado == resultadoAtual,
-        ),
+        if (resultado != ResultadoPartida.indefinido ||
+            grouped[resultado]!.isNotEmpty)
+          GrupoPalpitesJogo(
+            resultado: resultado,
+            palpites: List.unmodifiable(grouped[resultado]!),
+            resultadoAtual: resultado == resultadoAtual,
+          ),
     ];
   }
 
