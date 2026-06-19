@@ -54,6 +54,7 @@ class BolaoController extends ChangeNotifier {
 
   final Map<String, SportsDbEvent> _eventoPorJogoId = {};
   final Map<String, SportsDbEventDetailsResult> _detalhesPorJogoId = {};
+  final Map<String, _LiveClockSnapshot> _tempoAoVivoPorJogoId = {};
   final Set<String> _detalhesCarregando = {};
   BolaoMediaCatalog _mediaCatalog = const BolaoMediaCatalog.empty();
 
@@ -543,32 +544,48 @@ class BolaoController extends ChangeNotifier {
       return null;
     }
 
-    final eventStatus = _eventoPorJogoId[jogo.jogoId]?.strStatus?.trim();
-    final statusMinute = _minuteFromStatus(eventStatus);
-    if (statusMinute != null) {
-      return "$statusMinute'";
+    final snapshot =
+        _tempoAoVivoPorJogoId[jogo.jogoId] ?? _calcularTempoAoVivo(jogo);
+
+    return snapshot?.label;
+  }
+
+  _LiveClockSnapshot? _calcularTempoAoVivo(Jogo jogo) {
+    if (!jogo.isEmAndamento) {
+      return null;
     }
 
-    final kickoff = jogo.dataUtc?.toUtc();
+    final eventStatus = _eventoPorJogoId[jogo.jogoId]?.strStatus?.trim();
+    if (_statusIndicaIntervalo(eventStatus)) {
+      return const _LiveClockSnapshot(minuto: 45, intervalo: true);
+    }
+
+    final statusMinute = _minuteFromStatus(eventStatus);
+    if (statusMinute != null) {
+      return _LiveClockSnapshot(minuto: statusMinute.clamp(0, 90).toInt());
+    }
+
+    final kickoff =
+        _eventoPorJogoId[jogo.jogoId]?.strTimestampUtc?.toUtc() ??
+        jogo.dataUtc?.toUtc();
     if (kickoff == null) {
-      return eventStatus == null || eventStatus.isEmpty ? null : eventStatus;
+      return null;
     }
 
     final elapsed = DateTime.now().toUtc().difference(kickoff).inMinutes;
     if (elapsed < 0) {
-      return null;
+      return const _LiveClockSnapshot(minuto: 0);
     }
 
     if (elapsed <= 45) {
-      return "${elapsed.clamp(1, 45)}'";
+      return _LiveClockSnapshot(minuto: elapsed.clamp(0, 45).toInt());
     }
 
     if (elapsed <= 60) {
-      return 'Intervalo';
+      return const _LiveClockSnapshot(minuto: 45, intervalo: true);
     }
 
-    final secondHalfMinute = (elapsed - 15).clamp(46, 120);
-    return "aprox. $secondHalfMinute'";
+    return _LiveClockSnapshot(minuto: (elapsed - 15).clamp(46, 90).toInt());
   }
 
   TimeSportsDb? timeSportsDb(String nomeTime) {
@@ -1139,17 +1156,57 @@ class BolaoController extends ChangeNotifier {
         .toList(growable: false);
 
     if (!mudou) {
-      return false;
+      final tempoMudou = _atualizarTemposAoVivo();
+      if (tempoMudou && notificar) {
+        notifyListeners();
+      }
+
+      return tempoMudou;
     }
 
     _data = _data.copyWith(jogos: jogos);
     _recalcular();
+    _atualizarTemposAoVivo();
 
     if (notificar) {
       notifyListeners();
     }
 
     return true;
+  }
+
+  bool _atualizarTemposAoVivo() {
+    final jogosLive = _data.jogos
+        .where((jogo) => jogo.isEmAndamento)
+        .toList(growable: false);
+    final liveIds = jogosLive.map((jogo) => jogo.jogoId).toSet();
+    var mudou = false;
+
+    final antigos = _tempoAoVivoPorJogoId.keys.toList(growable: false);
+    for (final jogoId in antigos) {
+      if (!liveIds.contains(jogoId)) {
+        _tempoAoVivoPorJogoId.remove(jogoId);
+        mudou = true;
+      }
+    }
+
+    for (final jogo in jogosLive) {
+      final novo = _calcularTempoAoVivo(jogo);
+      if (novo == null) {
+        continue;
+      }
+
+      final consolidado = _LiveClockSnapshot.preferir(
+        _tempoAoVivoPorJogoId[jogo.jogoId],
+        novo,
+      );
+      if (_tempoAoVivoPorJogoId[jogo.jogoId] != consolidado) {
+        _tempoAoVivoPorJogoId[jogo.jogoId] = consolidado;
+        mudou = true;
+      }
+    }
+
+    return mudou;
   }
 
   void _atualizarProximaAtualizacao() {
@@ -1211,6 +1268,18 @@ class BolaoController extends ChangeNotifier {
 
     final match = RegExp(r'^(\d{1,3})').firstMatch(value);
     return int.tryParse(match?.group(1) ?? '');
+  }
+
+  bool _statusIndicaIntervalo(String? value) {
+    final text = value?.toUpperCase().trim();
+    if (text == null || text.isEmpty) {
+      return false;
+    }
+
+    return text == 'HT' ||
+        text == 'HALF TIME' ||
+        text == 'HALF-TIME' ||
+        text.contains('INTERVALO');
   }
 
   LinhaPontuacaoParticipante? _linhaEm(
@@ -1290,5 +1359,47 @@ class BolaoController extends ChangeNotifier {
   void dispose() {
     _refreshTimer?.cancel();
     super.dispose();
+  }
+}
+
+class _LiveClockSnapshot {
+  final int minuto;
+  final bool intervalo;
+
+  const _LiveClockSnapshot({required this.minuto, this.intervalo = false});
+
+  String get label {
+    return intervalo ? 'Intervalo' : "$minuto'";
+  }
+
+  static _LiveClockSnapshot preferir(
+    _LiveClockSnapshot? atual,
+    _LiveClockSnapshot novo,
+  ) {
+    if (atual == null) {
+      return novo;
+    }
+
+    if (novo.intervalo) {
+      if (atual.minuto >= 46) {
+        return atual;
+      }
+
+      return atual.intervalo ? atual : novo;
+    }
+
+    if (atual.intervalo && novo.minuto < 46) {
+      return atual;
+    }
+
+    if (!atual.intervalo && !novo.intervalo && atual.minuto == novo.minuto) {
+      return atual;
+    }
+
+    if (novo.minuto < atual.minuto) {
+      return atual;
+    }
+
+    return novo;
   }
 }

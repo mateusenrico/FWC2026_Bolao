@@ -112,6 +112,59 @@ void main() {
       expect(atualizado.golsVisitante, 0);
     },
   );
+
+  test('refresh preserva minuto ao vivo contra resposta atrasada', () async {
+    final api = _FakeSportsDbApiService();
+    final controller = await BolaoController.carregar(apiService: api);
+    final jogo = controller.data.jogos.firstWhere(
+      (jogo) =>
+          jogo.idEventAtual != null &&
+          !jogo.resultadoFinal &&
+          !jogo.temResultado,
+    );
+
+    api.enqueue([_eventFor(jogo, homeScore: 0, awayScore: 0, status: '35')]);
+    await controller.atualizarApi();
+    expect(
+      controller.tempoAtualDoJogo(controller.jogoPorId(jogo.jogoId)!),
+      "35'",
+    );
+
+    api.enqueue([_eventFor(jogo, homeScore: 0, awayScore: 0, status: '21')]);
+    await controller.atualizarApi();
+    expect(
+      controller.tempoAtualDoJogo(controller.jogoPorId(jogo.jogoId)!),
+      "35'",
+    );
+
+    api.enqueue([_eventFor(jogo, homeScore: 0, awayScore: 0, status: 'HT')]);
+    await controller.atualizarApi();
+    expect(
+      controller.tempoAtualDoJogo(controller.jogoPorId(jogo.jogoId)!),
+      'Intervalo',
+    );
+
+    api.enqueue([_eventFor(jogo, homeScore: 0, awayScore: 0, status: '44')]);
+    await controller.atualizarApi();
+    expect(
+      controller.tempoAtualDoJogo(controller.jogoPorId(jogo.jogoId)!),
+      'Intervalo',
+    );
+
+    api.enqueue([_eventFor(jogo, homeScore: 0, awayScore: 0, status: '52')]);
+    await controller.atualizarApi();
+    expect(
+      controller.tempoAtualDoJogo(controller.jogoPorId(jogo.jogoId)!),
+      "52'",
+    );
+
+    api.enqueue([_eventFor(jogo, homeScore: 0, awayScore: 0, status: '49')]);
+    await controller.atualizarApi();
+    expect(
+      controller.tempoAtualDoJogo(controller.jogoPorId(jogo.jogoId)!),
+      "52'",
+    );
+  });
 }
 
 class _FakeSportsDbApiService extends SportsDbApiService {

@@ -7,6 +7,7 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - tela inicial responsiva;
 - destaque para partida ao vivo ou próximo horário, com grid compacto de palpites; jogos ao vivo exibem pontos parciais;
 - banner ao vivo fixo no topo da home apenas quando o bloco principal não estiver exibindo “Acontecendo agora”;
+- banner ao vivo das telas internas mostra minuto decorrido ou intervalo, em vez do horário de início;
 - ranking parcial colapsável na home, sem toggle, ordenado por consolidado + ao vivo quando houver jogo em andamento;
 - mini gráfico de evolução por posição abaixo do ranking parcial da home;
 - filtros de partidas: hoje, amanhã, rodada, passados, futuros e todos;
@@ -35,6 +36,7 @@ Este pacote adiciona o dashboard visual e integra o core de pontuação existent
 - simulador preservado no código, mas temporariamente removido da navegação principal;
 - atualização incremental da SportsDB em memória a cada 5 segundos durante jogos ao vivo, preservando os assets locais se a API falhar;
 - refresh anti-regressão para evitar que placares/status voltem para snapshots mais antigos da API;
+- relógio ao vivo anti-regressão, limitado de 0 a 90 minutos e preservando o estado de intervalo;
 - tabelas de grupos responsivas no celular, sem largura mínima que cause overflow horizontal;
 - mesma regra 5/3/2/1/0 para jogos de grupos e mata-mata;
 - testes básicos da regra de pontuação, incluindo placar exato no mata-mata.

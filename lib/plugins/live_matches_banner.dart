@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_routes.dart';
-import '../core/functions/date_time_utils.dart';
 import '../core/functions/team_normalizer.dart';
 import '../models/jogo.dart';
 import '../services/bolao_controller.dart';
@@ -123,15 +122,37 @@ class _LiveMatchChip extends StatelessWidget {
                 badgeUrl: controller.badgeDoTime(jogo.visitantePrevisto),
               ),
               const Spacer(),
-              Text(
-                AppDateTime.horario(AppDateTime.horarioBrasilia(jogo)),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: colors.onSurfaceVariant,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              _LiveClockText(controller: controller, jogo: jogo),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LiveClockText extends StatelessWidget {
+  final BolaoController controller;
+  final Jogo jogo;
+
+  const _LiveClockText({required this.controller, required this.jogo});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final clock = controller.tempoAtualDoJogo(jogo) ?? 'Ao vivo';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: colors.error.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        clock,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: colors.error,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );

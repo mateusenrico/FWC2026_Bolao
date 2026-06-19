@@ -91,6 +91,8 @@ marcada como parcial por disponibilidade da API, nao por lacuna de codigo.
 | Dashboard: futuros nao repetem jogos de hoje | Completo | `BolaoController.jogosPorPeriodo` |
 | Dashboard: filtros Passados/Hoje/Rodada/Futuros e subfiltros de futuro | Completo | `HomeScreen`, `PeriodoJogos` |
 | Tempo atual/aproximado de jogo ao vivo | Completo | `BolaoController.tempoAtualDoJogo`, `PartidaCard` |
+| Relogio ao vivo sem regressao, com minuto 0-90 e intervalo preservado | Completo | `_LiveClockSnapshot`, `BolaoController._atualizarTemposAoVivo`, teste de regressao |
+| Banner ao vivo das telas internas mostra minuto/intervalo em vez do horario de inicio | Completo | `LiveMatchesBanner` |
 | Gols/cartoes/estatisticas/escalacao da partida pela API | Parcial por API | `MatchApiDetails`, `SportsDbApiService.fetchEventDetails`; aparece quando a SportsDB retorna dados |
 | Gols anulados/VAR quando retornados pela timeline | Parcial por API | `SportsDbTimelineItem.isCancelled`, `MatchApiDetails` |
 | Foto do estadio na tela da partida quando houver asset/API | Completo | `JogoDetailScreen`, `VenueSportsDb`, `MediaCatalogService` |

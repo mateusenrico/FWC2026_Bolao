@@ -498,7 +498,7 @@ A tool:
 6. gera logs em `logs/update_sportsdb/`.
 7. tenta enriquecer times, venues e liga com metadados visuais da TheSportsDB.
 
-No app em execução, o controller também faz uma atualização inicial ao carregar e mantém um timer de 5 segundos. A consulta automática desse timer aplica os dados dinâmicos que realmente mudaram, como placar, status, mídia e eventos associados, sem colocar a UI inteira em estado de carregamento. Fora disso, o relógio local apenas evita que jogos recém-iniciados ou já estourados fiquem com status incoerente. O refresh é monotônico para placar/status: depois que um placar maior ou encerrado é conhecido, respostas atrasadas da API não podem devolver o jogo para placar menor ou estado ao vivo mais antigo.
+No app em execução, o controller também faz uma atualização inicial ao carregar e mantém um timer de 5 segundos. A consulta automática desse timer aplica os dados dinâmicos que realmente mudaram, como placar, status, mídia e eventos associados, sem colocar a UI inteira em estado de carregamento. Fora disso, o relógio local evita que jogos recém-iniciados ou já estourados fiquem com status incoerente. O refresh é monotônico para placar/status/tempo ao vivo: depois que um placar maior, minuto mais avançado ou encerramento é conhecido, respostas atrasadas da API não podem devolver o jogo para placar menor, minuto menor ou estado ao vivo mais antigo.
 
 Na tela de detalhe da partida, o app consulta sob demanda os endpoints `lookuptimeline.php`, `lookuplineup.php`, `eventresults.php` e `lookupeventstats.php` por `idEvent`. Esses dados são cacheados por partida e invalidados quando o jogo está ao vivo, para permitir que gols/cartões/estatísticas acompanhem o refresh sem pesar a tela inicial.
 
@@ -581,6 +581,7 @@ Finalizado ou praticamente fechado:
 - [x] indicador visual de próxima atualização automática
 - [x] atualização inicial automática e refresh incremental de 5 segundos quando houver jogo ao vivo
 - [x] refresh anti-regressão no app e no tool de deploy para evitar oscilação de placar/status
+- [x] relógio ao vivo monotônico, limitado de 0 a 90 minutos, com intervalo preservado
 - [x] navegação mobile para Grupos e Times validada sem overflow horizontal
 - [x] metadados visuais de times, venues e liga
 - [x] widgets de imagem remota para badges, banners, venues e liga
